@@ -20,11 +20,21 @@
 }
 
 - (IBAction)doSomething:(id)sender {
-    if ([[_refreshBtn title] isEqualTo:@"Button"]) {
-        [_refreshBtn setTitle:@"Hi Steve"];
+    
+    // Load Google and change button accordingly
+    if ([[_refreshBtn title] isEqualTo:@"Load Yahoo"]) {
+        [_refreshBtn setTitle:@"Load Google"];
+        NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://yahoo.com"]];
+        [self.webView.mainFrame loadRequest:request];
+
     }
+    
+    // Load Yahoo and change button accordingly
     else {
-        [_refreshBtn setTitle:@"Button"];
+        [_refreshBtn setTitle:@"Load Yahoo"];
+        NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://google.com"]];
+        [self.webView.mainFrame loadRequest:request];
+        
     }
 
 }
