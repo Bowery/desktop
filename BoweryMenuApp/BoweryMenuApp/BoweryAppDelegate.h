@@ -13,6 +13,7 @@
 @interface BoweryAppDelegate : NSObject <NSApplicationDelegate>
 
 @property (weak) IBOutlet WebView *webView;
+@property (nonatomic) IBOutlet NSButton *refreshBtn;
 @property (assign) IBOutlet NSWindow *window;
 
 @end

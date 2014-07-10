@@ -1,9 +1,16 @@
+// Copyright 2014 Bowery, Inc.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+)
+
+var (
+	port       = flag.String("port", ":32055", "Port to run Bowery Desktop Client on.")
+	isLoggedIn = false
 )
 
 func handler(rw http.ResponseWriter, req *http.Request) {
@@ -11,6 +18,6 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":32055", nil))
+	http.Handle("/", http.FileServer(http.Dir("./static/")))
+	log.Fatal(http.ListenAndServe(*port, nil))
 }
