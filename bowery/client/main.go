@@ -20,16 +20,28 @@ var (
 	DaemonEndpoint string = "localhost:3000" // TODO (thebyrd) change this to match the toolbar app
 	db             *localdb.DB
 	data           *localData
-	r              = render.New(render.Options{
-		IndentJSON:    true,
-		IsDevelopment: true,
-		Layout:        "layout",
-	})
 )
+
+var r = render.New(render.Options{
+	IndentJSON:    true,
+	IsDevelopment: true,
+	Layout:        "layout",
+})
+
+type Application struct {
+	ID         string
+	Name       string
+	Start      string
+	Build      string
+	Env        map[string]string
+	RemotePath string
+	RemoteAddr string
+	LocalPath  string
+}
 
 type localData struct {
 	Developer    *schemas.Developer
-	Applications []*schemas.Application
+	Applications []*Application
 }
 
 // Set up local db.
@@ -47,12 +59,12 @@ func init() {
 	}
 }
 
-func getApps() []*schemas.Application {
+func getApps() []*Application {
 	return data.Applications
 }
 
-func getAppById(id string) *schemas.Application {
-	var application schemas.Application
+func getAppById(id string) *Application {
+	var application Application
 	for _, app := range getApps() {
 		if app.ID == id {
 			application = *app
@@ -103,7 +115,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 
 func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "new", map[string]interface{}{
-			"Title": "New Application",
+		"Title": "New Application",
 	})
 }
 
