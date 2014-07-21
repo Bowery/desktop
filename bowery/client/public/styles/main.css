@@ -251,3 +251,7 @@ ul.list .item {
   color: #C7C7CC;
   cursor: default;
 }
+
+.create-application {
+  display: none;
+}

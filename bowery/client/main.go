@@ -90,6 +90,8 @@ func main() {
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
+	mux.HandleFunc("/applications/verify", verifyAppHandler)
+	mux.HandleFunc("/applications/create", createAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
@@ -117,6 +119,14 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "new", map[string]interface{}{
 		"Title": "New Application",
 	})
+}
+
+func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
+	r.JSON(rw, http.StatusOK, map[string]string{"todo": "true"})
+}
+
+func createAppHandler(rw http.ResponseWriter, req *http.Request) {
+	r.JSON(rw, http.StatusOK, map[string]string{"todo": "true"})
 }
 
 func appHandler(rw http.ResponseWriter, req *http.Request) {
