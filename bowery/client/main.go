@@ -28,8 +28,8 @@ var (
 )
 
 type localData struct {
-	Developer    schemas.Developer
-	Applications []schemas.Application
+	Developer    *schemas.Developer
+	Applications []*schemas.Application
 }
 
 // Set up local db.
@@ -47,20 +47,30 @@ func init() {
 	}
 }
 
-func getApps() []schemas.Application {
+func getApps() []*schemas.Application {
 	return data.Applications
 }
 
-func getAppById(id string) schemas.Application {
+func getAppById(id string) *schemas.Application {
 	var application schemas.Application
 	for _, app := range getApps() {
 		if app.ID == id {
-			application = app
+			application = *app
 			break
 		}
 	}
 
-	return application
+	return &application
+}
+
+func getDev() *schemas.Developer {
+	return data.Developer
+}
+
+func updateDev() error {
+	// todo(steve): update broome
+	// Update local
+	return db.Save(data)
 }
 
 func main() {
@@ -69,6 +79,8 @@ func main() {
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
+	mux.HandleFunc("/settings", getSettingsHandler)
+	mux.HandleFunc("/_/settings", updateSettingsHandler)
 
 	app := negroni.Classic()
 	app.UseHandler(mux)
@@ -109,5 +121,37 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "application", map[string]interface{}{
 		"Application": application,
 		"Status":      "Syncing...",
+	})
+}
+
+func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
+		"Developer": getDev(),
+	})
+}
+
+func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
+	name := req.FormValue("name")
+	email := req.FormValue("email")
+	dev := getDev()
+
+	if name != "" {
+		dev.Name = name
+	}
+
+	if email != "" {
+		dev.Email = email
+	}
+
+	if err := updateDev(); err != nil {
+		r.JSON(rw, http.StatusOK, map[string]string{
+			"status": "failed",
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": "success",
 	})
 }
