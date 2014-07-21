@@ -1,0 +1,27 @@
+<!doctype html>
+<head>
+<link rel="stylesheet" href="/styles/main.css" />
+<title>{{.Title}}</title>
+</head>
+<body>
+
+  <div class="container login">
+    <div class="nav">
+      <a href="/new" class="create-app-link">+</a>
+    </div>
+    <h1>{{.Title}}</h1>
+
+    <div class="group applications">
+    {{range .Apps}}
+      <div class="item">
+        <a href="/applications/{{.ID}}">{{.Name}}</a>
+      </div>
+    {{end}}
+  </div>
+
+    <div class="footer">
+      <p>{{.Status}}</p>
+      <a href="/settings" class="settings-link">&#x2699;</a>
+    </div>
+  </div>
+</body>
