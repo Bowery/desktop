@@ -58,6 +58,7 @@ func main() {
 	r := render.New(render.Options{
 		IndentJSON:    true,
 		IsDevelopment: true, // TODO (thebyrd) remove in production
+		Layout: "layout",
 	})
 
 	mux := http.NewServeMux()
@@ -81,6 +82,12 @@ func main() {
 		r.HTML(w, http.StatusOK, "application", map[string]interface{}{
 			"Application": application,
 			"Status":      "Syncing...",
+		})
+	})
+
+	mux.HandleFunc("/apps", func(w http.ResponseWriter, req *http.Request) {
+		r.HTML(w, http.StatusOK, "applications", map[string]interface{}{
+			"Title": "Applications",
 		})
 	})
 

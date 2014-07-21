@@ -1,0 +1,25 @@
+<!doctype html>
+<head>
+<link rel="stylesheet" href="/styles/main.css" />
+<title>Bowery v3 guide</title>
+</head>
+<body>
+  <div class="container login">
+    <div class="triangle"></div>
+    <div class="nav">
+      <span class="heading">{{.Title}}</span>
+      <a href="/new" class="create-app-link">
+        <img class="icon" src="/images/plus.png">
+      </a>
+    </div>
+    <div class="content">
+      {{yield}}
+    </div>
+    <div class="footer">
+      <span class="heading status"></span>
+      <a href="/settings" class="settings-link">
+        <img class="icon gear" src="/images/gear.png">
+      </a>
+    </div>
+  </div>
+</body>
