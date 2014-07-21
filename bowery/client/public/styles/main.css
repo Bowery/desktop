@@ -27,7 +27,7 @@ a {
 }
 
 h3 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   color: #2D2C2C;
 }
@@ -53,8 +53,8 @@ ul.list {
 }
 
 ul.list .item {
-  height: 56px;
-  border-bottom: 1px solid #ddd;
+  height: 52px;
+  border-bottom: 1px solid #EBEEF0;
   background-color: white;
   padding: 9px 0;
 }
