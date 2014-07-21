@@ -1,6 +1,16 @@
-
-    <form method="post" action="/_/login">
-      <input type="text" name="email" placeholder="email" />
-      <input type="passord" name="password" placeholder="password" />
-      <input type="submit" />
-    </form>
+<h1>Welcome to Bowery</h1>
+<h3>Let's get you signed in</h3>
+<form class="form" method="post" action="/_/login">
+  <div class="field">
+    <input type="text" name="email" class="field-input" />
+    <label for="email" class="field-label">Email</label>
+  </div>
+  <div class="field">
+    <input type="password" name="password" class="field-input" />
+    <label for="password" class="field-label">Password</label>
+  </div>
+  <div class="field-submit">
+    <input class="submit" type="submit" value="Submit" />
+  </div>
+</form>
+<h3>Don't have an account? Sign up here.</h3>

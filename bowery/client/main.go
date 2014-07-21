@@ -2,11 +2,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Bowery/gopackages/localdb"
 	"github.com/Bowery/gopackages/schemas"
@@ -16,8 +19,8 @@ import (
 )
 
 var (
-	AuthEndpoint   string = "broome.io"
-	DaemonEndpoint string = "localhost:3000" // TODO (thebyrd) change this to match the toolbar app
+	AuthEndpoint   string = "http://broome.io"
+	DaemonEndpoint string = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
 	db             *localdb.DB
 	data           *localData
 )
@@ -38,6 +41,11 @@ type Application struct {
 	RemoteAddr string
 	LocalPath  string
 }
+
+const (
+	AuthCreateTokenPath = "/developers/token"
+	AuthMePath          = "/developers/me?token={token}"
+)
 
 type localData struct {
 	Developer    *schemas.Developer
@@ -81,13 +89,16 @@ func getDev() *schemas.Developer {
 
 func updateDev() error {
 	// todo(steve): update broome
-	// Update local
 	return db.Save(data)
 }
 
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/signup", signupHandler)
+	mux.HandleFunc("/_/signup", createDeveloperHandler)
+	mux.HandleFunc("/login", loginHandler)
+	mux.HandleFunc("/_/login", submitLoginHandler)
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
@@ -102,13 +113,146 @@ func main() {
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
-	r.HTML(rw, http.StatusOK, "home", map[string]interface{}{
-		"Title":  "Home Page!",
-		"Status": "All Systems Go!",
-	})
+	// If there is no logged in user, show signup page.
+	dev := getDev()
+	if dev.ID.Hex() == "" {
+		http.Redirect(rw, req, "/signup", http.StatusMovedPermanently)
+		return
+	}
+
+	http.Redirect(rw, req, "/apps", http.StatusMovedPermanently)
+}
+
+func signupHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "signup", nil)
+}
+
+func loginHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "login", nil)
+}
+
+type loginReq struct {
+	Email    string
+	Password string
+}
+
+type res struct {
+	Status string `json:"status"`
+	Err    string `json:"error"`
+}
+
+type createTokenRes struct {
+	*res
+	Token string `json:"token"`
+}
+
+type developerRes struct {
+	*res
+	Developer *schemas.Developer `json:"developer"`
+}
+
+func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
+	email := req.FormValue("email")
+	password := req.FormValue("password")
+
+	// To login a user, first fetch their token, and then
+	// using their token, get the developer object.
+
+	// Get token.
+	var body bytes.Buffer
+	bodyReq := &loginReq{
+		Email:    email,
+		Password: password,
+	}
+	encoder := json.NewEncoder(&body)
+	if err := encoder.Encode(bodyReq); err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	res, err := http.Post(AuthEndpoint+AuthCreateTokenPath, "application/json", &body)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer res.Body.Close()
+
+	// Decode response.
+	createRes := new(createTokenRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(createRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	token := ""
+	if createRes.Status == "created" {
+		token = createRes.Token
+	}
+
+	// Get developer.
+	res, err = http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", token, -1))
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer res.Body.Close()
+
+	// Decode response.
+	devRes := new(developerRes)
+	decoder = json.NewDecoder(res.Body)
+	err = decoder.Decode(devRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	if devRes.Status == "found" {
+		data.Developer = devRes.Developer
+		db.Save(data)
+
+		// Redirect to applications.
+		http.Redirect(rw, req, "/apps", http.StatusMovedPermanently)
+		return
+	}
+
+	// todo(steve) handle error.
+}
+
+func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
+	firstName := req.FormValue("first_name")
+	lastName := req.FormValue("last_name")
+	email := req.FormValue("email")
+	password := req.FormValue("password")
+	confirm := req.FormValue("password_confirm")
+
+	if firstName == "" || lastName == "" || email == "" || password == "" || confirm == "" {
+		r.HTML(rw, http.StatusBadRequest, "signup", map[string]interface{}{
+			"Error": "Missing fields",
+		})
+		return
+	}
 }
 
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev == nil {
+		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+		return
+	}
+
 	r.HTML(rw, http.StatusOK, "applications", map[string]interface{}{
 		"Title": "Applications",
 		"Apps":  getApps(),
@@ -147,6 +291,13 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev == nil {
+		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+		return
+	}
+
 	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
 		"Developer": getDev(),
 	})
