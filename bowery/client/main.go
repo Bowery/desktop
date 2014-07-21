@@ -99,6 +99,7 @@ func main() {
 	mux.HandleFunc("/_/signup", createDeveloperHandler)
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/_/login", submitLoginHandler)
+	mux.HandleFunc("/logout", logoutHandler)
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
@@ -113,10 +114,9 @@ func main() {
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show signup page.
-	dev := getDev()
-	if dev.ID.Hex() == "" {
-		http.Redirect(rw, req, "/signup", http.StatusMovedPermanently)
+	// If there is no logged in user, show login page.
+	if getDev().ID.Hex() == "" {
+		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
 		return
 	}
 
@@ -129,6 +129,12 @@ func signupHandler(rw http.ResponseWriter, req *http.Request) {
 
 func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "login", nil)
+}
+
+func logoutHandler(rw http.ResponseWriter, req *http.Request) {
+	data.Developer = nil
+	db.Save(data)
+	http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
 }
 
 type loginReq struct {

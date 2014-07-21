@@ -1,0 +1,6 @@
+dependencies:
+  override:
+    - echo ""
+test:
+  override:
+    - echo "No tests"
