@@ -116,25 +116,43 @@ func main() {
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	if getDev().ID.Hex() == "" {
-		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
 
-	http.Redirect(rw, req, "/apps", http.StatusMovedPermanently)
+	http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
-	r.HTML(rw, http.StatusOK, "signup", nil)
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev != nil && getDev().ID.Hex() != "" {
+		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		return
+	}
+
+	r.HTML(rw, http.StatusOK, "signup", map[string]string{
+		"Title": "Welcome to Bowery",
+	})
 }
 
 func loginHandler(rw http.ResponseWriter, req *http.Request) {
-	r.HTML(rw, http.StatusOK, "login", nil)
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev != nil && getDev().ID.Hex() != "" {
+		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		return
+	}
+
+	r.HTML(rw, http.StatusOK, "login", map[string]string{
+		"Title": "Login to Bowery",
+	})
 }
 
 func logoutHandler(rw http.ResponseWriter, req *http.Request) {
-	data.Developer = nil
+	data.Developer = &schemas.Developer{}
 	db.Save(data)
-	http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+	http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 }
 
 type loginReq struct {
@@ -229,7 +247,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 		db.Save(data)
 
 		// Redirect to applications.
-		http.Redirect(rw, req, "/apps", http.StatusMovedPermanently)
+		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -237,13 +255,11 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
-	firstName := req.FormValue("first_name")
-	lastName := req.FormValue("last_name")
+	name := req.FormValue("name")
 	email := req.FormValue("email")
 	password := req.FormValue("password")
-	confirm := req.FormValue("password_confirm")
 
-	if firstName == "" || lastName == "" || email == "" || password == "" || confirm == "" {
+	if name == "" || email == "" || password == "" {
 		r.HTML(rw, http.StatusBadRequest, "signup", map[string]interface{}{
 			"Error": "Missing fields",
 		})
@@ -254,8 +270,8 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil {
-		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+	if dev == nil || dev.ID.Hex() == "" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -266,6 +282,13 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func newAppHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev == nil || dev.ID.Hex() == "" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		return
+	}
+
 	r.HTML(rw, http.StatusOK, "new", map[string]interface{}{
 		"Title": "New Application",
 	})
@@ -280,6 +303,13 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func appHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := getDev()
+	if dev == nil || dev.ID.Hex() == "" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		return
+	}
+
 	id := req.URL.Path[len("/applications/"):]
 	application := getAppById(id)
 
@@ -299,8 +329,8 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil {
-		http.Redirect(rw, req, "/login", http.StatusMovedPermanently)
+	if dev == nil || dev.ID.Hex() == "" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
 
