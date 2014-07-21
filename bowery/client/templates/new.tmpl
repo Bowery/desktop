@@ -1,14 +1,75 @@
-<form class="form">
+<form class="form verify-application">
   <div class="field">
-    <input type="text" class="field-input" name="ip-addr">
-    <label class="field-label">Remote IP Address</label>
+    <input type="text" class="field-input" name="ip-addr" id="ip-addr">
+    <label for="ip-addr" class="field-label">Remote IP Address</label>
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="local-dir">
-    <label class="field-label">Local Directory</label>
+    <input type="text" class="field-input" name="local-dir" id="local-dir">
+    <label for="local-dir" class="field-label">Local Directory</label>
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="remote-dir">
-    <label class="field-label">Remote Directory</label>
+    <input type="text" class="field-input" name="remote-dir" id="remote-dir">
+    <label for="remote-dir" class="field-label">Remote Directory</label>
+  </div>
+  <div class="field-submit">
+    <input class="submit verify" type="submit" value="Verify Information">
   </div>
 </form>
+
+<form class="form create-application">
+  <input class="" type="hidden" value="" name="id">
+  <div class="field">
+    <input type="text" class="field-input" name="name" id="name">
+    <label for="name" class="field-label">Application Name</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="start" id="start">
+    <label for="start" class="field-label">Start Command</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="build" id="build">
+    <label for="build" class="field-label">Build Command</label>
+  </div>
+  <div class="field-submit">
+    <input class="submit create" type="submit" value="Create Application">
+  </div>
+</form>
+
+
+<script type="text/javascript">
+/**
+ * Asks the server what's wrong with user provided info
+ * and returns any problems it gets back as a map[field] = problem.
+ */
+function verifyInfo(formEl) {
+  return {}
+  return {
+    "local-dir": "You must provide a local directory to sync."
+  }
+}
+
+/**
+ * on .submit.verify click event verify ip & directories.
+ * If they're valid then hide .verify-application and show .create-application.
+ * on
+ */
+$(document).ready(function () {
+  verifyFormEl = $('.verify-application');
+  createFormEl = $('.create-application')
+  $('.submit.verify').click(function (e) {
+    e.preventDefault()
+    problems = verifyInfo(verifyFormEl)
+    validInput = Object.keys(problems).length == 0
+    if (validInput) {
+      verifyFormEl.css("display", "none")
+      createFormEl.css("display", "block")
+    } else {
+      for (var field in problems) {
+        verifyFormEl.find(".field-input[name=" + field + "]").addClass("invalid")
+        verifyFormEl.find(".field-input[name=" + field + "] + .field-label").text(problems[field])
+      }
+    }
+  })
+})
+
+</script>
