@@ -1,5 +1,5 @@
 <div class="group settings">
-  <form class="form" method="put" action="/_/settings">
+  <form class="form user-settings" method="put" action="/_/settings">
     <div class="field">
       <input type="text" name="name" class="field-input" value="{{.Developer.Name}}" />
       <label for="name" class="field-label">Name</label>
@@ -12,4 +12,5 @@
       <input class="submit" type="submit" value="Submit" />
     </div>
   </form>
+  <a href="/logout">Logout</a>
 </div>
