@@ -66,7 +66,7 @@ func getAppById(id string) schemas.Application {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/applications", appsHandler)
+	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/", appHandler)
 
 	app := negroni.Classic()

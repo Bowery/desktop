@@ -17,7 +17,7 @@ body {
   background: url("https://i.cloudup.com/OcSNhET4sc.png");
   cursor: default;
   -webkit-user-select: none;
-  color: #C7C7CC;
+  color: #8E8E93;
 }
 
 a {
@@ -145,11 +145,41 @@ ul.list .item {
 .icon:hover {
   opacity: 1;
 }
-
-.heading.status:before {
-  content: "Syncing..."
+.spin {
+  width: 16px;
+  float: left;
+  margin-right: 10px;
+}
+.spin.active .icon {
+    -webkit-animation-name:             rotate;
+    -webkit-animation-duration:         1s;
+    -webkit-animation-iteration-count:  infinite;
+    -webkit-transition-timing-function: cubic-bezier(0,0,1,1);
 }
 
-.heading.status:hover:before {
-  content: "Pause Syncing"
+.status {
+  float: left;
+}
+.status-description {
+  font-size: 12px;
+  font-weight: 400;
+  margin: 2px 0;
+}
+.status .bar {
+  width: 180px;
+  height: 2px;
+  background-color: #C7C7CC;
+}
+.status .inner-bar {
+  height: 2px;
+  background-color: #157AFB;
+}
+
+@-webkit-keyframes rotate {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
 }
