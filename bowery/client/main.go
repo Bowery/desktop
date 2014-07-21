@@ -67,6 +67,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/apps", appsHandler)
+	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
 
 	app := negroni.Classic()
@@ -85,6 +86,12 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "applications", map[string]interface{}{
 		"Title": "Applications",
 		"Apps":  getApps(),
+	})
+}
+
+func newAppHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "new", map[string]interface{}{
+			"Title": "New Application",
 	})
 }
 
