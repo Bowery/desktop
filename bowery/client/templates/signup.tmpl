@@ -1,1 +1,25 @@
-<h1>{{.title}}</h1>
+<h1>Sign up for Bowery.</h1>
+<h3>Because we love you.</h3>
+<form class="form" method="post" action="/_/signup">
+  <div class="field">
+    <input type="text" name="first_name" class="field-input" />
+    <label for="first_name" class="field-label">First Name</label>
+  </div>
+  <div class="field">
+    <input type="text" name="last_name" class="field-input" />
+    <label for="last_name" class="field-label">Last Name</label>
+  </div>
+  <div class="field">
+    <input type="text" name="email" class="field-input" />
+    <label for="email" class="field-label">Email</label>
+  </div>
+  <div class="field">
+    <input type="password" name="password" class="field-input" />
+    <label for="password" class="field-label">Password</label>
+  </div>
+  <div class="field">
+    <input type="password" name="password_confirm" class="field-input" />
+    <label for="password_confirm" class="field-label">Confirm Password</label>
+  </div>
+  <input type="submit" value="Submit" />
+</form>
