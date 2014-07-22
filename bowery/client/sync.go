@@ -239,7 +239,6 @@ func (watcher *Watcher) Upload() error {
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
-
 	// Attempt to upload, ensuring the upload is at the beginning of the file.
 	for i < 1000 {
 		_, err = file.Seek(0, os.SEEK_SET)
