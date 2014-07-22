@@ -70,7 +70,10 @@ ul.list .item {
 .heading {
   font-weight: bold;
   color: #8E8E93;
-  font-size: 14px;
+  font-size: 15px;
+  float: left;
+  line-height: 1;
+  margin-top: 1px;
 }
 
 .sub-heading {
@@ -102,11 +105,7 @@ ul.list .item {
 }
 
 .nav, .footer {
-  /*background: rgb(1, 136, 113);*/
-  /*background: rgb(1, 136, 113);*/
-  /*background: #157AFB;*/
   height: 40px;
-  padding: 7px 20px;
   z-index:2;
   position: absolute;
   width: 350px;
@@ -117,6 +116,7 @@ ul.list .item {
   border-radius: 8px 8px 0 0;
   background: linear-gradient(#EBEEF0, rgba(246, 246, 246, 0.9)); /*F6F6F6*/
   border-bottom: 1px solid #EBEEF0;
+  padding: 12px 20px 10px 20px;
 }
 
 .footer {
@@ -124,6 +124,7 @@ ul.list .item {
   border-radius: 0 0 8px 8px;
   background: linear-gradient(rgba(246, 246, 246, 0.9), #EBEEF0);
   border-top: 1px solid #EBEEF0;
+  padding: 10px 20px 12px 20px;
 }
 
 .create-app-link {
@@ -135,15 +136,9 @@ ul.list .item {
 }
 
 .icon {
-  margin-top: 4px;
   opacity: 1;
-  height: 16px;
+  height: 18px;
   opacity: 0.6;
-}
-.icon.gear {
-  height: 24px;
-  margin-top: 0;
-  opacity: 0.4;
 }
 .icon:hover {
   opacity: 1;
@@ -166,7 +161,7 @@ ul.list .item {
 .status-description {
   font-size: 12px;
   font-weight: 400;
-  margin: 2px 0;
+  margin-bottom: 2px;
 }
 .status .bar {
   width: 180px;
@@ -220,14 +215,15 @@ ul.list .item {
   height: 40px;
   margin-top: 10px;
   border: 1px solid #C7C7CC;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
   color: #2D2C2C;
-  padding: 5px 30px;
+  padding: 5px 18px;
+  font-family: "Helvetica Neue";
 }
 .field-submit {
   width: 100%;
-  margin-top: 22px;
+  margin: 22px 0;
 }
 .submit, .btn {
   width: 100%;
