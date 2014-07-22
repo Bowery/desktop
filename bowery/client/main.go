@@ -105,6 +105,8 @@ func updateDev() error {
 }
 
 func main() {
+	defer syncer.Close()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/signup", signupHandler)
@@ -128,7 +130,8 @@ func main() {
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	if getDev().ID.Hex() == "" {
+	dev := getDev()
+	if dev == nil || dev.ID.Hex() == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -377,7 +380,7 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
-		"app": app,
+		"app":     app,
 	})
 }
 
