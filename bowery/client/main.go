@@ -17,6 +17,7 @@ import (
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/codegangsta/negroni"
+	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
 )
 
@@ -120,6 +121,10 @@ func main() {
 	mux.HandleFunc("/applications/", appHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
+	mux.HandleFunc("/_/ws", wsHandler)
+
+	// Start ws
+	go wsPool.run()
 
 	app := negroni.Classic()
 	app.UseHandler(mux)
@@ -377,7 +382,7 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
-		"app": app,
+		"app":     app,
 	})
 }
 
@@ -443,4 +448,27 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": "success",
 	})
+}
+
+var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
+
+func wsHandler(rw http.ResponseWriter, req *http.Request) {
+	ws, err := upgrader.Upgrade(rw, req, nil)
+	if err != nil {
+		return
+	}
+
+	conn := &connection{
+		send: make(chan []byte, 256),
+		ws:   ws,
+	}
+
+	wsPool.register <- conn
+
+	defer func() {
+		wsPool.unregister <- conn
+	}()
+
+	go conn.writer()
+	conn.reader()
 }
