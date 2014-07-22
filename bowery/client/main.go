@@ -27,6 +27,7 @@ var (
 	db             *localdb.DB
 	data           *localData
 	syncer         *Syncer
+	logManager     *LogManager
 )
 
 var r = render.New(render.Options{
@@ -73,9 +74,12 @@ func init() {
 	}
 
 	syncer = NewSyncer()
+	logManager = NewLogManager()
+
 	if data.Applications != nil {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
+			logManager.Connect(app)
 		}
 	}
 }
@@ -356,6 +360,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Watch(app)
+	logManager.Connect(app)
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
