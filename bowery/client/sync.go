@@ -125,7 +125,6 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			found = append(found, path)
 			return nil
 		}
-
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -308,9 +307,8 @@ func (syncer *Syncer) Watch(app *Application) {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Application: app, Status: "upload"}
-
 		watcher.Start(syncer.Event, syncer.Error)
+		// syncer.Event <- &Event{Application: app, Status: "upload"}
 	}()
 }
 
