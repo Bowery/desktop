@@ -25,7 +25,8 @@
     <label for="build" class="field-label">Build Command</label>
   </div>
   <div class="field-submit">
-    <input class="submit edit" type="submit" value="Update Application">
+    <input class="submit edit half" type="submit" value="Update">
+    <input class="submit delete half alert" type="submit" value="Delete">
   </div>
 </form>
 
@@ -44,6 +45,23 @@
         } else {
           console.log("$$$$$", resp)
           alert(resp.error)
+        }
+      })
+    })
+
+    $('.edit-application .submit.delete').click(function (e) {
+      e.preventDefault()
+      $.ajax({
+        url: "/applications/remove",
+        method: "PUT",
+        data: $('.form.edit-application').serialize()
+      })
+      .done(function (resp) {
+        if (resp.success) {
+          window.location = "/apps"
+        } else {
+          console.log(resp)
+          alert(JSON.stringify(resp))
         }
       })
     })

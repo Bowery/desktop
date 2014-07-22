@@ -124,6 +124,7 @@ func main() {
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
 	mux.HandleFunc("/applications/create", createAppHandler)
 	mux.HandleFunc("/applications/update", updateAppHandler)
+	mux.HandleFunc("/applications/remove", removeAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
@@ -391,6 +392,21 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"app":     app,
+	})
+}
+
+func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
+	apps := getApps()
+	for i, app := range apps {
+		if app.ID == req.FormValue("id") {
+			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
+			break
+		}
+	}
+	data.Applications = apps
+	db.Save(data)
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"success": true,
 	})
 }
 
