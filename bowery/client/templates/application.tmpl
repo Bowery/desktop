@@ -1,1 +1,52 @@
-Edit Me!
+<form class="form edit-application">
+  <input class="" type="hidden" value="{{.Application.ID}}" name="id">
+  <div class="field">
+    <input type="text" class="field-input" name="name" id="name" value="{{.Application.Name}}">
+    <label for="name" class="field-label">Application Name</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="ip-addr" id="ip-addr" value="{{.Application.RemoteAddr}}">
+    <label for="ip-addr" class="field-label">Remote IP Address</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="local-dir" id="local-dir" value="{{.Application.LocalPath}}">
+    <label for="local-dir" class="field-label">Local Directory</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="remote-dir" id="remote-dir" value="{{.Application.RemotePath}}">
+    <label for="remote-dir" class="field-label">Remote Directory</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="start" id="start" value="{{.Application.Start}}">
+    <label for="start" class="field-label">Start Command</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="build" id="build" value="{{.Application.Build}}">
+    <label for="build" class="field-label">Build Command</label>
+  </div>
+  <div class="field-submit">
+    <input class="submit edit" type="submit" value="Update Application">
+  </div>
+</form>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    $('.edit-application .submit.edit').click(function (e) {
+      e.preventDefault()
+      $.ajax({
+        url: "/applications/update",
+        method: "PUT",
+        data: $('.form.edit-application').serialize()
+      })
+      .done(function (resp) {
+        if (resp.success) {
+          window.location = "/apps"
+        } else {
+          console.log("$$$$$", resp)
+          alert(resp.error)
+        }
+      })
+    })
+  })
+
+</script>

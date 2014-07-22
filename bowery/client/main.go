@@ -116,6 +116,7 @@ func main() {
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
 	mux.HandleFunc("/applications/create", createAppHandler)
+	mux.HandleFunc("/applications/update", updateAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
@@ -351,6 +352,35 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
+func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
+	app := getAppById(req.FormValue("id"))
+	if app.ID == "" {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
+			"Error": "No such application.",
+		})
+		return
+	}
+
+	app.Name = req.FormValue("name")
+	app.Start = req.FormValue("start")
+	app.Build = req.FormValue("build")
+	app.RemotePath = req.FormValue("remote-dir")
+	app.RemoteAddr = req.FormValue("ip-addr")
+	app.LocalPath = req.FormValue("local-dir")
+	app.LastUpdatedAt = time.Now()
+	for i, a := range data.Applications {
+		if a.ID == app.ID {
+			data.Applications[i] = app
+		}
+	}
+	db.Save(data)
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"app": app,
+	})
+}
+
 func appHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
@@ -370,6 +400,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	r.HTML(rw, http.StatusOK, "application", map[string]interface{}{
+		"Title":       application.Name,
 		"Application": application,
 		"Status":      "Syncing...",
 	})
