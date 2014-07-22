@@ -37,16 +37,6 @@
 
 
 <script type="text/javascript">
-/**
- * Asks the server what's wrong with user provided info
- * and returns any problems it gets back as a map[field] = problem.
- */
-function verifyInfo(formEl) {
-  return {}
-  return {
-    "local-dir": "You must provide a local directory to sync."
-  }
-}
 
 /**
  * on .submit.verify click event verify ip & directories.
@@ -54,21 +44,44 @@ function verifyInfo(formEl) {
  * on
  */
 $(document).ready(function () {
-  verifyFormEl = $('.verify-application');
+  verifyFormEl = $('.verify-application')
   createFormEl = $('.create-application')
+
   $('.submit.verify').click(function (e) {
     e.preventDefault()
-    problems = verifyInfo(verifyFormEl)
-    validInput = Object.keys(problems).length == 0
-    if (validInput) {
-      verifyFormEl.css("display", "none")
-      createFormEl.css("display", "block")
-    } else {
-      for (var field in problems) {
-        verifyFormEl.find(".field-input[name=" + field + "]").addClass("invalid")
-        verifyFormEl.find(".field-input[name=" + field + "] + .field-label").text(problems[field])
+    $.ajax({
+      url: "/applications/verify",
+      method: "PUT",
+      data: verifyFormEl.serialize()
+    })
+    .done(function (problems) {
+      validInput = Object.keys(problems).length == 0
+      if (validInput) {
+        verifyFormEl.css("display", "none")
+        createFormEl.css("display", "block")
+      } else {
+        for (var field in problems) {
+          verifyFormEl.find(".field-input[name=" + field + "]").addClass("invalid")
+          verifyFormEl.find(".field-input[name=" + field + "] + .field-label").text(problems[field])
+        }
       }
-    }
+    })
+  })
+
+  $('.submit.create').click(function (e) {
+    e.preventDefault()
+    $.ajax({
+      url: "/applications/create",
+      method: "POST",
+      data: verifyFormEl.serialize() + "&" + createFormEl.serialize()
+    })
+    .done(function (resp) {
+      if (resp.success) {
+        window.location = "/apps" // 1993 till infinity.
+      } else {
+        alert(resp.error)
+      }
+    })
   })
 })
 

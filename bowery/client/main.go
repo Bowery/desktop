@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"code.google.com/p/go-uuid/uuid"
 	"github.com/Bowery/gopackages/localdb"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
@@ -32,14 +34,15 @@ var r = render.New(render.Options{
 })
 
 type Application struct {
-	ID         string
-	Name       string
-	Start      string
-	Build      string
-	Env        map[string]string
-	RemotePath string
-	RemoteAddr string
-	LocalPath  string
+	ID            string
+	Name          string
+	Start         string
+	Build         string
+	Env           map[string]string
+	RemotePath    string
+	RemoteAddr    string
+	LocalPath     string
+	LastUpdatedAt time.Time
 }
 
 const (
@@ -295,11 +298,46 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
-	r.JSON(rw, http.StatusOK, map[string]string{"todo": "true"})
+	requestProblems := map[string]string{}
+
+	// TODO (thebyrd) remoteAddr must be accessible delancey agent
+	// remoteAddr := req.FormValue("ip-addr")
+
+	// remoteDir doesn't matter
+	// remoteDir := req.FormValue("remote-dir")
+
+	localDir := req.FormValue("local-dir")
+	if localDir[:2] == "~/" {
+		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	}
+	if stat, err := os.Stat(localDir); os.IsNotExist(err) || !stat.IsDir() {
+		requestProblems["local-dir"] = localDir + " is not a valid directory."
+	}
+
+	r.JSON(rw, http.StatusOK, requestProblems)
 }
 
 func createAppHandler(rw http.ResponseWriter, req *http.Request) {
-	r.JSON(rw, http.StatusOK, map[string]string{"todo": "true"})
+
+	app := &Application{
+		ID:            uuid.New(),
+		Name:          req.FormValue("name"),
+		Start:         req.FormValue("start"),
+		Build:         req.FormValue("build"),
+		RemotePath:    req.FormValue("remote-dir"),
+		RemoteAddr:    req.FormValue("ip-addr"),
+		LocalPath:     req.FormValue("local-dir"),
+		LastUpdatedAt: time.Now(),
+	}
+
+	if data.Applications == nil {
+		data.Applications = []*Application{}
+	}
+
+	data.Applications = append(data.Applications, app)
+	db.Save(data)
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
 func appHandler(rw http.ResponseWriter, req *http.Request) {
