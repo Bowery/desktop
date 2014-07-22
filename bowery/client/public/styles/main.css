@@ -224,6 +224,7 @@ ul.list .item {
 .field-submit {
   width: 100%;
   margin: 22px 0;
+  overflow: hidden;
 }
 .submit, .btn {
   width: 100%;
@@ -235,7 +236,17 @@ ul.list .item {
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
+  display: block;
+  text-align: center;
   transition: all 300ms;
+}
+.submit.alert, .btn.alert {
+  border: 1px solid #FC5322;
+  color: #FC5322;
+}
+.submit.alert:hover, .btn.alert:hover {
+  color: #FC5322;
+  border: 1px solid #FC5322;
 }
 .submit:hover,
 .btn:hover {
@@ -246,6 +257,14 @@ ul.list .item {
   border: 1px solid #C7C7CC;
   color: #C7C7CC;
   cursor: default;
+}
+
+.half {
+  width: 150px;
+  float: left;
+}
+.half + .half {
+  margin-left: 10px;
 }
 
 .create-application {
