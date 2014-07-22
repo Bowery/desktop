@@ -25,6 +25,7 @@ var (
 	DaemonEndpoint string = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
 	db             *localdb.DB
 	data           *localData
+	syncer         *Syncer
 )
 
 var r = render.New(render.Options{
@@ -67,6 +68,14 @@ func init() {
 	data = new(localData)
 	if err = db.Load(data); err == io.EOF || os.IsNotExist(err) {
 		log.Println("No existing state")
+		return
+	}
+
+	syncer = NewSyncer()
+	if data.Applications != nil {
+		for _, app := range data.Applications {
+			syncer.Watch(app)
+		}
 	}
 }
 
@@ -336,6 +345,8 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	data.Applications = append(data.Applications, app)
 	db.Save(data)
+
+	syncer.Watch(app)
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
