@@ -45,6 +45,10 @@ func DelanceyUpload(app *Application, file *os.File) error {
 		err = writer.WriteField("start", app.Start)
 	}
 	if err == nil {
+		ghettoPath := app.LocalPath + ":" + app.RemotePath
+		err = writer.WriteField("path", ghettoPath)
+	}
+	if err == nil {
 		envData, err := json.Marshal(app.Env)
 		if err != nil {
 			return err
@@ -80,6 +84,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 	return uploadRes
 }
 
+// DelanceyUpdate updates the given name with the status and path.
 func DelanceyUpdate(app *Application, full, name, status string) error {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
@@ -166,4 +171,19 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 	}
 
 	return updateRes
+}
+
+// Check checks to see if delancey is running.
+func DelanceyCheck(url string) error {
+	res, err := http.Get("http://" + url + "/healthz")
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return http.ErrNotSupported
+	}
+
+	return nil
 }

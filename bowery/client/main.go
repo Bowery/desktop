@@ -323,14 +323,14 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 
-	// TODO (thebyrd) remoteAddr must be accessible delancey agent
-	// remoteAddr := req.FormValue("ip-addr")
-
-	// remoteDir doesn't matter
-	// remoteDir := req.FormValue("remote-dir")
+	remoteAddr := req.FormValue("ip-addr")
+	err := DelanceyCheck(remoteAddr)
+	if err != nil {
+		requestProblems["ip-addr"] = remoteAddr + " delancey endpoint can't be reached."
+	}
 
 	localDir := req.FormValue("local-dir")
-	if localDir[:2] == "~/" {
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
 		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
 	}
 	if stat, err := os.Stat(localDir); os.IsNotExist(err) || !stat.IsDir() {

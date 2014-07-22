@@ -125,7 +125,6 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			found = append(found, path)
 			return nil
 		}
-
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -239,7 +238,6 @@ func (watcher *Watcher) Upload() error {
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
-
 	// Attempt to upload, ensuring the upload is at the beginning of the file.
 	for i < 1000 {
 		_, err = file.Seek(0, os.SEEK_SET)
@@ -309,9 +307,8 @@ func (syncer *Syncer) Watch(app *Application) {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Application: app, Status: "upload"}
-
 		watcher.Start(syncer.Event, syncer.Error)
+		// syncer.Event <- &Event{Application: app, Status: "upload"}
 	}()
 }
 
