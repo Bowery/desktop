@@ -11,7 +11,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 CGO_ENABLED=0
 
 # Change into that directory
-cd "$DIR"
+cd $DIR
 
 # Get the git commit
 GIT_COMMIT=$(git rev-parse HEAD)
@@ -21,7 +21,7 @@ GOPATHSINGLE=${GOPATH%%:*}
 
 # Install dependencies
 echo "--> Installing dependencies to speed up builds..."
-go get -d \
+go get \
   -ldflags "${CGO_LDFLAGS}" \
   ./...
 
@@ -36,10 +36,10 @@ cp bin/client ${GOPATHSINGLE}/bin
 DIR=$PWD
 
 # Move it to the XCode proj
-while [ ! -e BoweryMenubarApp ]; do cd ..; done
+while [ ! -e BoweryMenuApp ]; do cd ..; done
 XCODE_DIR=$PWD
 
-BOWERY_DIR=BoweryMenubarApp/Popup/Bowery
-cp "$DIR/bin/client" "$BOWERY_DIR/"
-cp -r "$DIR/public" "$BOWERY_DIR/"
-cp -r "$DIR/templates" "$BOWERY_DIR/"
+BOWERY_DIR=BoweryMenuApp/BoweryMenuApp/Bowery
+cp $DIR/bin/client $BOWERY_DIR/
+cp -r $DIR/public $BOWERY_DIR/
+cp -r $DIR/templates $BOWERY_DIR/

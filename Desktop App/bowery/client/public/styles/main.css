@@ -137,7 +137,7 @@ ul.list .item .status.alert {
   border-radius: 0 0 8px 8px;
   background: linear-gradient(rgba(246, 246, 246, 0.9), #EBEEF0);
   border-top: 1px solid #EBEEF0;
-  padding: 10px 20px 12px 20px;
+  padding: 10px 20px 10px 20px;
 }
 
 .nav-icons {
@@ -149,41 +149,44 @@ ul.list .item .status.alert {
 }
 
 .icon {
-  opacity: 1;
   height: 18px;
   opacity: 0.6;
 }
 .icon:hover {
   opacity: 1;
 }
-.spin {
+.status-icon {
+  opacity: 0.6;
   width: 16px;
   float: left;
   margin-right: 10px;
+  height: 18px;
+  width: 18px;
+  background-size: 18px 18px;
 }
-.spin.active .icon {
-    -webkit-animation-name:             rotate;
-    -webkit-animation-duration:         1s;
-    -webkit-animation-iteration-count:  infinite;
-    -webkit-transition-timing-function: cubic-bezier(0,0,1,1);
+.play:hover {
+  opacity: 1;
+}
+
+.pause:hover, .check:hover {
+  opacity: 1;
+  background-image: url(/images/1242-pause@2x.png);
+}
+.pause {
+  background-image: url(/images/1242-pause@2x.png);
+}
+.play {
+  background-image: url(/images/1241-play@2x.png);
+}
+.check {
+  background-image: url(/images/888-check@2x.png);
 }
 
 .status {
   float: left;
-}
-.status-description {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
-  margin-bottom: 2px;
-}
-.status .bar {
-  width: 180px;
-  height: 2px;
-  background-color: #C7C7CC;
-}
-.status .inner-bar {
-  height: 2px;
-  background-color: #157AFB;
+  margin-top: 1px;
 }
 
 @-webkit-keyframes rotate {
