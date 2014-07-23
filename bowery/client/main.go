@@ -37,15 +37,16 @@ var r = render.New(render.Options{
 })
 
 type Application struct {
-	ID            string
-	Name          string
-	Start         string
-	Build         string
-	Env           map[string]string
-	RemotePath    string
-	RemoteAddr    string
-	LocalPath     string
-	LastUpdatedAt time.Time
+	ID              string
+	Name            string
+	Start           string
+	Build           string
+	Env             map[string]string
+	RemotePath      string
+	RemoteAddr      string
+	LocalPath       string
+	LastUpdatedAt   time.Time
+	IsSyncAvailable bool
 }
 
 const (
@@ -163,7 +164,7 @@ func main() {
 	if data.Applications != nil {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
-			logManager.Connect(app)
+			// logManager.Connect(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
 		}
 	}
@@ -437,14 +438,15 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	app := &Application{
-		ID:            uuid.New(),
-		Name:          req.FormValue("name"),
-		Start:         req.FormValue("start"),
-		Build:         req.FormValue("build"),
-		RemotePath:    req.FormValue("remote-dir"),
-		RemoteAddr:    req.FormValue("ip-addr"),
-		LocalPath:     localDir,
-		LastUpdatedAt: time.Now(),
+		ID:              uuid.New(),
+		Name:            req.FormValue("name"),
+		Start:           req.FormValue("start"),
+		Build:           req.FormValue("build"),
+		RemotePath:      req.FormValue("remote-dir"),
+		RemoteAddr:      req.FormValue("ip-addr"),
+		LocalPath:       localDir,
+		LastUpdatedAt:   time.Now(),
+		IsSyncAvailable: true,
 	}
 
 	if data.Applications == nil {

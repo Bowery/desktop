@@ -174,6 +174,21 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		return nil
 	}
 
+	// Periodically check that the agent is still available.
+	go func() {
+		for {
+			<-time.After(5 * time.Second)
+			var status string
+			if err := DelanceyCheck(watcher.Application.RemoteAddr); err != nil {
+				status = "disconnect"
+			} else {
+				status = "connect"
+			}
+
+			evChan <- &Event{Application: watcher.Application, Status: status}
+		}
+	}()
+
 	for {
 		// Check if we're done.
 		select {
