@@ -100,11 +100,13 @@ func (l *logger) Start() {
 		data := make([]byte, 512)
 		n, _ := l.conn.Read(data)
 
-		msg, _ := json.Marshal(map[string]interface{}{
-			"appID":   l.application.ID,
-			"message": string(data[:n]),
-		})
-		wsPool.broadcast <- msg
+		if len(string(data[:n])) > 0 {
+			msg, _ := json.Marshal(map[string]interface{}{
+				"appID":   l.application.ID,
+				"message": string(data[:n]),
+			})
+			wsPool.broadcast <- msg
+		}
 	}
 }
 

@@ -164,7 +164,7 @@ func main() {
 	if data.Applications != nil {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
-			// logManager.Connect(app)
+			logManager.Connect(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
 		}
 	}

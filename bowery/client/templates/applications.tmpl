@@ -1,27 +1,10 @@
 <div class="group applications">
   <ul class="list">
-    <!-- <li class="item">
-      <a href="/">
-        <h3>.../Downloads/example-app</h3>
-        <p class="subtitle">seconds ago • 196.64.82.34</p>
-      </a>
-    </li>
-    <li class="item">
-      <a href="/">
-        <h3>Personal Blog</h3>
-        <p class="subtitle">4 days ago • ec2-blah-ip.amazonaws.com</p>
-      </a>
-    </li>
-    <li class="item">
-      <a href="/">
-        <h3>Fun Side Project</h3>
-        <p class="subtitle">seconds ago • 64.41.82.344</p>
-      </a>
-    </li> -->
     {{range .Apps}}
-    <li class="item">
+    <li class="item" data-app="{{.ID}}">
       <a href="/applications/{{.ID}}">
         <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
+        <span class="status"></span>
         <p class="subtitle">seconds ago •{{.RemoteAddr}}</p>
       </a>
     </li>

@@ -60,6 +60,19 @@ ul.list .item {
   border-bottom: 1px solid #EBEEF0;
   background-color: white;
   padding: 9px 0;
+  position: relative;
+}
+
+ul.list .item .status.alert {
+  position: absolute;
+  top: 18px;
+  right: 0px;
+  width: 15px;
+  height: 15px;
+  background: url(/images/791-warning@2x.png);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 .subtitle {
