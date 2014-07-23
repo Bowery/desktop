@@ -13,8 +13,8 @@ body {
   font-family: "Helvetica Neue";
   font-weight: 300;
   font-size: 20px;
-  padding: 200px 600px;
-  background: url("https://i.cloudup.com/OcSNhET4sc.png");
+  /* padding: 200px 600px; */
+  /* background: url("https://i.cloudup.com/OcSNhET4sc.png"); */
   cursor: default;
   -webkit-user-select: none;
   color: #8E8E93;
@@ -99,7 +99,7 @@ ul.list .item .status.alert {
   height: 350px;
   border-radius: 8px;
   position: relative;
-  box-shadow: 0 0 15px #333;
+  /* box-shadow: 0 0 15px #333; */
   background-color: white;
 }
 .content::-webkit-scrollbar {

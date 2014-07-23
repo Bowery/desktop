@@ -13,11 +13,21 @@
 
 @synthesize refreshBtn = _refreshBtn;
 
+NSTask *task;
+
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
+    task = [[NSTask alloc] init];
+
+    // find the client
+    NSString* client = [[NSBundle mainBundle] pathForResource:@"Bowery/client" ofType:@""];
+    [task setLaunchPath:client];
+    [task launch];
+
+    [self.webView setDrawsBackground:NO];
+    
 	NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://0.0.0.0:32055/login"]];
 	[self.webView.mainFrame loadRequest:request];
-    NSLog(@"did finish");
 }
 
 - (IBAction)doSomething:(id)sender {
@@ -27,7 +37,7 @@
         [_refreshBtn setTitle:@"Load Google"];
         NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://0.0.0.0:32055/login"]];
         [self.webView.mainFrame loadRequest:request];
-
+        
     }
     
     // Load Yahoo and change button accordingly
@@ -37,7 +47,12 @@
         [self.webView.mainFrame loadRequest:request];
         
     }
+    
+}
 
+-(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
+    [task terminate];
+    return YES;
 }
 
 @end
