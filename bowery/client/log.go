@@ -26,8 +26,40 @@ func NewLogManager() *LogManager {
 // and adds it to the LogManager.
 func (lm *LogManager) Connect(app *Application) {
 	l := NewLogger(app)
-	go l.start()
+	go l.Start()
 	lm.loggers = append(lm.loggers, l)
+}
+
+// Remove closes the logger for a given app.
+func (lm *LogManager) Remove(app *Application) error {
+	for idx, logger := range lm.loggers {
+		if logger != nil && logger.application.ID == app.ID {
+			err := logger.Close()
+			if err != nil {
+				return err
+			}
+
+			lm.loggers[idx] = nil
+		}
+	}
+
+	return nil
+}
+
+// Close closes the loggers connections.
+func (lm *LogManager) Close() error {
+	for _, logger := range lm.loggers {
+		if logger == nil {
+			continue
+		}
+
+		err := logger.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // logger manages the tcp connection and data channel
@@ -35,7 +67,7 @@ func (lm *LogManager) Connect(app *Application) {
 type logger struct {
 	application *Application
 	conn        net.Conn
-	channel     chan []byte
+	done        chan struct{}
 }
 
 // NewLogger creates a new logger for a given
@@ -43,39 +75,42 @@ type logger struct {
 func NewLogger(app *Application) *logger {
 	logger := new(logger)
 	logger.application = app
-	logger.channel = make(chan []byte)
+	logger.done = make(chan struct{})
 	return logger
 }
 
-// start connects to the application's remote agent's
+// Start connects to the application's remote agent's
 // tcp listener and broadcasts new data to the wsPool.
-func (l *logger) start() {
+func (l *logger) Start() {
 	var err error
 	l.conn, err = net.Dial("tcp", strings.Split(l.application.RemoteAddr, ":")[0]+":3002")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer l.conn.Close()
-
-	go func(ch chan []byte) {
-		for {
-			data := make([]byte, 512)
-			l.conn.Read(data)
-			ch <- data
-		}
-	}(l.channel)
 
 	for {
+		// Check if we're done.
 		select {
-		case data := <-l.channel:
-			msg, _ := json.Marshal(map[string]interface{}{
-				"appID":   l.application.ID,
-				"message": string(data),
-			})
-			wsPool.broadcast <- msg
+		case <-l.done:
+			return
+		default:
 		}
-	}
 
-	return
+		data := make([]byte, 512)
+		n, _ := l.conn.Read(data)
+
+		msg, _ := json.Marshal(map[string]interface{}{
+			"appID":   l.application.ID,
+			"message": string(data[:n]),
+		})
+		wsPool.broadcast <- msg
+	}
+}
+
+// Close closes the loggers connection.
+func (l *logger) Close() error {
+	close(l.done)
+
+	return l.conn.Close()
 }
