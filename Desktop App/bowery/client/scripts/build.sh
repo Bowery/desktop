@@ -36,10 +36,10 @@ cp bin/client ${GOPATHSINGLE}/bin
 DIR=$PWD
 
 # Move it to the XCode proj
-while [ ! -e BoweryMenuApp ]; do cd ..; done
+while [ ! -e BoweryMenubarApp ]; do cd ..; done
 XCODE_DIR=$PWD
 
-BOWERY_DIR=BoweryMenuApp/BoweryMenuApp/Bowery
+BOWERY_DIR=BoweryMenubarApp/Popup/Bowery
 cp $DIR/bin/client $BOWERY_DIR/
 cp -r $DIR/public $BOWERY_DIR/
 cp -r $DIR/templates $BOWERY_DIR/
