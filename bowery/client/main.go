@@ -375,7 +375,12 @@ func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 
 	remoteAddr := req.FormValue("ip-addr")
-	err := DelanceyCheck(remoteAddr)
+	var err error
+	if len(strings.Split(remoteAddr, ":")) > 1 {
+		err = DelanceyCheck(remoteAddr)
+	} else {
+		err = DelanceyCheck(remoteAddr + ":3001")
+	}
 	if err != nil {
 		requestProblems["ip-addr"] = remoteAddr + " delancey endpoint can't be reached."
 	}

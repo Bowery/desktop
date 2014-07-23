@@ -43,8 +43,10 @@ if (window['WebSocket']) {
   conn.onclose = function (e) {}
   conn.onmessage = function (e) {
     var data = JSON.parse(e.data)
-    if (appID == data.appID)
-      logContainerEl.innerHTML += data.message
+    if (appID == data.appID) {
+      logContainerEl.innerHTML += '<p>' + data.message + '</p>'
+      logContainerEl.scrollTop = logContainerEl.scrollHeight
+    }
   }
 } else {
   logContainerEl.innerHTML = 'Your browser is out of date.'
