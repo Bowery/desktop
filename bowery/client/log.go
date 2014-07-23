@@ -112,7 +112,12 @@ func (l *logger) Start() {
 
 // Close closes the loggers connection.
 func (l *logger) Close() error {
+	var err error
 	close(l.done)
 
-	return l.conn.Close()
+	if l.conn != nil {
+		err = l.conn.Close()
+	}
+
+	return err
 }
