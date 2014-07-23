@@ -11,7 +11,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 CGO_ENABLED=0
 
 # Change into that directory
-cd $DIR
+cd "$DIR"
 
 # Get the git commit
 GIT_COMMIT=$(git rev-parse HEAD)
@@ -40,6 +40,6 @@ while [ ! -e BoweryMenubarApp ]; do cd ..; done
 XCODE_DIR=$PWD
 
 BOWERY_DIR=BoweryMenubarApp/Popup/Bowery
-cp $DIR/bin/client $BOWERY_DIR/
-cp -r $DIR/public $BOWERY_DIR/
-cp -r $DIR/templates $BOWERY_DIR/
+cp "$DIR/bin/client" $BOWERY_DIR/
+cp -r "$DIR/public" $BOWERY_DIR/
+cp -r "$DIR/templates" $BOWERY_DIR/
