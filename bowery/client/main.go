@@ -49,8 +49,9 @@ type Application struct {
 }
 
 const (
-	AuthCreateTokenPath = "/developers/token"
-	AuthMePath          = "/developers/me?token={token}"
+	AuthCreateDeveloperPath = "/developers"
+	AuthCreateTokenPath     = "/developers/token"
+	AuthMePath              = "/developers/me?token={token}"
 )
 
 type localData struct {
@@ -141,7 +142,7 @@ func main() {
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -152,7 +153,7 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev != nil && getDev().ID.Hex() != "" {
+	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
 	}
@@ -165,7 +166,7 @@ func signupHandler(rw http.ResponseWriter, req *http.Request) {
 func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev != nil && getDev().ID.Hex() != "" {
+	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
 	}
@@ -182,6 +183,7 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 type loginReq struct {
+	Name     string
 	Email    string
 	Password string
 }
@@ -291,12 +293,61 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	var body bytes.Buffer
+	bodyReq := &loginReq{Name: name, Email: email, Password: password}
+
+	encoder := json.NewEncoder(&body)
+	err := encoder.Encode(bodyReq)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	res, err := http.Post(AuthEndpoint+AuthCreateDeveloperPath, "application/json", &body)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer res.Body.Close()
+
+	// Decode json response.
+	createRes := new(developerRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(createRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	// Created, just return token.
+	if createRes.Status == "created" {
+		data.Developer = createRes.Developer
+		db.Save(data)
+
+		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if strings.Contains(createRes.Err, "email already exists") {
+		http.Redirect(rw, req, "/signup?error=emailtaken", http.StatusTemporaryRedirect)
+		return
+	}
+
+	http.Redirect(rw, req, "/signup", http.StatusTemporaryRedirect)
+	return
 }
 
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -310,7 +361,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -413,7 +464,7 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 func appHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -438,7 +489,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
