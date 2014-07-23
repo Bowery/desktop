@@ -55,7 +55,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	ignoreList, err := ignores.Get(local)
 	if err != nil {
 		errChan <- watcher.wrapErr(err)
-		ignoreList = make([]string, 0)
+		return
 	}
 
 	// Get initial stats.
@@ -80,6 +80,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	})
 	if err != nil {
 		errChan <- watcher.wrapErr(err)
+		return
 	}
 
 	// Manages updates/creates.
@@ -184,17 +185,19 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		ignoreList, err = ignores.Get(local)
 		if err != nil {
 			errChan <- watcher.wrapErr(err)
-			ignoreList = make([]string, 0)
+			return
 		}
 
 		err = filepath.Walk(local, walker)
 		if err != nil {
 			errChan <- watcher.wrapErr(err)
+			return
 		}
 
 		err = checkDeletes()
 		if err != nil {
 			errChan <- watcher.wrapErr(err)
+			return
 		}
 
 		found = make([]string, 0)
