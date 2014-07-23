@@ -79,6 +79,24 @@ func init() {
 		log.Println("No existing state")
 		return
 	}
+
+	go func() {
+		for {
+			<-time.After(5 * time.Second)
+			if data.Applications == nil {
+				continue
+			}
+
+			for _, app := range data.Applications {
+				status := "connect"
+				if err := DelanceyCheck(app.RemoteAddr); err != nil {
+					status = "disconnect"
+				}
+
+				broadcastJSON(&Event{Application: app, Status: status})
+			}
+		}
+	}()
 }
 
 func broadcastJSON(data interface{}) {
