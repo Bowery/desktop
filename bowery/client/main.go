@@ -144,6 +144,8 @@ func main() {
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/_/login", submitLoginHandler)
 	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/pause", pauseSyncHandler)
+	mux.HandleFunc("/resume", resumeSyncHandler)
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
@@ -397,6 +399,33 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 	return
 }
 
+func pauseSyncHandler(rw http.ResponseWriter, req *http.Request) {
+	if data.Applications == nil {
+		return
+	}
+
+	for _, app := range data.Applications {
+		syncer.Remove(app)
+		logManager.Remove(app)
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
+}
+
+func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
+	if data.Applications == nil {
+		return
+	}
+
+	for _, app := range data.Applications {
+		syncer.Watch(app)
+		logManager.Connect(app)
+		broadcastJSON(&Event{Application: app, Status: "upload-start"})
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
+}
+
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
@@ -525,12 +554,16 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 	apps := getApps()
 	for i, app := range apps {
 		if app.ID == req.FormValue("id") {
+			syncer.Remove(app)
+			logManager.Remove(app)
+
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 			break
 		}
 	}
 	data.Applications = apps
 	db.Save(data)
+
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
 	})
