@@ -13,8 +13,8 @@ body {
   font-family: "Helvetica Neue";
   font-weight: 300;
   font-size: 20px;
-  padding: 200px 600px;
-  background: url("https://i.cloudup.com/OcSNhET4sc.png");
+  /* padding: 200px 600px; */
+  /* background: url("https://i.cloudup.com/OcSNhET4sc.png"); */
   cursor: default;
   -webkit-user-select: none;
   color: #8E8E93;
@@ -60,6 +60,19 @@ ul.list .item {
   border-bottom: 1px solid #EBEEF0;
   background-color: white;
   padding: 9px 0;
+  position: relative;
+}
+
+ul.list .item .status.alert {
+  position: absolute;
+  top: 18px;
+  right: 0px;
+  width: 15px;
+  height: 15px;
+  background: url(/images/791-warning@2x.png);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 .subtitle {
@@ -86,7 +99,7 @@ ul.list .item {
   height: 350px;
   border-radius: 8px;
   position: relative;
-  box-shadow: 0 0 15px #333;
+  /* box-shadow: 0 0 15px #333; */
   background-color: white;
 }
 .content::-webkit-scrollbar {
@@ -127,7 +140,7 @@ ul.list .item {
   padding: 10px 20px 12px 20px;
 }
 
-.create-app-link {
+.nav-icons {
   float: right;
 }
 
@@ -224,6 +237,7 @@ ul.list .item {
 .field-submit {
   width: 100%;
   margin: 22px 0;
+  overflow: hidden;
 }
 .submit, .btn {
   width: 100%;
@@ -235,7 +249,17 @@ ul.list .item {
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
+  display: block;
+  text-align: center;
   transition: all 300ms;
+}
+.submit.alert, .btn.alert {
+  border: 1px solid #FC5322;
+  color: #FC5322;
+}
+.submit.alert:hover, .btn.alert:hover {
+  color: #FC5322;
+  border: 1px solid #FC5322;
 }
 .submit:hover,
 .btn:hover {
@@ -246,6 +270,14 @@ ul.list .item {
   border: 1px solid #C7C7CC;
   color: #C7C7CC;
   cursor: default;
+}
+
+.half {
+  width: 150px;
+  float: left;
+}
+.half + .half {
+  margin-left: 10px;
 }
 
 .create-application {

@@ -22,11 +22,12 @@ import (
 )
 
 var (
-	AuthEndpoint   string = "http://broome.io"
-	DaemonEndpoint string = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
+	AuthEndpoint   = "http://broome.io"
+	DaemonEndpoint = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
+	syncer         = NewSyncer()
+	logManager     = NewLogManager()
 	db             *localdb.DB
 	data           *localData
-	syncer         *Syncer
 )
 
 var r = render.New(render.Options{
@@ -36,25 +37,32 @@ var r = render.New(render.Options{
 })
 
 type Application struct {
-	ID            string
-	Name          string
-	Start         string
-	Build         string
-	Env           map[string]string
-	RemotePath    string
-	RemoteAddr    string
-	LocalPath     string
-	LastUpdatedAt time.Time
+	ID              string
+	Name            string
+	Start           string
+	Build           string
+	Env             map[string]string
+	RemotePath      string
+	RemoteAddr      string
+	LocalPath       string
+	LastUpdatedAt   time.Time
+	IsSyncAvailable bool
 }
 
 const (
-	AuthCreateTokenPath = "/developers/token"
-	AuthMePath          = "/developers/me?token={token}"
+	AuthCreateDeveloperPath = "/developers"
+	AuthCreateTokenPath     = "/developers/token"
+	AuthMePath              = "/developers/me?token={token}"
 )
 
 type localData struct {
 	Developer    *schemas.Developer
 	Applications []*Application
+}
+
+type wsError struct {
+	Application *Application `json:"application"`
+	Err         string       `json:"error"`
 }
 
 // Set up local db.
@@ -72,12 +80,38 @@ func init() {
 		return
 	}
 
-	syncer = NewSyncer()
-	if data.Applications != nil {
-		for _, app := range data.Applications {
-			syncer.Watch(app)
+	if os.Getenv("ENV") == "APP" {
+		if err := os.Chdir("BoweryMenuApp.app/Contents/Resources/Bowery"); err != nil {
+			panic("Wrong Directory!")
 		}
 	}
+
+	go func() {
+		for {
+			<-time.After(5 * time.Second)
+			if data.Applications == nil {
+				continue
+			}
+
+			for _, app := range data.Applications {
+				status := "connect"
+				if err := DelanceyCheck(app.RemoteAddr); err != nil {
+					status = "disconnect"
+				}
+
+				broadcastJSON(&Event{Application: app, Status: status})
+			}
+		}
+	}()
+}
+
+func broadcastJSON(data interface{}) {
+	msg, err := json.Marshal(data)
+	if err != nil {
+		msg = []byte(`{"error": "` + strings.Replace(err.Error(), `"`, "'", -1) + `"}`)
+	}
+
+	wsPool.broadcast <- msg
 }
 
 func getApps() []*Application {
@@ -107,6 +141,7 @@ func updateDev() error {
 
 func main() {
 	defer syncer.Close()
+	defer logManager.Close()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
@@ -115,11 +150,14 @@ func main() {
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/_/login", submitLoginHandler)
 	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/pause", pauseSyncHandler)
+	mux.HandleFunc("/resume", resumeSyncHandler)
 	mux.HandleFunc("/apps", appsHandler)
 	mux.HandleFunc("/applications/new", newAppHandler)
 	mux.HandleFunc("/applications/verify", verifyAppHandler)
 	mux.HandleFunc("/applications/create", createAppHandler)
 	mux.HandleFunc("/applications/update", updateAppHandler)
+	mux.HandleFunc("/applications/remove", removeAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
@@ -128,15 +166,44 @@ func main() {
 	// Start ws
 	go wsPool.run()
 
+	// Start retrieving sync events.
+	go func() {
+		for {
+			select {
+			case ev := <-syncer.Event:
+				broadcastJSON(ev)
+			case err := <-syncer.Error:
+				ws := new(wsError)
+				we, ok := err.(*WatchError)
+				if !ok {
+					ws.Err = err.Error()
+				} else {
+					ws.Application = we.Application
+					ws.Err = we.Err.Error()
+				}
+
+				broadcastJSON(ws)
+			}
+		}
+	}()
+
+	if data.Applications != nil {
+		for _, app := range data.Applications {
+			syncer.Watch(app)
+			logManager.Connect(app)
+			broadcastJSON(&Event{Application: app, Status: "upload-start"})
+		}
+	}
+
 	app := negroni.Classic()
 	app.UseHandler(mux)
-	app.Run(":3001")
+	app.Run(":32055")
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -147,7 +214,7 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev != nil && getDev().ID.Hex() != "" {
+	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
 	}
@@ -160,7 +227,7 @@ func signupHandler(rw http.ResponseWriter, req *http.Request) {
 func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev != nil && getDev().ID.Hex() != "" {
+	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
 	}
@@ -177,6 +244,7 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 type loginReq struct {
+	Name     string
 	Email    string
 	Password string
 }
@@ -286,12 +354,88 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	var body bytes.Buffer
+	bodyReq := &loginReq{Name: name, Email: email, Password: password}
+
+	encoder := json.NewEncoder(&body)
+	err := encoder.Encode(bodyReq)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	res, err := http.Post(AuthEndpoint+AuthCreateDeveloperPath, "application/json", &body)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer res.Body.Close()
+
+	// Decode json response.
+	createRes := new(developerRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(createRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	// Created, just return token.
+	if createRes.Status == "created" {
+		data.Developer = createRes.Developer
+		db.Save(data)
+
+		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if strings.Contains(createRes.Err, "email already exists") {
+		http.Redirect(rw, req, "/signup?error=emailtaken", http.StatusTemporaryRedirect)
+		return
+	}
+
+	http.Redirect(rw, req, "/signup", http.StatusTemporaryRedirect)
+	return
+}
+
+func pauseSyncHandler(rw http.ResponseWriter, req *http.Request) {
+	if data.Applications == nil {
+		return
+	}
+
+	for _, app := range data.Applications {
+		syncer.Remove(app)
+		logManager.Remove(app)
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
+}
+
+func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
+	if data.Applications == nil {
+		return
+	}
+
+	for _, app := range data.Applications {
+		syncer.Watch(app)
+		logManager.Connect(app)
+		broadcastJSON(&Event{Application: app, Status: "upload-start"})
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -305,7 +449,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -318,14 +462,19 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 
-	// TODO (thebyrd) remoteAddr must be accessible delancey agent
-	// remoteAddr := req.FormValue("ip-addr")
-
-	// remoteDir doesn't matter
-	// remoteDir := req.FormValue("remote-dir")
+	remoteAddr := req.FormValue("ip-addr")
+	var err error
+	if len(strings.Split(remoteAddr, ":")) > 1 {
+		err = DelanceyCheck(remoteAddr)
+	} else {
+		err = DelanceyCheck(remoteAddr + ":3001")
+	}
+	if err != nil {
+		requestProblems["ip-addr"] = remoteAddr + " delancey endpoint can't be reached."
+	}
 
 	localDir := req.FormValue("local-dir")
-	if localDir[:2] == "~/" {
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
 		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
 	}
 	if stat, err := os.Stat(localDir); os.IsNotExist(err) || !stat.IsDir() {
@@ -336,16 +485,21 @@ func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func createAppHandler(rw http.ResponseWriter, req *http.Request) {
+	localDir := req.FormValue("local-dir")
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
+		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	}
 
 	app := &Application{
-		ID:            uuid.New(),
-		Name:          req.FormValue("name"),
-		Start:         req.FormValue("start"),
-		Build:         req.FormValue("build"),
-		RemotePath:    req.FormValue("remote-dir"),
-		RemoteAddr:    req.FormValue("ip-addr"),
-		LocalPath:     req.FormValue("local-dir"),
-		LastUpdatedAt: time.Now(),
+		ID:              uuid.New(),
+		Name:            req.FormValue("name"),
+		Start:           req.FormValue("start"),
+		Build:           req.FormValue("build"),
+		RemotePath:      req.FormValue("remote-dir"),
+		RemoteAddr:      req.FormValue("ip-addr"),
+		LocalPath:       localDir,
+		LastUpdatedAt:   time.Now(),
+		IsSyncAvailable: true,
 	}
 
 	if data.Applications == nil {
@@ -356,6 +510,8 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Watch(app)
+	logManager.Connect(app)
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
@@ -369,12 +525,17 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	localDir := req.FormValue("local-dir")
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
+		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	}
+
 	app.Name = req.FormValue("name")
 	app.Start = req.FormValue("start")
 	app.Build = req.FormValue("build")
 	app.RemotePath = req.FormValue("remote-dir")
 	app.RemoteAddr = req.FormValue("ip-addr")
-	app.LocalPath = req.FormValue("local-dir")
+	app.LocalPath = localDir
 	app.LastUpdatedAt = time.Now()
 	for i, a := range data.Applications {
 		if a.ID == app.ID {
@@ -383,16 +544,41 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	db.Save(data)
 
+	syncer.Remove(app)
+	logManager.Remove(app)
+	syncer.Watch(app)
+	logManager.Connect(app)
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
+
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"app":     app,
 	})
 }
 
+func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
+	apps := getApps()
+	for i, app := range apps {
+		if app.ID == req.FormValue("id") {
+			syncer.Remove(app)
+			logManager.Remove(app)
+
+			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
+			break
+		}
+	}
+	data.Applications = apps
+	db.Save(data)
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"success": true,
+	})
+}
+
 func appHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}
@@ -417,7 +603,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
-	if dev == nil || dev.ID.Hex() == "" {
+	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
 	}

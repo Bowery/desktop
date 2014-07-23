@@ -2,6 +2,7 @@
 <head>
 <link rel="stylesheet" href="/styles/main.css" />
 <script type="text/javascript" src="/scripts/jquery.js"></script>
+<script type="text/javascript" src="/scripts/sync.js"></script>
 <title>Bowery v3 guide</title>
 </head>
 <body>
@@ -9,9 +10,17 @@
     <div class="triangle"></div>
     <div class="nav">
       <span class="heading title">{{.Title}}</span>
-      <a href="/applications/new" class="create-app-link">
-        <img class="icon" src="/images/746-plus-circle@2x.png">
-      </a>
+      <div class="nav-icons">
+        <a href="/apps" >
+          <img class="icon" src="/images/750-home@2x.png">
+        </a>
+        <a href="mailto:support@bowery.io">
+          <img class="icon" src="/images/739-question@2x.png">
+        </a>
+        <a href="/applications/new">
+          <img class="icon" src="/images/746-plus-circle@2x.png">
+        </a>
+      </div>
     </div>
     <div class="content">
       <div class="extra-white"></div>

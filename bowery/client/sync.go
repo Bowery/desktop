@@ -15,15 +15,15 @@ import (
 
 // Event describes a file event and the associated application.
 type Event struct {
-	Application *Application
-	Status      string
-	Path        string
+	Application *Application `json:"application"`
+	Status      string       `json:"status"`
+	Path        string       `json:"path"`
 }
 
 // WatchError wraps an error to identify the app origin.
 type WatchError struct {
-	Application *Application
-	Err         error
+	Application *Application `json:"application"`
+	Err         error        `json:"error"`
 }
 
 func (w *WatchError) Error() string {
@@ -309,15 +309,35 @@ func (syncer *Syncer) Watch(app *Application) {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Application: app, Status: "upload"}
+		syncer.Event <- &Event{Application: app, Status: "upload-finish"}
 
 		watcher.Start(syncer.Event, syncer.Error)
 	}()
 }
 
+// Remove removes an applications syncer.
+func (syncer *Syncer) Remove(app *Application) error {
+	for idx, watcher := range syncer.Watchers {
+		if watcher != nil && watcher.Application.ID == app.ID {
+			err := watcher.Close()
+			if err != nil {
+				return err
+			}
+
+			syncer.Watchers[idx] = nil
+		}
+	}
+
+	return nil
+}
+
 // Close closes all the watchers.
 func (syncer *Syncer) Close() error {
 	for _, watcher := range syncer.Watchers {
+		if watcher == nil {
+			continue
+		}
+
 		err := watcher.Close()
 		if err != nil {
 			return err
