@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9CF308E319802E0A00F7E109 /* Bowery in Resources */ = {isa = PBXBuildFile; fileRef = 9CF308E219802E0A00F7E109 /* Bowery */; };
 		AA157D91196EF24D009E8AAE /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA157D90196EF24D009E8AAE /* Cocoa.framework */; };
 		AA157D9B196EF24D009E8AAE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA157D99196EF24D009E8AAE /* InfoPlist.strings */; };
 		AA157D9D196EF24D009E8AAE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA157D9C196EF24D009E8AAE /* main.m */; };
@@ -32,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9CF308E219802E0A00F7E109 /* Bowery */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Bowery; path = BoweryMenuApp/Bowery; sourceTree = "<group>"; };
 		AA157D8D196EF24D009E8AAE /* BoweryMenuApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BoweryMenuApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA157D90196EF24D009E8AAE /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		AA157D93196EF24D009E8AAE /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -83,6 +85,7 @@
 				AA157DB4196EF24D009E8AAE /* BoweryMenuAppTests */,
 				AA157D8F196EF24D009E8AAE /* Frameworks */,
 				AA157D8E196EF24D009E8AAE /* Products */,
+				9CF308E219802E0A00F7E109 /* Bowery */,
 			);
 			sourceTree = "<group>";
 		};
@@ -235,6 +238,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9CF308E319802E0A00F7E109 /* Bowery in Resources */,
 				AA157D9B196EF24D009E8AAE /* InfoPlist.strings in Resources */,
 				AA157DA9196EF24D009E8AAE /* Images.xcassets in Resources */,
 				AA157DA1196EF24D009E8AAE /* Credits.rtf in Resources */,
@@ -471,6 +475,7 @@
 				AA157DC0196EF24D009E8AAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		AA157DC1196EF24D009E8AAE /* Build configuration list for PBXNativeTarget "BoweryMenuAppTests" */ = {
 			isa = XCConfigurationList;
@@ -479,6 +484,7 @@
 				AA157DC3196EF24D009E8AAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

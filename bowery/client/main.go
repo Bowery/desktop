@@ -80,6 +80,12 @@ func init() {
 		return
 	}
 
+	if os.Getenv("ENV") == "APP" {
+		if err := os.Chdir("BoweryMenuApp.app/Contents/Resources/Bowery"); err != nil {
+			panic("Wrong Directory!")
+		}
+	}
+
 	go func() {
 		for {
 			<-time.After(5 * time.Second)
@@ -191,7 +197,7 @@ func main() {
 
 	app := negroni.Classic()
 	app.UseHandler(mux)
-	app.Run(":3001")
+	app.Run(":32055")
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
