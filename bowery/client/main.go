@@ -37,15 +37,16 @@ var r = render.New(render.Options{
 })
 
 type Application struct {
-	ID            string
-	Name          string
-	Start         string
-	Build         string
-	Env           map[string]string
-	RemotePath    string
-	RemoteAddr    string
-	LocalPath     string
-	LastUpdatedAt time.Time
+	ID              string
+	Name            string
+	Start           string
+	Build           string
+	Env             map[string]string
+	RemotePath      string
+	RemoteAddr      string
+	LocalPath       string
+	LastUpdatedAt   time.Time
+	IsSyncAvailable bool
 }
 
 const (
@@ -78,6 +79,24 @@ func init() {
 		log.Println("No existing state")
 		return
 	}
+
+	go func() {
+		for {
+			<-time.After(5 * time.Second)
+			if data.Applications == nil {
+				continue
+			}
+
+			for _, app := range data.Applications {
+				status := "connect"
+				if err := DelanceyCheck(app.RemoteAddr); err != nil {
+					status = "disconnect"
+				}
+
+				broadcastJSON(&Event{Application: app, Status: status})
+			}
+		}
+	}()
 }
 
 func broadcastJSON(data interface{}) {
@@ -437,14 +456,15 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	app := &Application{
-		ID:            uuid.New(),
-		Name:          req.FormValue("name"),
-		Start:         req.FormValue("start"),
-		Build:         req.FormValue("build"),
-		RemotePath:    req.FormValue("remote-dir"),
-		RemoteAddr:    req.FormValue("ip-addr"),
-		LocalPath:     localDir,
-		LastUpdatedAt: time.Now(),
+		ID:              uuid.New(),
+		Name:            req.FormValue("name"),
+		Start:           req.FormValue("start"),
+		Build:           req.FormValue("build"),
+		RemotePath:      req.FormValue("remote-dir"),
+		RemoteAddr:      req.FormValue("ip-addr"),
+		LocalPath:       localDir,
+		LastUpdatedAt:   time.Now(),
+		IsSyncAvailable: true,
 	}
 
 	if data.Applications == nil {
