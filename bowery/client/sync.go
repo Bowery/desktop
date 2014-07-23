@@ -15,15 +15,15 @@ import (
 
 // Event describes a file event and the associated application.
 type Event struct {
-	Application *Application
-	Status      string
-	Path        string
+	Application *Application `json:"application"`
+	Status      string       `json:"status"`
+	Path        string       `json:"path"`
 }
 
 // WatchError wraps an error to identify the app origin.
 type WatchError struct {
-	Application *Application
-	Err         error
+	Application *Application `json:"application"`
+	Err         error        `json:"error"`
 }
 
 func (w *WatchError) Error() string {
@@ -125,6 +125,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			found = append(found, path)
 			return nil
 		}
+
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -238,6 +239,7 @@ func (watcher *Watcher) Upload() error {
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
+
 	// Attempt to upload, ensuring the upload is at the beginning of the file.
 	for i < 1000 {
 		_, err = file.Seek(0, os.SEEK_SET)
@@ -307,14 +309,35 @@ func (syncer *Syncer) Watch(app *Application) {
 			syncer.Error <- err
 			return
 		}
+		syncer.Event <- &Event{Application: app, Status: "upload-finish"}
+
 		watcher.Start(syncer.Event, syncer.Error)
-		// syncer.Event <- &Event{Application: app, Status: "upload"}
 	}()
+}
+
+// Remove removes an applications syncer.
+func (syncer *Syncer) Remove(app *Application) error {
+	for idx, watcher := range syncer.Watchers {
+		if watcher != nil && watcher.Application.ID == app.ID {
+			err := watcher.Close()
+			if err != nil {
+				return err
+			}
+
+			syncer.Watchers[idx] = nil
+		}
+	}
+
+	return nil
 }
 
 // Close closes all the watchers.
 func (syncer *Syncer) Close() error {
 	for _, watcher := range syncer.Watchers {
+		if watcher == nil {
+			continue
+		}
+
 		err := watcher.Close()
 		if err != nil {
 			return err

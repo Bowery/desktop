@@ -44,9 +44,9 @@ func DelanceyUpload(app *Application, file *os.File) error {
 	if err == nil {
 		err = writer.WriteField("start", app.Start)
 	}
-	if err == nil {
-		ghettoPath := app.LocalPath + ":" + app.RemotePath
-		err = writer.WriteField("path", ghettoPath)
+	if err == nil && app.RemotePath != "" {
+		// Prepend LocalPath: here so it can recognize the remote path.
+		err = writer.WriteField("path", app.LocalPath+":"+app.RemotePath)
 	}
 	if err == nil {
 		envData, err := json.Marshal(app.Env)

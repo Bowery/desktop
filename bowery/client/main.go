@@ -22,12 +22,12 @@ import (
 )
 
 var (
-	AuthEndpoint   string = "http://broome.io"
-	DaemonEndpoint string = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
+	AuthEndpoint   = "http://broome.io"
+	DaemonEndpoint = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
+	syncer         = NewSyncer()
+	logManager     = NewLogManager()
 	db             *localdb.DB
 	data           *localData
-	syncer         *Syncer
-	logManager     *LogManager
 )
 
 var r = render.New(render.Options{
@@ -59,6 +59,11 @@ type localData struct {
 	Applications []*Application
 }
 
+type wsError struct {
+	Application *Application `json:"application"`
+	Err         string       `json:"error"`
+}
+
 // Set up local db.
 func init() {
 	var err error
@@ -73,16 +78,15 @@ func init() {
 		log.Println("No existing state")
 		return
 	}
+}
 
-	syncer = NewSyncer()
-	logManager = NewLogManager()
-
-	if data.Applications != nil {
-		for _, app := range data.Applications {
-			syncer.Watch(app)
-			logManager.Connect(app)
-		}
+func broadcastJSON(data interface{}) {
+	msg, err := json.Marshal(data)
+	if err != nil {
+		msg = []byte(`{"error": "` + strings.Replace(err.Error(), `"`, "'", -1) + `"}`)
 	}
+
+	wsPool.broadcast <- msg
 }
 
 func getApps() []*Application {
@@ -112,6 +116,7 @@ func updateDev() error {
 
 func main() {
 	defer syncer.Close()
+	defer logManager.Close()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
@@ -133,6 +138,35 @@ func main() {
 
 	// Start ws
 	go wsPool.run()
+
+	// Start retrieving sync events.
+	go func() {
+		for {
+			select {
+			case ev := <-syncer.Event:
+				broadcastJSON(ev)
+			case err := <-syncer.Error:
+				ws := new(wsError)
+				we, ok := err.(*WatchError)
+				if !ok {
+					ws.Err = err.Error()
+				} else {
+					ws.Application = we.Application
+					ws.Err = we.Err.Error()
+				}
+
+				broadcastJSON(ws)
+			}
+		}
+	}()
+
+	if data.Applications != nil {
+		for _, app := range data.Applications {
+			syncer.Watch(app)
+			logManager.Connect(app)
+			broadcastJSON(&Event{Application: app, Status: "upload-start"})
+		}
+	}
 
 	app := negroni.Classic()
 	app.UseHandler(mux)
@@ -392,6 +426,10 @@ func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func createAppHandler(rw http.ResponseWriter, req *http.Request) {
+	localDir := req.FormValue("local-dir")
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
+		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	}
 
 	app := &Application{
 		ID:            uuid.New(),
@@ -400,7 +438,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 		Build:         req.FormValue("build"),
 		RemotePath:    req.FormValue("remote-dir"),
 		RemoteAddr:    req.FormValue("ip-addr"),
-		LocalPath:     req.FormValue("local-dir"),
+		LocalPath:     localDir,
 		LastUpdatedAt: time.Now(),
 	}
 
@@ -413,6 +451,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	syncer.Watch(app)
 	logManager.Connect(app)
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
@@ -426,12 +465,17 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	localDir := req.FormValue("local-dir")
+	if len(localDir) >= 2 && localDir[:2] == "~/" {
+		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	}
+
 	app.Name = req.FormValue("name")
 	app.Start = req.FormValue("start")
 	app.Build = req.FormValue("build")
 	app.RemotePath = req.FormValue("remote-dir")
 	app.RemoteAddr = req.FormValue("ip-addr")
-	app.LocalPath = req.FormValue("local-dir")
+	app.LocalPath = localDir
 	app.LastUpdatedAt = time.Now()
 	for i, a := range data.Applications {
 		if a.ID == app.ID {
@@ -439,6 +483,12 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 	db.Save(data)
+
+	syncer.Remove(app)
+	logManager.Remove(app)
+	syncer.Watch(app)
+	logManager.Connect(app)
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
