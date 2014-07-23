@@ -1,0 +1,8 @@
+<h1>{{.Title}}</h1>
+<div class="group applications">
+{{range .Apps}}
+  <div class="item">
+    <a href="/applications/{{.ID}}">{{.Name}}</a>
+  </div>
+{{end}}
+</div>
