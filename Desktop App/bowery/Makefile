@@ -1,7 +1,7 @@
 DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
 all: deps format
-	@mkdir -p bin/
+	@mkdir -p client/bin
 	@bash --norc -i ./scripts/build_client.sh
 
 deps:
@@ -20,7 +20,7 @@ release:
 	@bash --norc -i ./scripts/release_agent.sh
 
 clean:
-	rm -rf */pkg
-	rm -rf */bin
+	rm -rf **/bin
+	rm -rf **/pkg
 
 .PHONY: all deps test format

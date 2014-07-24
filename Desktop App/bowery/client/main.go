@@ -169,8 +169,8 @@ func updateDev() error {
 		return updateRes
 	}
 
-  // TODO: When adding password/isAdmin settings we'll need to set the
-  // changes from the responses "update" field.
+	// TODO: When adding password/isAdmin settings we'll need to set the
+	// changes from the responses "update" field.
 
 	return db.Save(data)
 }
