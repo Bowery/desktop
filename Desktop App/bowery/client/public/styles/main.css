@@ -75,7 +75,7 @@ ul.list .item .status.alert {
   background-repeat: no-repeat;
 }
 
-.subtitle {
+.subtitle, .subtitle a {
   color: #C7C7CC;
   font-size: 13px;
 }

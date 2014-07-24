@@ -52,6 +52,7 @@
     [panel setBackgroundColor:[NSColor clearColor]];
     
     [self.boweryWebView setDrawsBackground:NO];
+    [self.boweryWebView setPolicyDelegate:self];
 	NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://0.0.0.0:32055/apps"]];
 	[self.boweryWebView.mainFrame loadRequest:request];
 
@@ -246,6 +247,17 @@
         
         [self.window orderOut:nil];
     });
+}
+
+- (void)webView:(WebView *)sender decidePolicyForNavigationAction: (NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id <WebPolicyDecisionListener>)listener
+{
+    NSLog(@"URL: %@", [request URL].path);
+    if ([[request URL].path isEqualToString:@"/log.html"]) {
+        [listener ignore];
+        [[NSWorkspace sharedWorkspace] openURL:[request URL]];
+    }
+    else
+        [listener use];
 }
 
 @end

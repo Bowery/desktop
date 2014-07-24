@@ -490,13 +490,22 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
 	}
 
+	ipAddr := req.FormValue("ip-addr")
+	log.Println(ipAddr)
+	log.Println(len(strings.Split(ipAddr, ":")))
+	if len(strings.Split(ipAddr, ":")) == 1 {
+		ipAddr += ":3001"
+	}
+
+	log.Println(ipAddr)
+
 	app := &Application{
 		ID:              uuid.New(),
 		Name:            req.FormValue("name"),
 		Start:           req.FormValue("start"),
 		Build:           req.FormValue("build"),
 		RemotePath:      req.FormValue("remote-dir"),
-		RemoteAddr:      req.FormValue("ip-addr"),
+		RemoteAddr:      ipAddr,
 		LocalPath:       localDir,
 		LastUpdatedAt:   time.Now(),
 		IsSyncAvailable: true,
