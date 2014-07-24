@@ -36,7 +36,7 @@ void *kContextActivePanel = &kContextActivePanel;
     
     // find the client
     NSString* client = [[NSBundle mainBundle] pathForResource:@"Bowery/client" ofType:@""];
-    [task setLaunchPath:client];
+    bm [task setLaunchPath:client];
     [task launch];
 
     // Install icon into the menu bar
