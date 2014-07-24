@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net"
-	"strings"
 )
 
 // LogManager manages the tcp connections of a list
@@ -83,7 +82,7 @@ func NewLogger(app *Application) *logger {
 // tcp listener and broadcasts new data to the wsPool.
 func (l *logger) Start() {
 	var err error
-	l.conn, err = net.Dial("tcp", strings.Split(l.application.RemoteAddr, ":")[0]+":3002")
+	l.conn, err = net.Dial("tcp", l.application.RemoteAddr+":"+l.application.LogPort)
 	if err != nil {
 		log.Println(err)
 		return

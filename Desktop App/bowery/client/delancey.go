@@ -62,7 +62,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 		return err
 	}
 
-	res, err := http.Post("http://"+app.RemoteAddr, writer.FormDataContentType(), &body)
+	res, err := http.Post("http://"+app.RemoteAddr+":"+app.SyncPort, writer.FormDataContentType(), &body)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", "http://"+app.RemoteAddr, &body)
+	req, err := http.NewRequest("PUT", "http://"+app.RemoteAddr+":"+app.SyncPort, &body)
 	if err != nil {
 		return err
 	}

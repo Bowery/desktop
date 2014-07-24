@@ -1,6 +1,6 @@
 <form class="form verify-application">
   <div class="field">
-    <input type="text" class="field-input" name="ip-addr" id="ip-addr">
+    <input type="text" class="field-input" name="ip-addr" id="ip-addr" autofocus>
     <label for="ip-addr" class="field-label">Remote IP Address</label>
   </div>
   <div class="field">
@@ -19,7 +19,7 @@
 <form class="form create-application">
   <input class="" type="hidden" value="" name="id">
   <div class="field">
-    <input type="text" class="field-input" name="name" id="name">
+    <input type="text" class="field-input" name="name" id="name" autofocus>
     <label for="name" class="field-label">Application Name</label>
   </div>
   <div class="field">
@@ -46,23 +46,23 @@
 $(document).ready(function () {
   verifyFormEl = $('.verify-application')
   createFormEl = $('.create-application')
-
+  
   $('.submit.verify').click(function (e) {
     e.preventDefault()
     $.ajax({
-      url: "/applications/verify",
-      method: "PUT",
+      url: '/applications/verify',
+      method: 'PUT',
       data: verifyFormEl.serialize()
     })
     .done(function (problems) {
       validInput = Object.keys(problems).length == 0
       if (validInput) {
-        verifyFormEl.css("display", "none")
-        createFormEl.css("display", "block")
+        verifyFormEl.css('display', 'none')
+        createFormEl.css('display', 'block')
       } else {
         for (var field in problems) {
-          verifyFormEl.find(".field-input[name=" + field + "]").addClass("invalid")
-          verifyFormEl.find(".field-input[name=" + field + "] + .field-label").text(problems[field])
+          verifyFormEl.find('.field-input[name=' + field + ']').addClass('invalid')
+          verifyFormEl.find('.field-input[name=' + field + '] + .field-label').text(problems[field])
         }
       }
     })
@@ -71,13 +71,13 @@ $(document).ready(function () {
   $('.submit.create').click(function (e) {
     e.preventDefault()
     $.ajax({
-      url: "/applications/create",
-      method: "POST",
-      data: verifyFormEl.serialize() + "&" + createFormEl.serialize()
+      url: '/applications/create',
+      method: 'POST',
+      data: verifyFormEl.serialize() + '&' + createFormEl.serialize()
     })
     .done(function (resp) {
       if (resp.success) {
-        window.location = "/apps" // 1993 till infinity.
+        window.location = '/apps' // 1993 till infinity.
       } else {
         alert(resp.error)
       }

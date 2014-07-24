@@ -45,6 +45,8 @@ type Application struct {
 	Env             map[string]string
 	RemotePath      string
 	RemoteAddr      string
+	SyncPort        string
+	LogPort         string
 	LocalPath       string
 	LastUpdatedAt   time.Time
 	IsSyncAvailable bool
@@ -97,7 +99,7 @@ func init() {
 
 			for _, app := range data.Applications {
 				status := "connect"
-				if err := DelanceyCheck(app.RemoteAddr); err != nil {
+				if err := DelanceyCheck(app.RemoteAddr + ":" + app.SyncPort); err != nil {
 					status = "disconnect"
 				}
 
@@ -536,10 +538,22 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 		Start:           req.FormValue("start"),
 		Build:           req.FormValue("build"),
 		RemotePath:      req.FormValue("remote-dir"),
-		RemoteAddr:      req.FormValue("ip-addr"),
 		LocalPath:       localDir,
 		LastUpdatedAt:   time.Now(),
 		IsSyncAvailable: true,
+	}
+
+	// Parse address. Split into
+	ipAddr := req.FormValue("ip-addr")
+	hostAndPort := strings.Split(ipAddr, ":")
+	if len(hostAndPort) == 1 {
+		app.RemoteAddr = ipAddr
+		app.SyncPort = "3001"
+		app.LogPort = "3002"
+	} else {
+		app.RemoteAddr = hostAndPort[0]
+		app.SyncPort = hostAndPort[1]
+		app.LogPort = "3002" // fix this later
 	}
 
 	if data.Applications == nil {
