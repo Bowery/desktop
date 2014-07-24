@@ -2,7 +2,7 @@ $(document).ready(function () {
   if (!window['WebSocket']) {
     return
   }
-  var conn = new WebSocket('ws://localhost:3001/_/ws')
+  var conn = new WebSocket('ws://localhost:32055/_/ws')
   var $syncStatusEl = $('.status-description')
 
   function upToDate() {
@@ -33,7 +33,6 @@ $(document).ready(function () {
     }
   })
 
-
   conn.onopen = function (ev) {
     console.log('open', ev)
   }
@@ -44,10 +43,10 @@ $(document).ready(function () {
 
   conn.onmessage = function (ev) {
     var data = JSON.parse(ev.data)
-    var appID = data.application.ID
+    console.log(data)
+    var appID = data.appID || data.application.ID
     var $appEl = $('.item[data-app="' + appID + '"]')
 
-    console.log(data)
 
     // Check for connect/disconnect status.
     if (data.status == 'connect')

@@ -59,6 +59,7 @@ $(document).ready(function () {
       if (validInput) {
         verifyFormEl.css("display", "none")
         createFormEl.css("display", "block")
+        createFormEl.find('#name').focus()
       } else {
         for (var field in problems) {
           verifyFormEl.find(".field-input[name=" + field + "]").addClass("invalid")
