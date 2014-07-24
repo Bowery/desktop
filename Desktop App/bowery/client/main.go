@@ -90,7 +90,7 @@ func init() {
 	}
 
 	if os.Getenv("ENV") == "APP" {
-		if err := os.Chdir("Popup.app/Contents/Resources/Bowery"); err != nil {
+		if err := os.Chdir("Bowery.app/Contents/Resources/Bowery"); err != nil {
 			panic("Wrong Directory!")
 		}
 	}
