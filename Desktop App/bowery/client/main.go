@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,18 +24,22 @@ import (
 )
 
 var (
-	AuthEndpoint   = "http://broome.io"
-	DaemonEndpoint = "http://localhost:3000" // TODO (thebyrd) change this to match the toolbar app
-	syncer         = NewSyncer()
-	logManager     = NewLogManager()
-	db             *localdb.DB
-	data           *localData
+	AuthEndpoint = "http://broome.io"
+	syncer       = NewSyncer()
+	logManager   = NewLogManager()
+	db           *localdb.DB
+	data         *localData
+	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 )
 
 var r = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 	Layout:        "layout",
+})
+
+var externalViewRenderer = render.New(render.Options{
+	IsDevelopment: true,
 })
 
 type Application struct {
@@ -89,6 +94,9 @@ func init() {
 			panic("Wrong Directory!")
 		}
 	}
+
+	// Make sure log dir is created
+	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
 
 	go func() {
 		for {
@@ -195,6 +203,7 @@ func main() {
 	mux.HandleFunc("/applications/update", updateAppHandler)
 	mux.HandleFunc("/applications/remove", removeAppHandler)
 	mux.HandleFunc("/applications/", appHandler)
+	mux.HandleFunc("/logs", logsHandler)
 	mux.HandleFunc("/settings", getSettingsHandler)
 	mux.HandleFunc("/_/settings", updateSettingsHandler)
 	mux.HandleFunc("/_/ws", wsHandler)
@@ -654,6 +663,21 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func logsHandler(rw http.ResponseWriter, req *http.Request) {
+	// Parse application ID.
+	appID := req.URL.Query().Get("app")
+
+	// Read from file.
+	logs, err := ioutil.ReadFile(filepath.Join(logDir, appID+".log"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	externalViewRenderer.HTML(rw, http.StatusOK, "logs", map[string]string{
+		"Logs": string(bytes.Trim(logs, "\x00")),
+	})
+}
+
 func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
@@ -663,6 +687,7 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
+		"Title":     "Settings",
 		"Developer": getDev(),
 	})
 }

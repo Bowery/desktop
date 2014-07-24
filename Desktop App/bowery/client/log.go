@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/Bowery/gopackages/sys"
 )
 
 // LogManager manages the tcp connections of a list
@@ -95,7 +93,7 @@ func (l *logger) Start() {
 		return
 	}
 
-	file, err := os.OpenFile(filepath.Join(os.Getenv(sys.HomeVar), ".bowery", l.application.ID+".log"),
+	file, err := os.OpenFile(filepath.Join(logDir, l.application.ID+".log"),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 
 	if err != nil {
@@ -127,7 +125,7 @@ func (l *logger) Start() {
 		n, _ := l.conn.Read(data)
 
 		if len(string(data[:n])) > 0 {
-			write(data)
+			write(bytes.Trim(data, "\x00"))
 			msg, _ := json.Marshal(map[string]interface{}{
 				"appID":   l.application.ID,
 				"message": string(data[:n]),
