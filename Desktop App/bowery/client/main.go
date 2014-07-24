@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,6 +53,7 @@ type Application struct {
 const (
 	AuthCreateDeveloperPath = "/developers"
 	AuthCreateTokenPath     = "/developers/token"
+	AuthUpdateDeveloperPath = "/developers/{token}"
 	AuthMePath              = "/developers/me?token={token}"
 )
 
@@ -135,7 +137,39 @@ func getDev() *schemas.Developer {
 }
 
 func updateDev() error {
-	// todo(steve): update broome
+	form := make(url.Values)
+	form.Set("name", data.Developer.Name)
+	form.Set("email", data.Developer.Email)
+
+	url := strings.Replace(AuthUpdateDeveloperPath, "{token}", data.Developer.Token, -1)
+	req, err := http.NewRequest("PUT", AuthEndpoint+url, strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(data.Developer.Token, "")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Decode json response.
+	updateRes := new(res)
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(updateRes)
+	if err != nil {
+		return err
+	}
+
+	if updateRes.Status != "updated" {
+		return updateRes
+	}
+
+  // TODO: When adding password/isAdmin settings we'll need to set the
+  // changes from the responses "update" field.
+
 	return db.Save(data)
 }
 
@@ -254,6 +288,10 @@ type res struct {
 	Err    string `json:"error"`
 }
 
+func (res *res) Error() string {
+	return res.Err
+}
+
 type createTokenRes struct {
 	*res
 	Token string `json:"token"`
@@ -340,7 +378,9 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// todo(steve) handle error.
+	r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+		"Error": devRes.Error(),
+	})
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
@@ -396,7 +436,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if strings.Contains(createRes.Err, "email already exists") {
+	if strings.Contains(createRes.Error(), "email already exists") {
 		http.Redirect(rw, req, "/signup?error=emailtaken", http.StatusTemporaryRedirect)
 		return
 	}
