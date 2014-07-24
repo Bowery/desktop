@@ -251,7 +251,7 @@
 
 - (void)webView:(WebView *)sender decidePolicyForNavigationAction: (NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id <WebPolicyDecisionListener>)listener
 {
-    if ([[request URL].path isEqualToString:@"/log.html"]) {
+    if ([[request URL].path isEqualToString:@"/logs"]) {
         [listener ignore];
         [[NSWorkspace sharedWorkspace] openURL:[request URL]];
     }

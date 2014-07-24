@@ -2,9 +2,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
+	"sync"
 )
 
 // LogManager manages the tcp connections of a list
@@ -88,6 +93,26 @@ func (l *logger) Start() {
 		return
 	}
 
+	file, err := os.OpenFile(filepath.Join(logDir, l.application.ID+".log"),
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	output := &syncWriter{File: file}
+	write := func(data []byte) error {
+		buf := bytes.NewBuffer(data)
+
+		_, err := io.Copy(output, buf)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	for {
 		// Check if we're done.
 		select {
@@ -100,6 +125,7 @@ func (l *logger) Start() {
 		n, _ := l.conn.Read(data)
 
 		if len(string(data[:n])) > 0 {
+			write(bytes.Trim(data, "\x00"))
 			msg, _ := json.Marshal(map[string]interface{}{
 				"appID":   l.application.ID,
 				"message": string(data[:n]),
@@ -119,4 +145,30 @@ func (l *logger) Close() error {
 	}
 
 	return err
+}
+
+type syncWriter struct {
+	File  *os.File
+	mutex sync.Mutex
+}
+
+// Write writes the given buffer and syncs to the fs.
+func (sw *syncWriter) Write(b []byte) (int, error) {
+	sw.mutex.Lock()
+	defer sw.mutex.Unlock()
+
+	n, err := sw.File.Write(b)
+	if err != nil {
+		return n, err
+	}
+
+	return n, sw.File.Sync()
+}
+
+// Close closes the writer after any writes have completed.
+func (sw *syncWriter) Close() error {
+	sw.mutex.Lock()
+	defer sw.mutex.Unlock()
+
+	return sw.File.Close()
 }
