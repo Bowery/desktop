@@ -1,7 +1,7 @@
 .vagrant/
-bowery/client/client
-bowery/client/gin-bin
-bowery/agent/agent
+Desktop app/bowery/client/client
+Desktop app/bowery/client/gin-bin
+Desktop app/bowery/agent/agent
 UserInterfaceState.xcuserstate
-BoweryMenubarApp/Popup/Bowery/
+Desktop app/BoweryMenubarApp/Popup/Bowery/
 bin/
