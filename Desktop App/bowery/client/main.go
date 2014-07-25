@@ -147,10 +147,12 @@ func getDev() *schemas.Developer {
 	return data.Developer
 }
 
-func updateDev() error {
+func updateDev(oldpass, newpass string) error {
 	form := make(url.Values)
 	form.Set("name", data.Developer.Name)
 	form.Set("email", data.Developer.Email)
+	form.Set("oldpassword", oldpass)
+	form.Set("password", newpass)
 
 	url := strings.Replace(AuthUpdateDeveloperPath, "{token}", data.Developer.Token, -1)
 	req, err := http.NewRequest("PUT", AuthEndpoint+url, strings.NewReader(form.Encode()))
@@ -167,7 +169,7 @@ func updateDev() error {
 	defer resp.Body.Close()
 
 	// Decode json response.
-	updateRes := new(res)
+	updateRes := new(updateDeveloperRes)
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(updateRes)
 	if err != nil {
@@ -178,8 +180,10 @@ func updateDev() error {
 		return updateRes
 	}
 
-	// TODO: When adding password/isAdmin settings we'll need to set the
-	// changes from the responses "update" field.
+	pass, ok := updateRes.Update["password"]
+	if ok {
+		data.Developer.Password = pass.(string)
+	}
 
 	return db.Save(data)
 }
@@ -358,6 +362,11 @@ type createTokenRes struct {
 type developerRes struct {
 	*res
 	Developer *schemas.Developer `json:"developer"`
+}
+
+type updateDeveloperRes struct {
+	*res
+	Update map[string]interface{} `json:"update"`
 }
 
 func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
@@ -742,6 +751,8 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	name := req.FormValue("name")
 	email := req.FormValue("email")
+	oldpass := req.FormValue("oldpassword")
+	newpass := req.FormValue("password")
 	dev := getDev()
 
 	if name != "" {
@@ -752,7 +763,7 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 		dev.Email = email
 	}
 
-	if err := updateDev(); err != nil {
+	if err := updateDev(oldpass, newpass); err != nil {
 		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": err.Error(),
 		})
