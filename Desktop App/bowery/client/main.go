@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/Bowery/gopackages/config"
+	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/localdb"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
@@ -31,6 +33,7 @@ var (
 	data         *localData
 	dbDr         = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
+	keenC        *keen.Client
 )
 
 var r = render.New(render.Options{
@@ -95,6 +98,11 @@ func init() {
 		if err := os.Chdir("Bowery.app/Contents/Resources/Bowery"); err != nil {
 			panic("Wrong Directory!")
 		}
+	}
+
+	keenC = &keen.Client{
+		WriteKey:  config.KeenWriteKey,
+		ProjectID: config.KeenProjectID,
 	}
 
 	// Make sure log dir is created
@@ -248,6 +256,7 @@ func updateDev(oldpass, newpass string) error {
 		data.Developer.Password = pass.(string)
 	}
 
+	keenC.AddEvent("bowery/desktop user update", map[string]*schemas.Developer{"user": data.Developer})
 	return db.Save(data)
 }
 
@@ -286,6 +295,10 @@ func main() {
 		for {
 			select {
 			case ev := <-syncer.Event:
+				keenC.AddEvent("bowery/desktop sync", map[string]interface{}{
+					"user":  data.Developer,
+					"event": ev,
+				})
 				broadcastJSON(ev)
 			case err := <-syncer.Error:
 				ws := new(wsError)
@@ -453,6 +466,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	db.Save(data)
 
+	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
 	http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 }
@@ -515,6 +529,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
 	http.Redirect(rw, req, "/signup", http.StatusTemporaryRedirect)
 	return
 }
@@ -529,6 +544,7 @@ func pauseSyncHandler(rw http.ResponseWriter, req *http.Request) {
 		logManager.Remove(app)
 	}
 
+	keenC.AddEvent("bowery/desktop sync pause", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
@@ -543,6 +559,7 @@ func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
 		broadcastJSON(&Event{Application: app, Status: "upload-start"})
 	}
 
+	keenC.AddEvent("bowery/desktop sync resume", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
@@ -639,6 +656,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	logManager.Connect(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
+	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
