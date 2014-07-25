@@ -136,18 +136,15 @@ func (l *logger) Start() {
 		n, err := l.conn.Read(data)
 		if err == io.EOF {
 			for {
-				log.Println("Attempting to connect.")
 				l.conn, err = net.Dial("tcp", l.application.RemoteAddr+":"+l.application.LogPort)
 				if err != nil {
 					if opError, ok := err.(*net.OpError); ok {
 						if opError.Op == "read" || opError.Op == "dial" {
-							log.Println("Failed to connect. Retrying...")
 							<-time.After(1 * time.Second)
 							continue
 						}
 					}
 				}
-				log.Println("Successfully connected")
 				break
 			}
 		}
