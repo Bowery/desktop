@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // LogManager manages the tcp connections of a list
@@ -87,10 +88,20 @@ func NewLogger(app *Application) *logger {
 // tcp listener and broadcasts new data to the wsPool.
 func (l *logger) Start() {
 	var err error
-	l.conn, err = net.Dial("tcp", l.application.RemoteAddr+":"+l.application.LogPort)
-	if err != nil {
-		log.Println(err)
-		return
+	for {
+		log.Println("Attempting to connect.")
+		l.conn, err = net.Dial("tcp", l.application.RemoteAddr+":"+l.application.LogPort)
+		if err != nil {
+			if opError, ok := err.(*net.OpError); ok {
+				if opError.Op == "read" || opError.Op == "dial" {
+					log.Println("Failed to connect. Retrying...")
+					<-time.After(1 * time.Second)
+					continue
+				}
+			}
+		}
+		log.Println("Successfully connected")
+		break
 	}
 
 	file, err := os.OpenFile(filepath.Join(logDir, l.application.ID+".log"),
@@ -122,7 +133,24 @@ func (l *logger) Start() {
 		}
 
 		data := make([]byte, 512)
-		n, _ := l.conn.Read(data)
+		n, err := l.conn.Read(data)
+		if err == io.EOF {
+			for {
+				log.Println("Attempting to connect.")
+				l.conn, err = net.Dial("tcp", l.application.RemoteAddr+":"+l.application.LogPort)
+				if err != nil {
+					if opError, ok := err.(*net.OpError); ok {
+						if opError.Op == "read" || opError.Op == "dial" {
+							log.Println("Failed to connect. Retrying...")
+							<-time.After(1 * time.Second)
+							continue
+						}
+					}
+				}
+				log.Println("Successfully connected")
+				break
+			}
+		}
 
 		if len(string(data[:n])) > 0 {
 			write(bytes.Trim(data, "\x00"))
