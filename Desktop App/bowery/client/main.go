@@ -62,6 +62,7 @@ const (
 	AuthCreateTokenPath     = "/developers/token"
 	AuthUpdateDeveloperPath = "/developers/{token}"
 	AuthMePath              = "/developers/me?token={token}"
+	AuthResetPasswordPath   = "/reset/{email}"
 )
 
 type localData struct {
@@ -146,10 +147,12 @@ func getDev() *schemas.Developer {
 	return data.Developer
 }
 
-func updateDev() error {
+func updateDev(oldpass, newpass string) error {
 	form := make(url.Values)
 	form.Set("name", data.Developer.Name)
 	form.Set("email", data.Developer.Email)
+	form.Set("oldpassword", oldpass)
+	form.Set("password", newpass)
 
 	url := strings.Replace(AuthUpdateDeveloperPath, "{token}", data.Developer.Token, -1)
 	req, err := http.NewRequest("PUT", AuthEndpoint+url, strings.NewReader(form.Encode()))
@@ -166,7 +169,7 @@ func updateDev() error {
 	defer resp.Body.Close()
 
 	// Decode json response.
-	updateRes := new(res)
+	updateRes := new(updateDeveloperRes)
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(updateRes)
 	if err != nil {
@@ -177,8 +180,10 @@ func updateDev() error {
 		return updateRes
 	}
 
-	// TODO: When adding password/isAdmin settings we'll need to set the
-	// changes from the responses "update" field.
+	pass, ok := updateRes.Update["password"]
+	if ok {
+		data.Developer.Password = pass.(string)
+	}
 
 	return db.Save(data)
 }
@@ -194,6 +199,8 @@ func main() {
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/_/login", submitLoginHandler)
 	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/reset", resetHandler)
+	mux.HandleFunc("/_/reset", submitResetHandler)
 	mux.HandleFunc("/pause", pauseSyncHandler)
 	mux.HandleFunc("/resume", resumeSyncHandler)
 	mux.HandleFunc("/apps", appsHandler)
@@ -288,6 +295,50 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 }
 
+func resetHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "reset", map[string]string{
+		"Title": "Reset Your Password",
+	})
+}
+
+func submitResetHandler(rw http.ResponseWriter, req *http.Request) {
+	email := req.FormValue("email")
+	if email == "" {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": "Missing fields",
+		})
+		return
+	}
+
+	resp, err := http.Get(AuthEndpoint + strings.Replace(AuthResetPasswordPath, "{email}", email, -1))
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	resetRes := new(res)
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(resetRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	if resetRes.Status == "success" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		return
+	}
+
+	r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+		"Error": resetRes.Error(),
+	})
+}
+
 type loginReq struct {
 	Name     string
 	Email    string
@@ -311,6 +362,11 @@ type createTokenRes struct {
 type developerRes struct {
 	*res
 	Developer *schemas.Developer `json:"developer"`
+}
+
+type updateDeveloperRes struct {
+	*res
+	Update map[string]interface{} `json:"update"`
 }
 
 func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
@@ -400,7 +456,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 	password := req.FormValue("password")
 
 	if name == "" || email == "" || password == "" {
-		r.HTML(rw, http.StatusBadRequest, "signup", map[string]interface{}{
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": "Missing fields",
 		})
 		return
@@ -695,6 +751,8 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	name := req.FormValue("name")
 	email := req.FormValue("email")
+	oldpass := req.FormValue("oldpassword")
+	newpass := req.FormValue("password")
 	dev := getDev()
 
 	if name != "" {
@@ -705,17 +763,14 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 		dev.Email = email
 	}
 
-	if err := updateDev(); err != nil {
-		r.JSON(rw, http.StatusOK, map[string]string{
-			"status": "failed",
-			"error":  err.Error(),
+	if err := updateDev(oldpass, newpass); err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
-		"status": "success",
-	})
+	http.Redirect(rw, req, "/settings", http.StatusTemporaryRedirect)
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
