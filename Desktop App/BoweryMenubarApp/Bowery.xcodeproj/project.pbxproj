@@ -23,8 +23,35 @@
 		9E2096101981C68900BEE0FE /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E20960E1981C68900BEE0FE /* MainMenu.xib */; };
 		9E2843DF1981CB9000F1A7F6 /* Bowery in Resources */ = {isa = PBXBuildFile; fileRef = 9E2843DE1981CB9000F1A7F6 /* Bowery */; };
 		9E4BA1E2197F364D00F09C90 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E4BA1E1197F364D00F09C90 /* WebKit.framework */; };
+		9EAA117C1982B92C0064DFB6 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EAA117A1982B92C0064DFB6 /* Crashlytics.framework */; };
+		9EAA117D1982B92C0064DFB6 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EAA117B1982B92C0064DFB6 /* Sparkle.framework */; };
+		9EAA117F1982B94E0064DFB6 /* Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9EAA117B1982B92C0064DFB6 /* Sparkle.framework */; };
+		9EE7C7D3198309B50001D8B6 /* icon_16x16.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7C9198309B50001D8B6 /* icon_16x16.png */; };
+		9EE7C7D4198309B50001D8B6 /* icon_16x16@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CA198309B50001D8B6 /* icon_16x16@2x.png */; };
+		9EE7C7D5198309B50001D8B6 /* icon_32x32.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CB198309B50001D8B6 /* icon_32x32.png */; };
+		9EE7C7D6198309B50001D8B6 /* icon_32x32@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CC198309B50001D8B6 /* icon_32x32@2x.png */; };
+		9EE7C7D7198309B50001D8B6 /* icon_128x128.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CD198309B50001D8B6 /* icon_128x128.png */; };
+		9EE7C7D8198309B50001D8B6 /* icon_128x128@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CE198309B50001D8B6 /* icon_128x128@2x.png */; };
+		9EE7C7D9198309B50001D8B6 /* icon_256x256.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7CF198309B50001D8B6 /* icon_256x256.png */; };
+		9EE7C7DA198309B50001D8B6 /* icon_256x256@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7D0198309B50001D8B6 /* icon_256x256@2x.png */; };
+		9EE7C7DB198309B50001D8B6 /* icon_512x512.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7D1198309B50001D8B6 /* icon_512x512.png */; };
+		9EE7C7DC198309B50001D8B6 /* icon_512x512@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7D2198309B50001D8B6 /* icon_512x512@2x.png */; };
+		9EE7C7DE198309BF0001D8B6 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9EE7C7DD198309BF0001D8B6 /* Images.xcassets */; };
 		DD4F7C0913C30F9F00825C6E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD4F7C0813C30F9F00825C6E /* Cocoa.framework */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9EAA117E1982B9410064DFB6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				9EAA117F1982B94E0064DFB6 /* Sparkle.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9E203BD319806EFA00467113 /* Status.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Status.png; sourceTree = "<group>"; };
@@ -51,6 +78,19 @@
 		9E2843DE1981CB9000F1A7F6 /* Bowery */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Bowery; path = Bowery/Bowery; sourceTree = "<group>"; };
 		9E4BA1E1197F364D00F09C90 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		9E662DC219804E9B00C89845 /* Bowery */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bowery; sourceTree = "<group>"; };
+		9EAA117A1982B92C0064DFB6 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
+		9EAA117B1982B92C0064DFB6 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		9EE7C7C9198309B50001D8B6 /* icon_16x16.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_16x16.png; sourceTree = "<group>"; };
+		9EE7C7CA198309B50001D8B6 /* icon_16x16@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_16x16@2x.png"; sourceTree = "<group>"; };
+		9EE7C7CB198309B50001D8B6 /* icon_32x32.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_32x32.png; sourceTree = "<group>"; };
+		9EE7C7CC198309B50001D8B6 /* icon_32x32@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_32x32@2x.png"; sourceTree = "<group>"; };
+		9EE7C7CD198309B50001D8B6 /* icon_128x128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_128x128.png; sourceTree = "<group>"; };
+		9EE7C7CE198309B50001D8B6 /* icon_128x128@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_128x128@2x.png"; sourceTree = "<group>"; };
+		9EE7C7CF198309B50001D8B6 /* icon_256x256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_256x256.png; sourceTree = "<group>"; };
+		9EE7C7D0198309B50001D8B6 /* icon_256x256@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_256x256@2x.png"; sourceTree = "<group>"; };
+		9EE7C7D1198309B50001D8B6 /* icon_512x512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_512x512.png; sourceTree = "<group>"; };
+		9EE7C7D2198309B50001D8B6 /* icon_512x512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_512x512@2x.png"; sourceTree = "<group>"; };
+		9EE7C7DD198309BF0001D8B6 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Bowery/Images.xcassets; sourceTree = "<group>"; };
 		DD4F7C0413C30F9F00825C6E /* Bowery.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bowery.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD4F7C0813C30F9F00825C6E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		DD4F7C0B13C30F9F00825C6E /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -64,7 +104,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E4BA1E2197F364D00F09C90 /* WebKit.framework in Frameworks */,
+				9EAA117C1982B92C0064DFB6 /* Crashlytics.framework in Frameworks */,
 				DD4F7C0913C30F9F00825C6E /* Cocoa.framework in Frameworks */,
+				9EAA117D1982B92C0064DFB6 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +116,7 @@
 		DD4F7BF913C30F9F00825C6E = {
 			isa = PBXGroup;
 			children = (
+				9EE7C7DD198309BF0001D8B6 /* Images.xcassets */,
 				9E2843DE1981CB9000F1A7F6 /* Bowery */,
 				9E20960A1981C5CD00BEE0FE /* Bowery-Info.plist */,
 				DD4F7C0E13C30F9F00825C6E /* Sources */,
@@ -94,6 +137,8 @@
 		DD4F7C0713C30F9F00825C6E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9EAA117A1982B92C0064DFB6 /* Crashlytics.framework */,
+				9EAA117B1982B92C0064DFB6 /* Sparkle.framework */,
 				9E4BA1E1197F364D00F09C90 /* WebKit.framework */,
 				DD4F7C0B13C30F9F00825C6E /* AppKit.framework */,
 				DD4F7C0C13C30F9F00825C6E /* CoreData.framework */,
@@ -171,6 +216,16 @@
 		DD4F7C4813C322D800825C6E /* Graphics */ = {
 			isa = PBXGroup;
 			children = (
+				9EE7C7C9198309B50001D8B6 /* icon_16x16.png */,
+				9EE7C7CA198309B50001D8B6 /* icon_16x16@2x.png */,
+				9EE7C7CB198309B50001D8B6 /* icon_32x32.png */,
+				9EE7C7CC198309B50001D8B6 /* icon_32x32@2x.png */,
+				9EE7C7CD198309B50001D8B6 /* icon_128x128.png */,
+				9EE7C7CE198309B50001D8B6 /* icon_128x128@2x.png */,
+				9EE7C7CF198309B50001D8B6 /* icon_256x256.png */,
+				9EE7C7D0198309B50001D8B6 /* icon_256x256@2x.png */,
+				9EE7C7D1198309B50001D8B6 /* icon_512x512.png */,
+				9EE7C7D2198309B50001D8B6 /* icon_512x512@2x.png */,
 				9E203BD319806EFA00467113 /* Status.png */,
 				9E203BD419806EFA00467113 /* Status@2x.png */,
 				9E203BD519806EFA00467113 /* StatusHighlighted.png */,
@@ -189,6 +244,7 @@
 				DD4F7C0013C30F9F00825C6E /* Sources */,
 				DD4F7C0113C30F9F00825C6E /* Frameworks */,
 				DD4F7C0213C30F9F00825C6E /* Resources */,
+				9EAA117E1982B9410064DFB6 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -229,12 +285,23 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9EE7C7D5198309B50001D8B6 /* icon_32x32.png in Resources */,
 				9E2843DF1981CB9000F1A7F6 /* Bowery in Resources */,
 				9E203BDA19806EFA00467113 /* StatusHighlighted@2x.png in Resources */,
 				9E203BD819806EFA00467113 /* Status@2x.png in Resources */,
 				9E203BD719806EFA00467113 /* Status.png in Resources */,
+				9EE7C7D7198309B50001D8B6 /* icon_128x128.png in Resources */,
+				9EE7C7D8198309B50001D8B6 /* icon_128x128@2x.png in Resources */,
+				9EE7C7DB198309B50001D8B6 /* icon_512x512.png in Resources */,
+				9EE7C7D4198309B50001D8B6 /* icon_16x16@2x.png in Resources */,
 				9E20960D1981C64400BEE0FE /* Panel.xib in Resources */,
+				9EE7C7D9198309B50001D8B6 /* icon_256x256.png in Resources */,
+				9EE7C7DA198309B50001D8B6 /* icon_256x256@2x.png in Resources */,
+				9EE7C7DC198309B50001D8B6 /* icon_512x512@2x.png in Resources */,
 				9E20960B1981C5CD00BEE0FE /* Bowery-Info.plist in Resources */,
+				9EE7C7D6198309B50001D8B6 /* icon_32x32@2x.png in Resources */,
+				9EE7C7DE198309BF0001D8B6 /* Images.xcassets in Resources */,
+				9EE7C7D3198309B50001D8B6 /* icon_16x16.png in Resources */,
 				9E203BD919806EFA00467113 /* StatusHighlighted.png in Resources */,
 				9E2096101981C68900BEE0FE /* MainMenu.xib in Resources */,
 			);
@@ -335,8 +402,14 @@
 		DD4F7C2313C30F9F00825C6E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application: Bowery Software, LLC. (B4B749T38A)";
 				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Bowery/Bowery-Prefix.pch";
 				INFOPLIST_FILE = "Bowery/Bowery-Info.plist";
@@ -348,8 +421,14 @@
 		DD4F7C2413C30F9F00825C6E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application: Bowery Software, LLC. (B4B749T38A)";
 				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Bowery/Bowery-Prefix.pch";
 				INFOPLIST_FILE = "Bowery/Bowery-Info.plist";
