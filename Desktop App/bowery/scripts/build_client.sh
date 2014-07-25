@@ -40,7 +40,7 @@ DIR=$PWD
 while [ ! -e BoweryMenubarApp ]; do cd ..; done
 XCODE_DIR=$PWD
 
-BOWERY_DIR=BoweryMenubarApp/Popup/Bowery
+BOWERY_DIR=BoweryMenubarApp/Bowery/Bowery
 mkdir -p $BOWERY_DIR
 cp "$DIR/bin/client" $BOWERY_DIR/
 cp -r "$DIR/public" $BOWERY_DIR/

@@ -1,3 +1,4 @@
+// Copyright 2013-2014 Bowery, Inc.
 #define STATUS_ITEM_VIEW_WIDTH 24.0
 
 #pragma mark -

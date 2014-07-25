@@ -1,3 +1,4 @@
+// Copyright 2013-2014 Bowery, Inc.
 #import "BackgroundView.h"
 #import "StatusItemView.h"
 #import <WebKit/WebKit.h>
