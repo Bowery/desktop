@@ -62,6 +62,7 @@ const (
 	AuthCreateTokenPath     = "/developers/token"
 	AuthUpdateDeveloperPath = "/developers/{token}"
 	AuthMePath              = "/developers/me?token={token}"
+	AuthResetPasswordPath   = "/reset/{email}"
 )
 
 type localData struct {
@@ -194,6 +195,8 @@ func main() {
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/_/login", submitLoginHandler)
 	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/reset", resetHandler)
+	mux.HandleFunc("/_/reset", submitResetHandler)
 	mux.HandleFunc("/pause", pauseSyncHandler)
 	mux.HandleFunc("/resume", resumeSyncHandler)
 	mux.HandleFunc("/apps", appsHandler)
@@ -286,6 +289,50 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	data.Developer = &schemas.Developer{}
 	db.Save(data)
 	http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+}
+
+func resetHandler(rw http.ResponseWriter, req *http.Request) {
+	r.HTML(rw, http.StatusOK, "reset", map[string]string{
+		"Title": "Reset Your Password",
+	})
+}
+
+func submitResetHandler(rw http.ResponseWriter, req *http.Request) {
+	email := req.FormValue("email")
+	if email == "" {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": "Missing fields",
+		})
+		return
+	}
+
+	resp, err := http.Get(AuthEndpoint + strings.Replace(AuthResetPasswordPath, "{email}", email, -1))
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	resetRes := new(res)
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(resetRes)
+	if err != nil {
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	if resetRes.Status == "success" {
+		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		return
+	}
+
+	r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+		"Error": resetRes.Error(),
+	})
 }
 
 type loginReq struct {
@@ -400,7 +447,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 	password := req.FormValue("password")
 
 	if name == "" || email == "" || password == "" {
-		r.HTML(rw, http.StatusBadRequest, "signup", map[string]interface{}{
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": "Missing fields",
 		})
 		return
@@ -706,16 +753,13 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := updateDev(); err != nil {
-		r.JSON(rw, http.StatusOK, map[string]string{
-			"status": "failed",
-			"error":  err.Error(),
+		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
+			"Error": err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
-		"status": "success",
-	})
+	http.Redirect(rw, req, "/settings", http.StatusTemporaryRedirect)
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
