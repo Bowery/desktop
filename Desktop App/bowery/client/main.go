@@ -143,7 +143,69 @@ func getAppById(id string) *Application {
 	return &application
 }
 
+func getToken() error {
+	// Get token.
+	var body bytes.Buffer
+	bodyReq := &loginReq{
+		Email:    data.Developer.Email,
+		Password: data.Developer.Password,
+	}
+	encoder := json.NewEncoder(&body)
+	if err := encoder.Encode(bodyReq); err != nil {
+		return err
+	}
+
+	res, err := http.Post(AuthEndpoint+AuthCreateTokenPath, "application/json", &body)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// Decode response.
+	createRes := new(createTokenRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(createRes)
+	if err != nil {
+		return err
+	}
+
+	if createRes.Status == "created" {
+		data.Developer.Token = createRes.Token
+	}
+
+	db.Save(data)
+
+	return nil
+}
+
 func getDev() *schemas.Developer {
+	// Get developer.
+	if data.Developer == nil {
+		return &schemas.Developer{}
+	}
+
+	res, err := http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", data.Developer.Token, -1))
+	if err != nil {
+		return data.Developer
+	}
+	defer res.Body.Close()
+
+	// Decode response.
+	devRes := new(developerRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(devRes)
+	if err != nil {
+		return data.Developer
+	}
+
+	if devRes.Status != "found" {
+		if err = getToken(); err != nil {
+			return data.Developer
+		}
+	}
+
+	data.Developer = devRes.Developer
+
 	return data.Developer
 }
 
@@ -254,7 +316,7 @@ func main() {
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
@@ -265,7 +327,7 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
@@ -278,7 +340,7 @@ func signupHandler(rw http.ResponseWriter, req *http.Request) {
 
 func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev != nil && dev.Token != "" {
 		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 		return
@@ -373,81 +435,25 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 	email := req.FormValue("email")
 	password := req.FormValue("password")
 
-	// To login a user, first fetch their token, and then
-	// using their token, get the developer object.
-
-	// Get token.
-	var body bytes.Buffer
-	bodyReq := &loginReq{
-		Email:    email,
-		Password: password,
+	if data.Developer == nil {
+		data.Developer = &schemas.Developer{}
 	}
-	encoder := json.NewEncoder(&body)
-	if err := encoder.Encode(bodyReq); err != nil {
+
+	data.Developer.Email = email
+	data.Developer.Password = password
+
+	if err := getToken(); err != nil {
 		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": err.Error(),
 		})
-		return
 	}
 
-	res, err := http.Post(AuthEndpoint+AuthCreateTokenPath, "application/json", &body)
-	if err != nil {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
-			"Error": err.Error(),
-		})
-		return
-	}
-	defer res.Body.Close()
+	data.Developer = getDev()
 
-	// Decode response.
-	createRes := new(createTokenRes)
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(createRes)
-	if err != nil {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
-			"Error": err.Error(),
-		})
-		return
-	}
+	db.Save(data)
 
-	token := ""
-	if createRes.Status == "created" {
-		token = createRes.Token
-	}
-
-	// Get developer.
-	res, err = http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", token, -1))
-	if err != nil {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
-			"Error": err.Error(),
-		})
-		return
-	}
-	defer res.Body.Close()
-
-	// Decode response.
-	devRes := new(developerRes)
-	decoder = json.NewDecoder(res.Body)
-	err = decoder.Decode(devRes)
-	if err != nil {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
-			"Error": err.Error(),
-		})
-		return
-	}
-
-	if devRes.Status == "found" {
-		data.Developer = devRes.Developer
-		db.Save(data)
-
-		// Redirect to applications.
-		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
-		return
-	}
-
-	r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
-		"Error": devRes.Error(),
-	})
+	// Redirect to applications.
+	http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
@@ -541,7 +547,7 @@ func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
 
 func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
@@ -555,7 +561,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 
 func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
@@ -696,7 +702,7 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 func appHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
-	dev := getDev()
+	dev := data.Developer
 	if dev == nil || dev.Token == "" {
 		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
 		return
@@ -744,7 +750,7 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
 		"Title":     "Settings",
-		"Developer": getDev(),
+		"Developer": dev,
 	})
 }
 
@@ -753,7 +759,7 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	email := req.FormValue("email")
 	oldpass := req.FormValue("oldpassword")
 	newpass := req.FormValue("password")
-	dev := getDev()
+	dev := data.Developer
 
 	if name != "" {
 		dev.Name = name
