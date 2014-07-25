@@ -29,6 +29,7 @@ var (
 	logManager   = NewLogManager()
 	db           *localdb.DB
 	data         *localData
+	dbDr         = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 )
 
@@ -78,7 +79,7 @@ type wsError struct {
 // Set up local db.
 func init() {
 	var err error
-	db, err = localdb.New(filepath.Join(os.Getenv(sys.HomeVar), ".bowery_state"))
+	db, err = localdb.New(dbDir)
 	if err != nil {
 		log.Println("Unable to create local database.")
 		return
