@@ -2,7 +2,7 @@ DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
 all: deps format
 	@mkdir -p bin/
-	@bash --norc -i ./scripts/build.sh
+	@bash --norc -i ../scripts/build_client.sh
 
 deps:
 	@echo "--> Installing build dependencies"
