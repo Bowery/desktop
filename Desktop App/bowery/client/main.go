@@ -31,7 +31,7 @@ var (
 	logManager   = NewLogManager()
 	db           *localdb.DB
 	data         *localData
-	dbDr         = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
+	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 	keenC        *keen.Client
 )
