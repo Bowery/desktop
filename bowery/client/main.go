@@ -194,10 +194,10 @@ func main() {
 	app.UseHandler(mux)
 
 	port := os.Getenv("PORT")
-	if  port == "" {
+	if port == "" {
 		port = "32055"
 	}
-	app.Run(":"+port)
+	app.Run(":" + port)
 }
 
 func broadcastJSON(data interface{}) {
