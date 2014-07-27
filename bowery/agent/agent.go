@@ -33,9 +33,14 @@ func main() {
 		route.HandlerFunc(r.Handler)
 	}
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3001"
+	}
+
 	// Start the server.
 	server := &http.Server{
-		Addr:    ":3001",
+		Addr:    ":" + port,
 		Handler: &SlashHandler{&LogHandler{os.Stdout, router}},
 	}
 
