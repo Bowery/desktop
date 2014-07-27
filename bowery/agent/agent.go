@@ -42,6 +42,9 @@ func main() {
 	// Start tcp.
 	go StartTCP()
 
-	log.Println("Delancey starting!")
+	// Start event listening.
+	go StartPluginListener()
+
+	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())
 }
