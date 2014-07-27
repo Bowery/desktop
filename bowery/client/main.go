@@ -127,6 +127,79 @@ func init() {
 	}()
 }
 
+func main() {
+	defer syncer.Close()
+	defer logManager.Close()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/signup", signupHandler)
+	mux.HandleFunc("/_/signup", createDeveloperHandler)
+	mux.HandleFunc("/login", loginHandler)
+	mux.HandleFunc("/_/login", submitLoginHandler)
+	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/reset", resetHandler)
+	mux.HandleFunc("/_/reset", submitResetHandler)
+	mux.HandleFunc("/pause", pauseSyncHandler)
+	mux.HandleFunc("/resume", resumeSyncHandler)
+	mux.HandleFunc("/apps", appsHandler)
+	mux.HandleFunc("/applications/new", newAppHandler)
+	mux.HandleFunc("/applications/verify", verifyAppHandler)
+	mux.HandleFunc("/applications/create", createAppHandler)
+	mux.HandleFunc("/applications/update", updateAppHandler)
+	mux.HandleFunc("/applications/remove", removeAppHandler)
+	mux.HandleFunc("/applications/", appHandler)
+	mux.HandleFunc("/logs", logsHandler)
+	mux.HandleFunc("/settings", getSettingsHandler)
+	mux.HandleFunc("/_/settings", updateSettingsHandler)
+	mux.HandleFunc("/_/ws", wsHandler)
+
+	// Start ws
+	go wsPool.run()
+
+	// Start retrieving sync events.
+	go func() {
+		for {
+			select {
+			case ev := <-syncer.Event:
+				keenC.AddEvent("bowery/desktop sync", map[string]interface{}{
+					"user":  data.Developer,
+					"event": ev,
+				})
+				broadcastJSON(ev)
+			case err := <-syncer.Error:
+				ws := new(wsError)
+				we, ok := err.(*WatchError)
+				if !ok {
+					ws.Err = err.Error()
+				} else {
+					ws.Application = we.Application
+					ws.Err = we.Err.Error()
+				}
+
+				broadcastJSON(ws)
+			}
+		}
+	}()
+
+	if data.Applications != nil {
+		for _, app := range data.Applications {
+			syncer.Watch(app)
+			logManager.Connect(app)
+			broadcastJSON(&Event{Application: app, Status: "upload-start"})
+		}
+	}
+
+	app := negroni.Classic()
+	app.UseHandler(mux)
+
+	port := os.Getenv("PORT")
+	if  port == "" {
+		port = "32055"
+	}
+	app.Run(":"+port)
+}
+
 func broadcastJSON(data interface{}) {
 	msg, err := json.Marshal(data)
 	if err != nil {
@@ -258,74 +331,6 @@ func updateDev(oldpass, newpass string) error {
 
 	keenC.AddEvent("bowery/desktop user update", map[string]*schemas.Developer{"user": data.Developer})
 	return db.Save(data)
-}
-
-func main() {
-	defer syncer.Close()
-	defer logManager.Close()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/signup", signupHandler)
-	mux.HandleFunc("/_/signup", createDeveloperHandler)
-	mux.HandleFunc("/login", loginHandler)
-	mux.HandleFunc("/_/login", submitLoginHandler)
-	mux.HandleFunc("/logout", logoutHandler)
-	mux.HandleFunc("/reset", resetHandler)
-	mux.HandleFunc("/_/reset", submitResetHandler)
-	mux.HandleFunc("/pause", pauseSyncHandler)
-	mux.HandleFunc("/resume", resumeSyncHandler)
-	mux.HandleFunc("/apps", appsHandler)
-	mux.HandleFunc("/applications/new", newAppHandler)
-	mux.HandleFunc("/applications/verify", verifyAppHandler)
-	mux.HandleFunc("/applications/create", createAppHandler)
-	mux.HandleFunc("/applications/update", updateAppHandler)
-	mux.HandleFunc("/applications/remove", removeAppHandler)
-	mux.HandleFunc("/applications/", appHandler)
-	mux.HandleFunc("/logs", logsHandler)
-	mux.HandleFunc("/settings", getSettingsHandler)
-	mux.HandleFunc("/_/settings", updateSettingsHandler)
-	mux.HandleFunc("/_/ws", wsHandler)
-
-	// Start ws
-	go wsPool.run()
-
-	// Start retrieving sync events.
-	go func() {
-		for {
-			select {
-			case ev := <-syncer.Event:
-				keenC.AddEvent("bowery/desktop sync", map[string]interface{}{
-					"user":  data.Developer,
-					"event": ev,
-				})
-				broadcastJSON(ev)
-			case err := <-syncer.Error:
-				ws := new(wsError)
-				we, ok := err.(*WatchError)
-				if !ok {
-					ws.Err = err.Error()
-				} else {
-					ws.Application = we.Application
-					ws.Err = we.Err.Error()
-				}
-
-				broadcastJSON(ws)
-			}
-		}
-	}()
-
-	if data.Applications != nil {
-		for _, app := range data.Applications {
-			syncer.Watch(app)
-			logManager.Connect(app)
-			broadcastJSON(&Event{Application: app, Status: "upload-start"})
-		}
-	}
-
-	app := negroni.Classic()
-	app.UseHandler(mux)
-	app.Run(":32055")
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
