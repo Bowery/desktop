@@ -16,7 +16,6 @@ body {
   /* padding: 200px 600px; */
   /* background: url("https://i.cloudup.com/OcSNhET4sc.png"); */
   cursor: default;
-  -webkit-user-select: none;
   color: #8E8E93;
 }
 textarea, input {

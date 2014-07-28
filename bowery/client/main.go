@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,6 +23,7 @@ import (
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/codegangsta/negroni"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
 )
@@ -77,6 +79,12 @@ type localData struct {
 type wsError struct {
 	Application *Application `json:"application"`
 	Err         string       `json:"error"`
+}
+
+type Route struct {
+	Method  string
+	Path    string
+	Handler http.HandlerFunc
 }
 
 // Set up local db.
@@ -137,28 +145,36 @@ func main() {
 	defer syncer.Close()
 	defer logManager.Close()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/signup", signupHandler)
-	mux.HandleFunc("/_/signup", createDeveloperHandler)
-	mux.HandleFunc("/login", loginHandler)
-	mux.HandleFunc("/_/login", submitLoginHandler)
-	mux.HandleFunc("/logout", logoutHandler)
-	mux.HandleFunc("/reset", resetHandler)
-	mux.HandleFunc("/_/reset", submitResetHandler)
-	mux.HandleFunc("/pause", pauseSyncHandler)
-	mux.HandleFunc("/resume", resumeSyncHandler)
-	mux.HandleFunc("/apps", appsHandler)
-	mux.HandleFunc("/applications/new", newAppHandler)
-	mux.HandleFunc("/applications/verify", verifyAppHandler)
-	mux.HandleFunc("/applications/create", createAppHandler)
-	mux.HandleFunc("/applications/update", updateAppHandler)
-	mux.HandleFunc("/applications/remove", removeAppHandler)
-	mux.HandleFunc("/applications/", appHandler)
-	mux.HandleFunc("/logs", logsHandler)
-	mux.HandleFunc("/settings", getSettingsHandler)
-	mux.HandleFunc("/_/settings", updateSettingsHandler)
-	mux.HandleFunc("/_/ws", wsHandler)
+	var Routes = []*Route{
+		&Route{"GET", "/", indexHandler},
+		&Route{"GET", "/signup", signupHandler},
+		&Route{"POST", "/signup", createDeveloperHandler},
+		&Route{"GET", "/login", loginHandler},
+		&Route{"POST", "/login", submitLoginHandler},
+		&Route{"GET", "/logout", logoutHandler},
+		&Route{"GET", "/reset", resetHandler},
+		&Route{"POST", "/reset", submitResetHandler},
+		&Route{"GET", "/pause", pauseSyncHandler},
+		&Route{"GET", "/resume", resumeSyncHandler},
+		&Route{"GET", "/applications", appsHandler},
+		&Route{"GET", "/applications/new", newAppHandler},
+		&Route{"POST", "/applications/verify", verifyAppHandler},
+		&Route{"POST", "/applications", createAppHandler},
+		&Route{"PUT", "/applications/{id}", updateAppHandler},
+		&Route{"DELETE", "/applications/{id}", removeAppHandler},
+		&Route{"GET", "/applications/{id}", appHandler},
+		&Route{"GET", "/logs/{id}", logsHandler},
+		&Route{"GET", "/settings", getSettingsHandler},
+		&Route{"POST", "/settings", updateSettingsHandler},
+		&Route{"GET", "/_/ws", wsHandler},
+	}
+
+	router := mux.NewRouter()
+	for _, r := range Routes {
+		route := router.NewRoute()
+		route.Path(r.Path).Methods(r.Method)
+		route.HandlerFunc(r.Handler)
+	}
 
 	// Start ws
 	go wsPool.run()
@@ -197,7 +213,7 @@ func main() {
 	}
 
 	app := negroni.Classic()
-	app.UseHandler(mux)
+	app.UseHandler(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -342,14 +358,14 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/apps", http.StatusSeeOther)
+	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
+		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 		return
 	}
 
@@ -362,7 +378,7 @@ func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
+		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 		return
 	}
 
@@ -474,7 +490,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
-	http.Redirect(rw, req, "/apps", http.StatusSeeOther)
+	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
@@ -526,7 +542,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = createRes.Developer
 		db.Save(data)
 
-		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
+		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 		return
 	}
 
@@ -717,16 +733,20 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
+	appId := mux.Vars(req)["id"]
 	apps := getApps()
 	for i, app := range apps {
-		if app.ID == req.FormValue("id") {
+		if app.ID == appId {
+			fmt.Println("found", appId)
 			syncer.Remove(app)
 			logManager.Remove(app)
-
+			fmt.Println("before", apps)
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
+
 			break
 		}
 	}
+	fmt.Println("after", apps)
 	data.Applications = apps
 	db.Save(data)
 
@@ -742,9 +762,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
-
-	id := req.URL.Path[len("/applications/"):]
-	application := getAppById(id)
+	application := getAppById(mux.Vars(req)["id"])
 
 	if application.ID == "" {
 		r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
@@ -762,7 +780,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 
 func logsHandler(rw http.ResponseWriter, req *http.Request) {
 	// Parse application ID.
-	appID := req.URL.Query().Get("app")
+	appID := mux.Vars(req)["id"]
 
 	// Read from file.
 	logs, err := ioutil.ReadFile(filepath.Join(logDir, appID+".log"))
@@ -811,7 +829,7 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/settings", http.StatusSeeOther)
+	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
