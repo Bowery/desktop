@@ -4,7 +4,6 @@ package main
 import (
 	"log"
 	"net"
-	"os"
 )
 
 var (
@@ -15,9 +14,9 @@ var (
 // Start a TCP listener on port 3002. Append
 // newly connected clients to slice.
 func StartTCP() {
-	port := os.Getenv("LOG_PORT")
-	if port == "" {
-		port = "3002"
+	port := "3002"
+	if InDevelopment {
+		port = "3004"
 	}
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {

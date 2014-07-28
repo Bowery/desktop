@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,8 +13,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var (
+	Env           = flag.String("env", "production", "If you want to run the agent in development mode uses different ports")
+	InDevelopment = false
+)
+
 func main() {
 	runtime.GOMAXPROCS(1)
+	flag.Parse()
+	if *Env == "development" {
+		InDevelopment = true
+	}
 
 	err := os.MkdirAll(ServiceDir, os.ModePerm|os.ModeDir)
 	if err == nil {
@@ -33,9 +43,9 @@ func main() {
 		route.HandlerFunc(r.Handler)
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3001"
+	port := "3001"
+	if InDevelopment {
+		port = "3003"
 	}
 
 	// Start the server.
