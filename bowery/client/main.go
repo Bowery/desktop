@@ -338,18 +338,18 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+	http.Redirect(rw, req, "/apps", http.StatusSeeOther)
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
 		return
 	}
 
@@ -362,7 +362,7 @@ func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
 		return
 	}
 
@@ -374,7 +374,7 @@ func loginHandler(rw http.ResponseWriter, req *http.Request) {
 func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	data.Developer = &schemas.Developer{}
 	db.Save(data)
-	http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+	http.Redirect(rw, req, "/login", http.StatusSeeOther)
 }
 
 func resetHandler(rw http.ResponseWriter, req *http.Request) {
@@ -412,7 +412,7 @@ func submitResetHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if resetRes.Status == "success" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -474,7 +474,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
-	http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+	http.Redirect(rw, req, "/apps", http.StatusSeeOther)
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
@@ -526,17 +526,17 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = createRes.Developer
 		db.Save(data)
 
-		http.Redirect(rw, req, "/apps", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/apps", http.StatusSeeOther)
 		return
 	}
 
 	if strings.Contains(createRes.Error(), "email already exists") {
-		http.Redirect(rw, req, "/signup?error=emailtaken", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/signup?error=emailtaken", http.StatusSeeOther)
 		return
 	}
 
 	keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
-	http.Redirect(rw, req, "/signup", http.StatusTemporaryRedirect)
+	http.Redirect(rw, req, "/signup", http.StatusSeeOther)
 	return
 }
 
@@ -573,7 +573,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -587,7 +587,7 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -739,7 +739,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -779,7 +779,7 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := getDev()
 	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusTemporaryRedirect)
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -811,7 +811,7 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/settings", http.StatusTemporaryRedirect)
+	http.Redirect(rw, req, "/settings", http.StatusSeeOther)
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
