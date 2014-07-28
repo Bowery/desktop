@@ -7,9 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/Bowery/gopackages/sys"
 )
@@ -147,8 +145,7 @@ func StartPluginListener() {
 		case ev := <-pluginManager.Event:
 			for _, plugin := range pluginManager.Plugins {
 				if command := plugin.Events[ev.Type]; command != "" {
-					parts := strings.Fields(command)
-					cmd := exec.Command(parts[0], parts[1:len(parts)]...)
+					cmd := ParseCmd(command, nil)
 					cmd.Stdout = os.Stdout // For debugging.
 					cmd.Run()
 				}

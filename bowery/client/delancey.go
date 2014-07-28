@@ -49,13 +49,6 @@ func DelanceyUpload(app *Application, file *os.File) error {
 		err = writer.WriteField("path", app.LocalPath+":"+app.RemotePath)
 	}
 	if err == nil {
-		envData, err := json.Marshal(app.Env)
-		if err != nil {
-			return err
-		}
-		err = writer.WriteField("env", string(envData))
-	}
-	if err == nil {
 		err = writer.Close()
 	}
 	if err != nil {
@@ -98,13 +91,6 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 	}
 	if err == nil {
 		err = writer.WriteField("start", app.Start)
-	}
-	if err == nil {
-		envData, err := json.Marshal(app.Env)
-		if err != nil {
-			return err
-		}
-		err = writer.WriteField("env", string(envData))
 	}
 	if err != nil {
 		return err

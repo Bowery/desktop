@@ -52,7 +52,6 @@ type Application struct {
 	Name            string
 	Start           string
 	Build           string
-	Env             map[string]string
 	RemotePath      string
 	RemoteAddr      string
 	SyncPort        string

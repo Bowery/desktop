@@ -3,7 +3,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -55,19 +54,8 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	start := req.FormValue("start")
 	path := req.FormValue("path")
 	pathList := strings.Split(path, ":")
-	env := req.FormValue("env")
 
 	log.Println(path)
-
-	// Parse env data
-	envData := map[string]string{}
-	if len(env) > 0 {
-		if err = json.Unmarshal([]byte(env), &envData); err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
-			return
-		}
-	}
 
 	// If target path is specified and path has changed.
 	if len(pathList) == 2 && ServiceDir != pathList[1] {
@@ -112,7 +100,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	<-Restart(true, true, init, build, test, start, envData)
+	<-Restart(true, true, init, build, test, start)
 	res.Body["status"] = "created"
 	res.Send(http.StatusOK)
 }
@@ -133,17 +121,6 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	build := req.FormValue("build")
 	test := req.FormValue("test")
 	start := req.FormValue("start")
-	env := req.FormValue("env")
-
-	// Parse env data
-	envData := map[string]string{}
-	if len(env) > 0 {
-		if err = json.Unmarshal([]byte(env), &envData); err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
-			return
-		}
-	}
 
 	if path == "" || typ == "" {
 		res.Body["error"] = "Missing form fields."
@@ -216,7 +193,7 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	<-Restart(false, true, init, build, test, start, envData)
+	<-Restart(false, true, init, build, test, start)
 	res.Body["status"] = "updated"
 	res.Send(http.StatusOK)
 }
