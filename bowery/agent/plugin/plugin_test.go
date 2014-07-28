@@ -16,7 +16,7 @@ import (
 var (
 	testPlugin = &Plugin{
 		Name: "test-plugin",
-		Events: map[string]string{
+		Hooks: map[string]string{
 			AFTER_APP_RESTART: "echo Restart",
 		},
 		Author: PluginAuthor{
@@ -78,7 +78,7 @@ func TestNewPluginWithValidDirectory(t *testing.T) {
 	}
 
 	if plugin.Name != "test-plugin" ||
-		plugin.Events[AFTER_APP_RESTART] != "echo Restart" ||
+		plugin.Hooks[AFTER_APP_RESTART] != "echo Restart" ||
 		plugin.Author.Name != "Steve Kaliski" ||
 		plugin.Author.Email != "steve@bowery.io" ||
 		plugin.Author.Twitter != "@stevekaliski" ||

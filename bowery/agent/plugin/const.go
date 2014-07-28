@@ -1,6 +1,6 @@
 // Copyright 2014 Bowery, Inc.
 // Lists all plugin events and details under what circumstances
-// tehy are triggered.
+// they are triggered.
 package plugin
 
 const (

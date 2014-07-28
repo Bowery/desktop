@@ -115,10 +115,9 @@ func StartPluginListener() {
 		case ev := <-pluginManager.Event:
 			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
-				if command := plugin.Events[ev.Type]; command != "" {
-					cmd := ParseCmd(command, nil)
-					cmd.Stdout = os.Stdout // For debugging.
-					cmd.Run()
+				if command := plugin.Hooks[ev.Type]; command != "" {
+					// todo(steve): execute command.
+					log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", plugin.Name, command))
 				}
 			}
 		case err := <-pluginManager.Error:
@@ -131,6 +130,7 @@ func StartPluginListener() {
 // EmitPluginEvent creates a new PluginEvent and sends it
 // to the pluginManager Event channel.
 func EmitPluginEvent(typ, path string) {
+	// todo(steve): handle error
 	pluginManager.Event <- &PluginEvent{
 		Type: typ,
 		Path: path,

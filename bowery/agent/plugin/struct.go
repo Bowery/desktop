@@ -4,10 +4,9 @@ package plugin
 // Plugin defines the properties and event handlers
 // of a plugin.
 type Plugin struct {
-	Name    string
-	Author  PluginAuthor
-	Website string
-	Events  map[string]string
+	Name   string
+	Author PluginAuthor
+	Hooks  map[string]string
 }
 
 // PluginAuther defines the attributes and properties
