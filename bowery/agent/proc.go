@@ -53,16 +53,11 @@ func (proc *Proc) Kill() error {
 // Restart restarts the services processes, the init cmd is only restarted
 // if initReset is true. Commands to run are only updated if reset is true.
 // A channel is returned and signaled if the commands start or the build fails.
-func Restart(initReset, reset bool, init, build, test, start string, env map[string]string) chan bool {
+func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)
 	tcp := NewTCP()
 	log.Println("Restarting")
-
-	// Set ENV
-	for k, v := range env {
-		os.Setenv(k, v)
-	}
 
 	err := killCmds(initReset)
 	if err != nil {
@@ -80,10 +75,10 @@ func Restart(initReset, reset bool, init, build, test, start string, env map[str
 		cmdStrs = [4]string{init, build, test, start}
 	}
 
-	initCmd := parseCmd(cmdStrs[0], tcp)
-	buildCmd := parseCmd(cmdStrs[1], tcp)
-	testCmd := parseCmd(cmdStrs[2], tcp)
-	startCmd := parseCmd(cmdStrs[3], tcp)
+	initCmd := ParseCmd(cmdStrs[0], tcp)
+	buildCmd := ParseCmd(cmdStrs[1], tcp)
+	testCmd := ParseCmd(cmdStrs[2], tcp)
+	startCmd := ParseCmd(cmdStrs[3], tcp)
 
 	// Run in goroutine so commands can run in the background with the tcp
 	// connection open.
@@ -104,7 +99,7 @@ func Restart(initReset, reset bool, init, build, test, start string, env map[str
 						continue
 					}
 
-					cmd := parseCmd(filepath.Join(scriptPath, info.Name()), tcp)
+					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), tcp)
 					if cmd != nil {
 						err := startProc(cmd, tcp)
 						if err == nil {
@@ -228,17 +223,58 @@ func killCmds(init bool) error {
 	return nil
 }
 
-// parseCmd converts a string to a command, connecting stdio to a
+// ParseCmd converts a string to a command, connecting stdio to a
 // tcp connection.
-func parseCmd(command string, tcp *TCP) *exec.Cmd {
+func ParseCmd(command string, tcp *TCP) *exec.Cmd {
 	if command == "" {
 		return nil
 	}
 
-	parts := strings.Fields(command)
-	cmd := exec.Command(parts[0], parts[1:len(parts)]...)
-	cmd.Stdout = tcp
-	cmd.Stderr = tcp
+	var (
+		vars []string
+		cmds []string
+	)
+	args := strings.Split(command, " ")
+	env := os.Environ()
+
+	// Separate env vars and the cmd.
+	for i, arg := range args {
+		if strings.Contains(arg, "=") {
+			vars = args[:i+1]
+		} else {
+			cmds = args[i:]
+			break
+		}
+	}
+
+	// Update existing env vars.
+	for i, v := range env {
+		envlist := strings.SplitN(v, "=", 2)
+
+		for n, arg := range vars {
+			arglist := strings.SplitN(arg, "=", 2)
+
+			if arglist[0] == envlist[0] {
+				env[i] = arg
+				vars[n] = ""
+				break
+			}
+		}
+	}
+
+	// Add new env vars.
+	for _, arg := range vars {
+		if arg != "" {
+			env = append(env, arg)
+		}
+	}
+
+	cmd := exec.Command(cmds[0], cmds[1:]...)
+	cmd.Env = env
+	if tcp != nil {
+		cmd.Stdout = tcp
+		cmd.Stderr = tcp
+	}
 
 	return cmd
 }
