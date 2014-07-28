@@ -3,7 +3,7 @@
 // removing plugins.
 //
 // Note(steve): Not completed yet.
-package main
+package plugin
 
 import (
 	"encoding/json"
@@ -17,7 +17,13 @@ var (
 	testPlugin = &Plugin{
 		Name: "test-plugin",
 		Events: map[string]string{
-			"after-restart": "echo Restart",
+			AFTER_APP_RESTART: "echo Restart",
+		},
+		Author: PluginAuthor{
+			Name:    "Steve Kaliski",
+			Email:   "steve@bowery.io",
+			Twitter: "@stevekaliski",
+			Github:  "github.com/sjkaliski",
 		},
 	}
 	testPluginManager *PluginManager
@@ -71,7 +77,12 @@ func TestNewPluginWithValidDirectory(t *testing.T) {
 		t.Error(err)
 	}
 
-	if plugin.Name != "test-plugin" || plugin.Events["after-restart"] != "echo Restart" {
+	if plugin.Name != "test-plugin" ||
+		plugin.Events[AFTER_APP_RESTART] != "echo Restart" ||
+		plugin.Author.Name != "Steve Kaliski" ||
+		plugin.Author.Email != "steve@bowery.io" ||
+		plugin.Author.Twitter != "@stevekaliski" ||
+		plugin.Author.Github != "github.com/sjkaliski" {
 		t.Error("Plugin properties not properly set.")
 	}
 

@@ -1,5 +1,5 @@
 // Copyright 2014 Bowery, Inc.
-package main
+package plugin
 
 import (
 	"encoding/json"
@@ -22,37 +22,6 @@ func init() {
 	if err := os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir); err != nil {
 		panic(err)
 	}
-}
-
-// Plugin defines the properties and event handlers
-// of a plugin.
-type Plugin struct {
-	Name   string
-	Events map[string]string
-}
-
-// PluginManager manages all of the plugins as well as
-// channels for events and errors.
-type PluginManager struct {
-	Plugins []*Plugin
-	Event   chan *Event
-	Error   chan error
-}
-
-// Event describes an application event along with
-// associated data.
-type Event struct {
-	// The type of event (e.g. after-restart, before-update)
-	Type string
-
-	// The path of the file that has been changed
-	Path string
-
-	// The stdout of the command ran.
-	Stdout string
-
-	// The stderr of the command ran.
-	Stderr string
 }
 
 // NewPlugin creates a new plugin.
@@ -79,7 +48,7 @@ func NewPluginManager() *PluginManager {
 
 	return &PluginManager{
 		Plugins: plugins,
-		Event:   make(chan *Event),
+		Event:   make(chan *PluginEvent),
 		Error:   make(chan error),
 	}
 }
@@ -156,5 +125,14 @@ func StartPluginListener() {
 			// todo(steve): handle error.
 			log.Println(err, "")
 		}
+	}
+}
+
+// EmitPluginEvent creates a new PluginEvent and sends it
+// to the pluginManager Event channel.
+func EmitPluginEvent(typ, path string) {
+	pluginManager.Event <- &PluginEvent{
+		Type: typ,
+		Path: path,
 	}
 }
