@@ -2,7 +2,7 @@ $(document).ready(function () {
   if (!window['WebSocket']) {
     return
   }
-  var conn = new WebSocket('ws://0.0.0.0:32055/_/ws')
+  var conn = new WebSocket('ws://' + window.location.host + '/_/ws')
   var $syncStatusEl = $('.status-description')
 
   function upToDate() {

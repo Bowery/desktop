@@ -152,7 +152,7 @@ func StartPluginListener() {
 			}
 		case err := <-pluginManager.Error:
 			// todo(steve): handle error
-			log.Println(err)
+			log.Println(err, "")
 		}
 	}
 }
