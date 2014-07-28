@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,6 +82,11 @@ type wsError struct {
 
 // Set up local db.
 func init() {
+	if os.Getenv("AGENT") == "development" {
+		// You'll have a seperate user/applications when using the dev agent
+		dbDir = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "devstate")
+	}
+
 	var err error
 	db, err = localdb.New(dbDir)
 	if err != nil {
@@ -599,14 +605,20 @@ func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 
 	remoteAddr := req.FormValue("ip-addr")
+
+	defaultSyncPort := ":3001"
+	if os.Getenv("AGENT") == "development" {
+		defaultSyncPort = ":3003"
+	}
+
 	var err error
 	if len(strings.Split(remoteAddr, ":")) > 1 {
 		err = DelanceyCheck(remoteAddr)
 	} else {
-		err = DelanceyCheck(remoteAddr + ":3001")
+		err = DelanceyCheck(remoteAddr + defaultSyncPort)
 	}
 	if err != nil {
-		requestProblems["ip-addr"] = remoteAddr + " delancey endpoint can't be reached."
+		requestProblems["ip-addr"] = "http://" + remoteAddr + defaultSyncPort + " can't be reached."
 	}
 
 	localDir := req.FormValue("local-dir")
@@ -643,12 +655,16 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	if len(hostAndPort) == 1 {
 		app.RemoteAddr = ipAddr
 		app.SyncPort = "3001"
-		app.LogPort = "3002"
+		if os.Getenv("AGENT") == "development" {
+			app.SyncPort = "3003"
+		}
 	} else {
 		app.RemoteAddr = hostAndPort[0]
 		app.SyncPort = hostAndPort[1]
-		app.LogPort = "3002" // fix this later
 	}
+	// Log Port is always SyncPort + 1
+	sp, _ := strconv.Atoi(app.SyncPort)
+	app.LogPort = strconv.Itoa(sp + 1)
 
 	if data.Applications == nil {
 		data.Applications = []*Application{}

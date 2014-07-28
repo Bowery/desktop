@@ -1,23 +1,33 @@
 # Bowery Desktop Client
+It's important that you use Bowery to develop Bowery as much as possible so that you'll develop empathy for users and catch bugs early on.
 
-Built for OS X only at the moment.
 
-## Development
-
-The desktop client is comprised of an app server and a desktop application.
-To develop the application, use XCode. The app server is written in Go,
-and works as expected.
-
-Once you boot up the application, it will point to localhost:32055; the changes
-you make on the app server will reflect there.
-
-To run the client:
-
+## Agent
+The artist formally known as the artist formally known as Satellite should be developed on a remote server using a stable build of the OS X Toolbar app.
+1. Create a box with Golang installed on Digital Ocean or AWS
+2. Create a new Application in the toolbar app with the following start/build commands.
 ```
-$ ENV=development ./client
+Start: ./dev-agent -env=development
+Build: ./build.sh
 ```
 
-## Compiling Server
+## Client
+Once you read how to setup the MenubarApp in XCode you'll realize that its a terrible development experience. Instead you should run the client in your browser.
 
-In order for the OS X app to launch the server, the binary must be in the right
-place. In order to do that, make sure you're in `bowery/client` and run make.
+In bowery/client:
+```
+$ ENV=development gin # Uses Stable Agent
+$ ENV=development AGENT=development gin # Uses Agent you're developing
+```
+Then navigate to `localhost:3000`.
+
+## MenubarApp
+The `BoweryMenubarApp` directory can be opened as a project in XCode.
+
+1. Stop any running version of the application
+2. Run clean in XCode  - black magic that solves most problems
+3. `cd bowery && make` - builds the go client app and move it to xcode project
+4. `pkill client`      - XCode won't kill it on its own)
+5. Run the XCode Project
+
+Rinse and Repeat...
