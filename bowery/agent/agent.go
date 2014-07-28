@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -59,6 +60,13 @@ func main() {
 
 	// Start event listening.
 	go StartPluginListener()
+
+	go func() {
+		<-time.After(2 * time.Second)
+		pluginManager.Event <- &Event{
+			Type: "after-update",
+		}
+	}()
 
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())

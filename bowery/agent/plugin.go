@@ -139,10 +139,12 @@ func StartPluginListener() {
 		log.Println(err)
 	}
 
-	// On Event and Error execute commands
+	// On Event and Error events, execute commands for
+	// plugins that have appropriate handlers.
 	for {
 		select {
 		case ev := <-pluginManager.Event:
+			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
 				if command := plugin.Events[ev.Type]; command != "" {
 					cmd := ParseCmd(command, nil)
@@ -151,7 +153,7 @@ func StartPluginListener() {
 				}
 			}
 		case err := <-pluginManager.Error:
-			// todo(steve): handle error
+			// todo(steve): handle error.
 			log.Println(err, "")
 		}
 	}
