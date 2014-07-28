@@ -94,21 +94,22 @@ func init() {
 		return
 	}
 
+	keenC = &keen.Client{
+		WriteKey:  config.KeenWriteKey,
+		ProjectID: config.KeenProjectID,
+	}
+
 	data = new(localData)
 	if err = db.Load(data); err == io.EOF || os.IsNotExist(err) {
-		log.Println("No existing state")
-		return
+		// Get developer.
+		data.Developer = &schemas.Developer{}
+		db.Save(data)
 	}
 
 	if os.Getenv("ENV") != "development" {
 		if err := os.Chdir("Bowery.app/Contents/Resources/Bowery"); err != nil {
 			panic("Wrong Directory!")
 		}
-	}
-
-	keenC = &keen.Client{
-		WriteKey:  config.KeenWriteKey,
-		ProjectID: config.KeenProjectID,
 	}
 
 	// Make sure log dir is created
@@ -267,11 +268,6 @@ func getToken() error {
 }
 
 func getDev() *schemas.Developer {
-	// Get developer.
-	if data.Developer == nil {
-		return &schemas.Developer{}
-	}
-
 	res, err := http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", data.Developer.Token, -1))
 	if err != nil {
 		return data.Developer
@@ -457,12 +453,12 @@ type updateDeveloperRes struct {
 }
 
 func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
-	email := req.FormValue("email")
-	password := req.FormValue("password")
-
 	if data.Developer == nil {
 		data.Developer = &schemas.Developer{}
 	}
+
+	email := req.FormValue("email")
+	password := req.FormValue("password")
 
 	data.Developer.Email = email
 	data.Developer.Password = password
