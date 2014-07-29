@@ -57,7 +57,7 @@ func (proc *Proc) Kill() error {
 // A channel is returned and signaled if the commands start or the build fails.
 
 func Restart(initReset, reset bool, init, build, test, start string) chan bool {
-	plugin.EmitPluginEvent(plugin.BEFORE_APP_RESTART, "")
+	plugin.EmitPluginEvent(plugin.BEFORE_APP_RESTART, "", ServiceDir)
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)
 	tcp := NewTCP()
@@ -181,7 +181,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 		log.Println("Restart complete")
 	}()
 
-	plugin.EmitPluginEvent(plugin.AFTER_APP_RESTART, "")
+	plugin.EmitPluginEvent(plugin.AFTER_APP_RESTART, "", ServiceDir)
 	return finish
 }
 
@@ -255,7 +255,7 @@ func ParseCmd(command string, tcp *TCP) *exec.Cmd {
 		}
 	}
 
-	plugin.EmitPluginEvent(plugin.BEFORE_ENV_SET, "")
+	plugin.EmitPluginEvent(plugin.BEFORE_ENV_SET, "", ServiceDir)
 
 	// Update existing env vars.
 	for i, v := range env {
@@ -279,7 +279,7 @@ func ParseCmd(command string, tcp *TCP) *exec.Cmd {
 		}
 	}
 
-	plugin.EmitPluginEvent(plugin.AFTER_ENV_SET, "")
+	plugin.EmitPluginEvent(plugin.AFTER_ENV_SET, "", ServiceDir)
 
 	cmd := exec.Command(cmds[0], cmds[1:]...)
 	cmd.Env = env
