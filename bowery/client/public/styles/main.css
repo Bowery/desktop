@@ -59,7 +59,7 @@ a {
   overflow: hidden;
 }
 h1 {
-  font: bold 40px Helvetica;
+  font: bold 32px Helvetica;
   color: white;
 }
 h3 {
@@ -114,10 +114,17 @@ textarea, input {
 .submit, .btn {
   cursor: pointer;
 }
-input.submit:hover,
-.btn:hover {
+
+.item input.submit,
+.item a.btn {
   font-weight: bold;
-  background: rgb(62, 170, 114);
-  color: white;
-  background-image: linear-gradient(transparent,rgba(0,0,0,.05) 40%,rgba(0,0,0,.1));
+  color: rgb(62, 170, 114);
+}
+
+
+.item input.submit.alert,
+.item a.btn.alert {
+  font-weight: bold;
+  color: #da4d0f; /* darker: #aa3c0c */
+  /*color: white;*/
 }

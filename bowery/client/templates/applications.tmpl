@@ -3,9 +3,8 @@
     {{range .Apps}}
     <li class="item" data-app="{{.ID}}">
       <a href="/applications/{{.ID}}">
-        <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
+        {{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}
         <span class="status"></span>
-        <p class="subtitle"><a href="/logs/{{.ID}}">logs</a> • {{.RemoteAddr}}</p>
       </a>
     </li>
     {{end}}

@@ -360,6 +360,7 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.HTML(rw, http.StatusOK, "home", map[string]string{
 		"Title": "Bowery",
+		"Subtitle": "Welcome Home",
 	})
 }
 
@@ -367,7 +368,7 @@ func signupHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+		http.Redirect(rw, req, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -380,7 +381,7 @@ func loginHandler(rw http.ResponseWriter, req *http.Request) {
 	// If there is no logged in user, show login page.
 	dev := data.Developer
 	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+		http.Redirect(rw, req, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -492,7 +493,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	http.Redirect(rw, req, "/", http.StatusSeeOther)
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
@@ -544,7 +545,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = createRes.Developer
 		db.Save(data)
 
-		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+		http.Redirect(rw, req, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -597,6 +598,7 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.HTML(rw, http.StatusOK, "applications", map[string]interface{}{
 		"Title": "Applications",
+		"Subtitle": "Click to edit application.",
 		"Apps":  getApps(),
 	})
 }
@@ -775,6 +777,7 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.HTML(rw, http.StatusOK, "application", map[string]interface{}{
 		"Title":       application.Name,
+		"Subtitle": "Click to edit field",
 		"Application": application,
 		"Status":      "Syncing...",
 	})
@@ -805,6 +808,7 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
 		"Title":     "Settings",
+		"Subtitle": "Click Field to Edit",
 		"Developer": dev,
 	})
 }
@@ -831,7 +835,7 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	http.Redirect(rw, req, "/", http.StatusSeeOther)
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
