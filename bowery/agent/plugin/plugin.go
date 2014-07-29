@@ -1,5 +1,5 @@
 // Copyright 2014 Bowery, Inc.
-package main
+package plugin
 
 import (
 	"encoding/json"
@@ -22,37 +22,6 @@ func init() {
 	if err := os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir); err != nil {
 		panic(err)
 	}
-}
-
-// Plugin defines the properties and event handlers
-// of a plugin.
-type Plugin struct {
-	Name   string
-	Events map[string]string
-}
-
-// PluginManager manages all of the plugins as well as
-// channels for events and errors.
-type PluginManager struct {
-	Plugins []*Plugin
-	Event   chan *Event
-	Error   chan error
-}
-
-// Event describes an application event along with
-// associated data.
-type Event struct {
-	// The type of event (e.g. after-restart, before-update)
-	Type string
-
-	// The path of the file that has been changed
-	Path string
-
-	// The stdout of the command ran.
-	Stdout string
-
-	// The stderr of the command ran.
-	Stderr string
 }
 
 // NewPlugin creates a new plugin.
@@ -79,7 +48,7 @@ func NewPluginManager() *PluginManager {
 
 	return &PluginManager{
 		Plugins: plugins,
-		Event:   make(chan *Event),
+		Event:   make(chan *PluginEvent),
 		Error:   make(chan error),
 	}
 }
@@ -139,20 +108,31 @@ func StartPluginListener() {
 		log.Println(err)
 	}
 
-	// On Event and Error execute commands
+	// On Event and Error events, execute commands for
+	// plugins that have appropriate handlers.
 	for {
 		select {
 		case ev := <-pluginManager.Event:
+			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
-				if command := plugin.Events[ev.Type]; command != "" {
-					cmd := ParseCmd(command, nil)
-					cmd.Stdout = os.Stdout // For debugging.
-					cmd.Run()
+				if command := plugin.Hooks[ev.Type]; command != "" {
+					// todo(steve): execute command.
+					log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", plugin.Name, command))
 				}
 			}
 		case err := <-pluginManager.Error:
-			// todo(steve): handle error
-			log.Println(err)
+			// todo(steve): handle error.
+			log.Println(err, "")
 		}
+	}
+}
+
+// EmitPluginEvent creates a new PluginEvent and sends it
+// to the pluginManager Event channel.
+func EmitPluginEvent(typ, path string) {
+	// todo(steve): handle error
+	pluginManager.Event <- &PluginEvent{
+		Type: typ,
+		Path: path,
 	}
 }

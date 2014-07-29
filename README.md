@@ -4,6 +4,7 @@ It's important that you use Bowery to develop Bowery as much as possible so that
 
 ## Agent
 The artist formally known as the artist formally known as Satellite should be developed on a remote server using a stable build of the OS X Toolbar app.
+
 1. Create a box with Golang installed on Digital Ocean or AWS
 2. Create a new Application in the toolbar app with the following start/build commands.
 ```

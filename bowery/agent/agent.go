@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/Bowery/desktop/bowery/agent/plugin"
 	"github.com/gorilla/mux"
 )
 
@@ -58,7 +59,7 @@ func main() {
 	go StartTCP()
 
 	// Start event listening.
-	go StartPluginListener()
+	go plugin.StartPluginListener()
 
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())

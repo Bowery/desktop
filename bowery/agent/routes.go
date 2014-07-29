@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bowery/desktop/bowery/agent/plugin"
 	"github.com/Bowery/gopackages/tar"
 )
 
@@ -41,6 +42,7 @@ type Route struct {
 
 // POST /, Upload service code running init steps.
 func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
+	plugin.EmitPluginEvent(plugin.BEFORE_FULL_UPLOAD, "")
 	res := NewResponder(rw, req)
 	attach, _, err := req.FormFile("file")
 	if err != nil && err != http.ErrMissingFile {
@@ -100,6 +102,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	plugin.EmitPluginEvent(plugin.AFTER_FULL_UPLOAD, "")
 	<-Restart(true, true, init, build, test, start)
 	res.Body["status"] = "created"
 	res.Send(http.StatusOK)
@@ -126,6 +129,14 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		res.Body["error"] = "Missing form fields."
 		res.Send(http.StatusBadRequest)
 		return
+	}
+	switch typ {
+	case "delete":
+		plugin.EmitPluginEvent(plugin.BEFORE_FILE_DELETE, path)
+	case "update":
+		plugin.EmitPluginEvent(plugin.BEFORE_FILE_UPDATE, path)
+	case "create":
+		plugin.EmitPluginEvent(plugin.BEFORE_FILE_CREATE, path)
 	}
 	path = filepath.Join(ServiceDir, filepath.Join(strings.Split(path, "/")...))
 
@@ -191,6 +202,15 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 				return
 			}
 		}
+	}
+
+	switch typ {
+	case "delete":
+		plugin.EmitPluginEvent(plugin.AFTER_FILE_DELETE, path)
+	case "update":
+		plugin.EmitPluginEvent(plugin.AFTER_FILE_UPDATE, path)
+	case "create":
+		plugin.EmitPluginEvent(plugin.AFTER_FILE_CREATE, path)
 	}
 
 	<-Restart(false, true, init, build, test, start)

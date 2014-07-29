@@ -41,7 +41,7 @@ var logContainerEl = document.getElementsByClassName('logs')[0]
 var appID = window.location.search.split('?app=')[1]
 
 if (window['WebSocket']) {
-  var conn = new WebSocket('ws://0.0.0.0:32055/_/ws')
+  var conn = new WebSocket('ws://' + window.location.host + '/_/ws')
   conn.onopen = function (e) {}
   conn.onclose = function (e) {}
   conn.onmessage = function (e) {
