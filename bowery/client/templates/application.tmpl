@@ -1,5 +1,5 @@
 <form class="form edit-application">
-  <input class="" type="hidden" value="{{.Application.ID}}" name="id">
+  <input class="appId" type="hidden" value="{{.Application.ID}}" name="id">
   <div class="field">
     <input type="text" class="field-input" name="name" id="name" value="{{.Application.Name}}">
     <label for="name" class="field-label">Application Name</label>
@@ -32,18 +32,19 @@
 
 <script type="text/javascript">
   $(document).ready(function () {
+    var appId = $('.appId').val()
+
     $('.edit-application .submit.edit').click(function (e) {
       e.preventDefault()
       $.ajax({
-        url: "/applications/update",
+        url: "/applications/" + appId,
         method: "PUT",
         data: $('.form.edit-application').serialize()
       })
       .done(function (resp) {
         if (resp.success) {
-          window.location = "/apps"
+          window.location = "/applications"
         } else {
-          console.log("$$$$$", resp)
           alert(resp.error)
         }
       })
@@ -52,13 +53,12 @@
     $('.edit-application .submit.delete').click(function (e) {
       e.preventDefault()
       $.ajax({
-        url: "/applications/remove",
-        method: "PUT",
-        data: $('.form.edit-application').serialize()
+        url: "/applications/" + appId,
+        method: "DELETE"
       })
       .done(function (resp) {
         if (resp.success) {
-          window.location = "/apps"
+          window.location = "/applications"
         } else {
           console.log(resp)
           alert(JSON.stringify(resp))

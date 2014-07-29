@@ -118,15 +118,18 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Run the build command, only proceed if successful.
 		if buildCmd != nil {
-
+			log.Println("Running Build Command")
 			err := buildCmd.Run()
 			if err != nil {
+				// TODO (steve) sometimes the build command which could be echoing
+				// something trivial (echo "blah") will fail with write tcp 65.209.47.35:34400: broken pipe
 				tcp.Write([]byte(err.Error() + "\n"))
 
 				killCmds(initReset)
 				finish <- false
 				return
 			}
+			log.Println("Finished Build Command")
 		}
 
 		// Start the test command.

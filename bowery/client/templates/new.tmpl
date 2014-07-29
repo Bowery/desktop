@@ -46,12 +46,12 @@
 $(document).ready(function () {
   verifyFormEl = $('.verify-application')
   createFormEl = $('.create-application')
-  
+
   $('.submit.verify').click(function (e) {
     e.preventDefault()
     $.ajax({
       url: '/applications/verify',
-      method: 'PUT',
+      method: 'POST',
       data: verifyFormEl.serialize()
     })
     .done(function (problems) {
@@ -71,13 +71,13 @@ $(document).ready(function () {
   $('.submit.create').click(function (e) {
     e.preventDefault()
     $.ajax({
-      url: '/applications/create',
+      url: '/applications',
       method: 'POST',
       data: verifyFormEl.serialize() + '&' + createFormEl.serialize()
     })
     .done(function (resp) {
       if (resp.success) {
-        window.location = '/apps' // 1993 till infinity.
+        window.location = '/applications' // 1993 till infinity.
       } else {
         alert(resp.error)
       }
