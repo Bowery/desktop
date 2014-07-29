@@ -358,7 +358,9 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	r.HTML(rw, http.StatusOK, "home", map[string]string{
+		"Title": "Welcome to Bowery",
+	})
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
