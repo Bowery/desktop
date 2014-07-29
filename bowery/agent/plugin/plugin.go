@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Bowery/gopackages/sys"
 )
@@ -49,7 +51,7 @@ func NewPluginManager() *PluginManager {
 	return &PluginManager{
 		Plugins: plugins,
 		Event:   make(chan *PluginEvent),
-		Error:   make(chan error),
+		Error:   make(chan *PluginError),
 	}
 }
 
@@ -116,23 +118,91 @@ func StartPluginListener() {
 			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
 				if command := plugin.Hooks[ev.Type]; command != "" {
-					// todo(steve): execute command.
-					log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", plugin.Name, command))
+					executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
 				}
 			}
 		case err := <-pluginManager.Error:
-			// todo(steve): handle error.
-			log.Println(err, "")
+			handlePluginError(err.Plugin.Name, err.Error)
 		}
 	}
 }
 
+// executeHook runs the specified command and returns the
+// resulting output.
+func executeHook(name, path, dir, command string) {
+	log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", name, command))
+
+	var (
+		vars []string
+		cmds []string
+	)
+	args := strings.Split(command, " ")
+	env := os.Environ()
+
+	// Separate env vars and the cmd.
+	for i, arg := range args {
+		if strings.Contains(arg, "=") {
+			vars = args[:i+1]
+		} else {
+			cmds = args[i:]
+			break
+		}
+	}
+
+	// Update existing env vars.
+	for i, v := range env {
+		envlist := strings.SplitN(v, "=", 2)
+
+		for n, arg := range vars {
+			arglist := strings.SplitN(arg, "=", 2)
+
+			if arglist[0] == envlist[0] {
+				env[i] = arg
+				vars[n] = ""
+				break
+			}
+		}
+	}
+
+	// Add new env vars.
+	for _, arg := range vars {
+		if arg != "" {
+			env = append(env, arg)
+		}
+	}
+
+	// Set ENV for hook. The hook will take on the current
+	// environment, but will be updated information about
+	// the application and files.
+	cmd := exec.Command(cmds[0], cmds[1:]...)
+	env = append(env, fmt.Sprintf("APP_DIR=%s", dir))
+	env = append(env, fmt.Sprintf("FILE_AFFECTED=%s", path))
+	cmd.Env = env
+	cmd.Dir = filepath.Join(pluginDir, name)
+	data, err := cmd.CombinedOutput()
+	if err != nil {
+		handlePluginError(name, err)
+		return
+	}
+
+	// debugging
+	log.Println(string(data))
+}
+
+// handlePluginError handles plugin errors that may occur when loading
+// and preparing a plugin, or when executing a plugin's hook.
+func handlePluginError(name string, err error) {
+	// todo(steve): shoot this down the wire.
+	log.Println("plugin error:", fmt.Sprintf("%s: `%s`", name, err.Error()))
+}
+
 // EmitPluginEvent creates a new PluginEvent and sends it
 // to the pluginManager Event channel.
-func EmitPluginEvent(typ, path string) {
+func EmitPluginEvent(typ, path, dir string) {
 	// todo(steve): handle error
 	pluginManager.Event <- &PluginEvent{
-		Type: typ,
-		Path: path,
+		Type:     typ,
+		FilePath: path,
+		AppDir:   dir,
 	}
 }
