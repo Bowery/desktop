@@ -359,7 +359,7 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	r.HTML(rw, http.StatusOK, "home", map[string]string{
-		"Title": "Welcome to Bowery",
+		"Title": "Bowery",
 	})
 }
 
