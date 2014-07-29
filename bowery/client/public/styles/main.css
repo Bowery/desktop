@@ -72,29 +72,52 @@ h3 {
   list-style: none;
 }
 .item {
-  border-top: 1px solid rgb(234, 239, 243);
-  border-bottom: 1px solid rgb(234, 239, 243);
   width: 100%;
-  background: rgb(234, 239, 243);
   position: relative;
 }
 .item:hover {
+  /*border-top: 1px solid rgb(208, 227, 230);
+  border-bottom: 1px solid rgb(208, 227, 230);
+  background: white;*/
+}
+.item a,
+.item input {
+  display: inline-block;
+  width: 100%;
+  color: rgb(108, 119, 126);
+  background: rgb(234, 239, 243);
+  border-top: 1px solid rgb(234, 239, 243);
+  border-bottom: 1px solid rgb(234, 239, 243);
+  padding: 15px 0 15px 45px;
+
+  transition: all 200ms;
+}
+.item a:hover,
+.item input:hover,
+.item input:focus {
+  color: rgb(44, 46, 53);
+  padding-left: 55px;
   border-top: 1px solid rgb(208, 227, 230);
   border-bottom: 1px solid rgb(208, 227, 230);
   background: white;
 }
-.item a {
-  display: inline-block;
-  width: 100%;
-  color: rgb(108, 119, 126);
-  padding: 15px 0 15px 45px;
-  transition: all 200ms;
-}
-.item a:hover {
-  color: rgb(44, 46, 53);
-  padding-left: 55px;
-}
 
 textarea, input {
   outline: none;
+  border: 0;
+  background: inherit;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+.submit, .btn {
+  cursor: pointer;
+}
+input.submit:hover,
+.btn:hover {
+  font-weight: bold;
+  background: rgb(62, 170, 114);
+  color: white;
+  background-image: linear-gradient(transparent,rgba(0,0,0,.05) 40%,rgba(0,0,0,.1));
 }

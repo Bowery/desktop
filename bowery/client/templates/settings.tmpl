@@ -1,24 +1,19 @@
 <div class="group settings">
   <form class="form user-settings" method="POST" action="/settings">
-    <div class="field">
-      <input type="text" name="name" class="field-input" value="{{.Developer.Name}}" />
-      <label for="name" class="field-label">Name</label>
-    </div>
-    <div class="field">
-      <input type="text" name="email" class="field-input" value="{{.Developer.Email}}" />
-      <label for="email" class="field-label">Email</label>
-    </div>
-    <div class="field">
-      <input type="password" name="password" class="field-input" />
-      <label for="password" class="field-label">New Password</label>
-    </div>
-    <div class="field">
-      <input type="password" name="oldpassword" class="field-input" />
-      <label for="oldpassword" class="field-label">Old Password</label>
-    </div>
-    <div class="field-submit">
-      <input class="submit" type="submit" value="Submit" />
-    </div>
+    <ul class="list">
+      <li class="item">
+        <input type="text" name="name" class="field-input" value="{{.Developer.Name}}" />
+      </li>
+      <li class="item">
+        <input type="text" name="email" class="field-input" value="{{.Developer.Email}}" />
+      </li>
+      <li class="item">
+        <input type="password" name="password" class="field-input" placeholder="Password" />
+      </li>
+      <li class="item">
+        <input class="submit" type="submit" value="Submit" />
+      </li>
+    </ul>
   </form>
   <a href="/logout">Logout</a>
 </div>
