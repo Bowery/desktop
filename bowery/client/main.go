@@ -87,6 +87,21 @@ type Route struct {
 	Handler http.HandlerFunc
 }
 
+// SlashHandler is a http.Handler that removes trailing slashes.
+type SlashHandler struct {
+	Handler http.Handler
+}
+
+// ServeHTTP strips trailing slashes and calls the handler.
+func (sh *SlashHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if req.URL.Path != "/" {
+		req.URL.Path = strings.TrimRight(req.URL.Path, "/")
+		req.RequestURI = req.URL.RequestURI()
+	}
+
+	sh.Handler.ServeHTTP(rw, req)
+}
+
 // Set up local db.
 func init() {
 	if os.Getenv("AGENT") == "development" {
@@ -213,7 +228,7 @@ func main() {
 	}
 
 	app := negroni.Classic()
-	app.UseHandler(router)
+	app.UseHandler(&SlashHandler{router})
 
 	port := os.Getenv("PORT")
 	if port == "" {
