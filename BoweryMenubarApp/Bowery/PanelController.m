@@ -54,7 +54,7 @@
     
     [self.boweryWebView setDrawsBackground:NO];
     [self.boweryWebView setPolicyDelegate:self];
-	NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://0.0.0.0:32055/applications"]];
+	NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://0.0.0.0:32055/"]];
 	[self.boweryWebView.mainFrame loadRequest:request];
 
     // Follow search string
