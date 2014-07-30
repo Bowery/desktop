@@ -34,7 +34,8 @@ type Author struct {
 }
 
 type Hooks struct {
-	OnPluginStart    string `json:"on-plugin-start,omitempty"`
+	OnPluginInit     string `json:"on-plugin-init,omitempty"`
+	Background       string `json:"background,omitempty"`
 	BeforeAppRestart string `json:"before-app-restart,omitempty"`
 	AfterAppRestart  string `json:"after-app-restart,omitempty"`
 	BeforeAppUpdate  string `json:"before-app-update,omitempty"`

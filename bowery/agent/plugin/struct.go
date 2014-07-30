@@ -1,6 +1,10 @@
 // Copyright 2014 Bowery, Inc.
 package plugin
 
+import (
+	"os/exec"
+)
+
 // Plugin defines the properties and event handlers
 // of a plugin.
 type Plugin struct {
@@ -15,6 +19,11 @@ type Plugin struct {
 
 	// Whether the plugin is being used or not.
 	IsEnabled bool
+
+	// BackgroundProcess is the long standing background
+	// process for a given plugin. The application's
+	// Stdout and Stderr are piped to this process.
+	BackgroundCommand *exec.Cmd
 }
 
 // PluginAuther defines the attributes and properties
@@ -57,12 +66,6 @@ type PluginEvent struct {
 
 	// The directory of the application code.
 	AppDir string
-
-	// The stdout of the command ran.
-	Stdout string
-
-	// The stderr of the command ran.
-	Stderr string
 }
 
 // Error describes a plugin error along with

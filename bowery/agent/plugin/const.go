@@ -4,6 +4,17 @@
 package plugin
 
 const (
+	// "Initialization" occurs after the plugin has been installed and when the agent
+	// reboots and reloads all previously installed plugins.
+	ON_PLUGIN_INIT = "on-plugin-init"
+
+	// Triggered after the plugin has been initialized. It is a background
+	// process that runs for the lifetime of the agent. It is restarted
+	// whenever the plugin is initialized (e.g. agent reboot). It has
+	// access to the stdout/stderr of the application via files
+	// found at $STDOUT and $STDERR.
+	BACKGROUND = "background"
+
 	// Triggered before restarting the application. At this point
 	// the application's files have been synced.
 	BEFORE_APP_RESTART = "before-app-restart"
@@ -55,12 +66,4 @@ const (
 	// occur when a new application is created and when
 	// the client is started.
 	AFTER_FULL_UPLOAD = "after-full-upload"
-
-	// Triggered before the custom environmental variables
-	// are set.
-	BEFORE_ENV_SET = "before-env-set"
-
-	// Triggered after the custom environmental variables
-	// are set.
-	AFTER_ENV_SET = "after-env-set"
 )

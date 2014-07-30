@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/sys"
 )
 
 var (
@@ -18,8 +19,18 @@ var (
 	mutex           sync.Mutex
 	cmdStrs         = [4]string{} // Order: init, build, test start.
 	// Only assign here if the process has been started.
-	prevInitCmd *exec.Cmd
+	prevInitCmd  *exec.Cmd
+	outputPath   = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log")
+	stdoutPath   = filepath.Join(outputPath, "stdout.log")
+	stderrPath   = filepath.Join(outputPath, "stderr.log")
+	stdoutWriter *OutputWriter
+	stderrWriter *OutputWriter
 )
+
+func init() {
+	stdoutWriter, _ = NewOutputWriter(stdoutPath)
+	stderrWriter, _ = NewOutputWriter(stderrPath)
+}
 
 // Proc describes a processes ids and its children.
 type Proc struct {
@@ -60,7 +71,6 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 	plugin.EmitPluginEvent(plugin.BEFORE_APP_RESTART, "", ServiceDir)
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)
-	tcp := NewTCP()
 	log.Println("Restarting")
 
 	err := killCmds(initReset)
@@ -79,10 +89,10 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 		cmdStrs = [4]string{init, build, test, start}
 	}
 
-	initCmd := ParseCmd(cmdStrs[0], tcp)
-	buildCmd := ParseCmd(cmdStrs[1], tcp)
-	testCmd := ParseCmd(cmdStrs[2], tcp)
-	startCmd := ParseCmd(cmdStrs[3], tcp)
+	initCmd := ParseCmd(cmdStrs[0], stdoutWriter, stderrWriter)
+	buildCmd := ParseCmd(cmdStrs[1], stdoutWriter, stderrWriter)
+	testCmd := ParseCmd(cmdStrs[2], stdoutWriter, stderrWriter)
+	startCmd := ParseCmd(cmdStrs[3], stdoutWriter, stderrWriter)
 
 	// Run in goroutine so commands can run in the background with the tcp
 	// connection open.
@@ -103,9 +113,9 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 						continue
 					}
 
-					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), tcp)
+					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), stdoutWriter, stderrWriter)
 					if cmd != nil {
-						err := startProc(cmd, tcp)
+						err := startProc(cmd, stdoutWriter, stderrWriter)
 						if err == nil {
 							cmds = append(cmds, cmd)
 						}
@@ -121,9 +131,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 			log.Println("Running Build Command")
 			err := buildCmd.Run()
 			if err != nil {
-				// TODO (steve) sometimes the build command which could be echoing
-				// something trivial (echo "blah") will fail with write tcp 65.209.47.35:34400: broken pipe
-				tcp.Write([]byte(err.Error() + "\n"))
+				stderrWriter.Write([]byte(err.Error() + "\n"))
 
 				killCmds(initReset)
 				finish <- false
@@ -134,7 +142,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Start the test command.
 		if testCmd != nil {
-			err := startProc(testCmd, tcp)
+			err := startProc(testCmd, stdoutWriter, stderrWriter)
 			if err == nil {
 				cmds = append(cmds, testCmd)
 			}
@@ -142,7 +150,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Start the init command if init is set.
 		if initReset && initCmd != nil {
-			err := startProc(initCmd, tcp)
+			err := startProc(initCmd, stdoutWriter, stderrWriter)
 			if err == nil {
 				prevInitCmd = initCmd
 			}
@@ -150,7 +158,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Start the start command.
 		if startCmd != nil {
-			err := startProc(startCmd, tcp)
+			err := startProc(startCmd, stdoutWriter, stderrWriter)
 			if err == nil {
 				cmds = append(cmds, startCmd)
 			}
@@ -165,7 +173,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 			wg.Add(1)
 
 			go func(c *exec.Cmd) {
-				waitProc(c, tcp)
+				waitProc(c, stdoutWriter, stderrWriter)
 				wg.Done()
 			}(prevInitCmd)
 		}
@@ -173,7 +181,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 		// Loop the commands and wait for them in parallel.
 		for _, cmd := range cmds {
 			go func(c *exec.Cmd) {
-				waitProc(c, tcp)
+				waitProc(c, stdoutWriter, stderrWriter)
 				wg.Done()
 			}(cmd)
 		}
@@ -186,18 +194,18 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 }
 
 // waitProc waits for a process to end and writes errors to tcp.
-func waitProc(cmd *exec.Cmd, tcp *TCP) {
+func waitProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) {
 	err := cmd.Wait()
 	if err != nil {
-		tcp.Write([]byte(err.Error() + "\n"))
+		stderrWriter.Write([]byte(err.Error() + "\n"))
 	}
 }
 
 // startProc starts a process and writes errors to tcp.
-func startProc(cmd *exec.Cmd, tcp *TCP) error {
+func startProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) error {
 	err := cmd.Start()
 	if err != nil {
-		tcp.Write([]byte(err.Error() + "\n"))
+		stderrWriter.Write([]byte(err.Error() + "\n"))
 	}
 
 	return err
@@ -222,6 +230,22 @@ func killCmds(init bool) error {
 			}
 		}
 
+		// Don't kill any plugin background processes.
+		isPluginBackgroundProcess := false
+		for _, p := range plugin.GetPlugins() {
+			log.Println(p)
+			if p.BackgroundCommand != nil {
+				if p.BackgroundCommand.Process.Pid == proc.Pid {
+					isPluginBackgroundProcess = true
+					break
+				}
+			}
+		}
+
+		if isPluginBackgroundProcess {
+			continue
+		}
+
 		err = proc.Kill()
 		if err != nil {
 			return err
@@ -233,7 +257,7 @@ func killCmds(init bool) error {
 
 // ParseCmd converts a string to a command, connecting stdio to a
 // tcp connection.
-func ParseCmd(command string, tcp *TCP) *exec.Cmd {
+func ParseCmd(command string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cmd {
 	if command == "" {
 		return nil
 	}
@@ -254,8 +278,6 @@ func ParseCmd(command string, tcp *TCP) *exec.Cmd {
 			break
 		}
 	}
-
-	plugin.EmitPluginEvent(plugin.BEFORE_ENV_SET, "", ServiceDir)
 
 	// Update existing env vars.
 	for i, v := range env {
@@ -279,13 +301,11 @@ func ParseCmd(command string, tcp *TCP) *exec.Cmd {
 		}
 	}
 
-	plugin.EmitPluginEvent(plugin.AFTER_ENV_SET, "", ServiceDir)
-
 	cmd := exec.Command(cmds[0], cmds[1:]...)
 	cmd.Env = env
-	if tcp != nil {
-		cmd.Stdout = tcp
-		cmd.Stderr = tcp
+	if stdoutWriter != nil && stderrWriter != nil {
+		cmd.Stdout = stdoutWriter
+		cmd.Stderr = stderrWriter
 	}
 
 	return cmd
