@@ -32,3 +32,5 @@ The `BoweryMenubarApp` directory can be opened as a project in XCode.
 5. Run the XCode Project
 
 Rinse and Repeat...
+
+The Makefile automates this process `make` to start the app and `make clean` to stop it. You can see logs in `debug.log`.
