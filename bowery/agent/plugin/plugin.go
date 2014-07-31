@@ -3,6 +3,7 @@ package plugin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,12 +17,15 @@ import (
 
 var (
 	pluginManager *PluginManager
-	pluginDir     = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+	PluginDir     = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
 )
 
 // Create plugin dir.
 func init() {
-	if err := os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir); err != nil {
+	if PluginDir == "" {
+		filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+	}
+	if err := os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir); err != nil {
 		panic(err)
 	}
 }
@@ -55,10 +59,14 @@ func NewPluginManager() *PluginManager {
 	}
 }
 
-// LoadPlugin looks through the pluginDir and loads the plugins.
+func SetPluginManager() {
+	pluginManager = NewPluginManager()
+}
+
+// LoadPlugin looks through the PluginDir and loads the plugins.
 func (pm *PluginManager) LoadPlugins() error {
-	// Get contents of plugindir.
-	files, err := ioutil.ReadDir(pluginDir)
+	// Get contents of PluginDir.
+	files, err := ioutil.ReadDir(PluginDir)
 	if err != nil {
 		return err
 	}
@@ -68,7 +76,7 @@ func (pm *PluginManager) LoadPlugins() error {
 			continue
 		}
 
-		plugin, err := NewPlugin(filepath.Join(pluginDir, file.Name()))
+		plugin, err := NewPlugin(filepath.Join(PluginDir, file.Name()))
 		if err != nil {
 			continue
 		}
@@ -80,14 +88,39 @@ func (pm *PluginManager) LoadPlugins() error {
 	return nil
 }
 
+func AddPlugin(plugin *Plugin) {
+	pluginManager.AddPlugin(plugin)
+}
+
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
 	pm.Plugins = append(pm.Plugins, plugin)
 }
 
 // RemovePlugin removes a Plugin.
-func (pm *PluginManager) RemovePlugin(plugin *Plugin) error {
-	// todo(steve)
+func RemovePlugin(name string) error {
+	return pluginManager.RemovePlugin(name)
+}
+
+// RemovePlugin removes a Plugin by name.
+func (pm *PluginManager) RemovePlugin(name string) error {
+	index := -1
+	for i, plugin := range pm.Plugins {
+		if plugin.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("invalid plugin name")
+	}
+
+	if err := os.RemoveAll(filepath.Join(PluginDir, name)); err != nil {
+		return err
+	}
+
+	pm.Plugins = append(pm.Plugins[:index], pm.Plugins[index+1:]...)
 	return nil
 }
 
@@ -101,7 +134,7 @@ func (pm *PluginManager) UpdatePlugin(plugin *Plugin) error {
 // listens for events.
 func StartPluginListener() {
 	if pluginManager == nil {
-		pluginManager = NewPluginManager()
+		SetPluginManager()
 	}
 
 	// Load existing plugins.
@@ -178,7 +211,7 @@ func executeHook(name, path, dir, command string) {
 	env = append(env, fmt.Sprintf("APP_DIR=%s", dir))
 	env = append(env, fmt.Sprintf("FILE_AFFECTED=%s", path))
 	cmd.Env = env
-	cmd.Dir = filepath.Join(pluginDir, name)
+	cmd.Dir = filepath.Join(PluginDir, name)
 	data, err := cmd.CombinedOutput()
 	if err != nil {
 		handlePluginError(name, err)

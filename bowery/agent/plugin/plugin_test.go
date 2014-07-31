@@ -30,18 +30,18 @@ var (
 )
 
 func init() {
-	pluginDir = "plugins"
+	PluginDir = "plugins"
 
 	data, err := json.Marshal(testPlugin)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := os.MkdirAll(filepath.Join(pluginDir, "test-plugin"), os.ModePerm|os.ModeDir); err != nil {
+	if err := os.MkdirAll(filepath.Join(PluginDir, "test-plugin"), os.ModePerm|os.ModeDir); err != nil {
 		panic(err)
 	}
 
-	if err = ioutil.WriteFile(filepath.Join(pluginDir, "test-plugin", "plugin.json"), data, 0644); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(PluginDir, "test-plugin", "plugin.json"), data, 0644); err != nil {
 		panic(err)
 	}
 }
@@ -64,15 +64,45 @@ func TestLoadPlugins(t *testing.T) {
 	}
 }
 
+func TestAddPlugin(t *testing.T) {
+	testPluginManager.AddPlugin(&Plugin{
+		Name: "another-plugin",
+		Author: PluginAuthor{
+			Name: "j-money",
+		},
+	})
+
+	for _, plugin := range testPluginManager.Plugins {
+		if plugin.Name == "another-plugin" {
+			return
+		}
+	}
+
+	t.Error("Failed to add plugin.")
+}
+
+func TestRemovePlugin(t *testing.T) {
+	err := testPluginManager.RemovePlugin("another-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, plugin := range testPluginManager.Plugins {
+		if plugin.Name == "another-plugin" {
+			t.Fatal("Failed to remove the plugin")
+		}
+	}
+}
+
 func TestNewPluginWithNoDirectory(t *testing.T) {
-	_, err := NewPlugin(filepath.Join(pluginDir, "invalid-plugin"))
+	_, err := NewPlugin(filepath.Join(PluginDir, "invalid-plugin"))
 	if err == nil {
 		t.Fatal("A new plugin was created without valid plugin.json file.", err)
 	}
 }
 
 func TestNewPluginWithValidDirectory(t *testing.T) {
-	plugin, err := NewPlugin(filepath.Join(pluginDir, "test-plugin"))
+	plugin, err := NewPlugin(filepath.Join(PluginDir, "test-plugin"))
 	if err != nil {
 		t.Error(err)
 	}

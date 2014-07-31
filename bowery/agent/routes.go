@@ -1,5 +1,4 @@
 // Copyright 2013-2014 Bowery, Inc.
-// Contains the routes for satellite.
 package main
 
 import (
@@ -19,9 +18,10 @@ import (
 // 32 MB, same as http.
 const httpMaxMem = 32 << 10
 
-// Directory the service lives in.
-var HomeDir = "/root/" // default for ubuntu docker container
-var ServiceDir = "/application"
+var (
+	HomeDir    = "/root/"       // Default for ubuntu docker container
+	ServiceDir = "/application" // Directory the service lives in.
+)
 
 // List of named routes.
 var Routes = []*Route{
@@ -29,6 +29,8 @@ var Routes = []*Route{
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
+	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
+	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
 
@@ -270,6 +272,75 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 			res.Send(http.StatusInternalServerError)
 			return
 		}
+	}
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// POST /plugins, Upload a plugin
+func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	attach, _, err := req.FormFile("file")
+	if err != nil && err != http.ErrMissingFile {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	name := req.FormValue("name")
+	if name == "" {
+		res.Body["error"] = "plugin name required"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	pluginPath := filepath.Join(plugin.PluginDir, name)
+	if attach != nil {
+		defer attach.Close()
+		if err = tar.Untar(attach, pluginPath); err != nil {
+			res.Body["error"] = err.Error()
+			res.Send(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	p, err := plugin.NewPlugin(pluginPath)
+	if err != nil {
+		res.Body["error"] = "unable to create plugin"
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	plugin.AddPlugin(p)
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// DELETE /plugins?name=PLUGIN_NAME, Removes a plugin
+func RemovePluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	query := req.URL.Query()
+
+	if len(query["name"]) < 1 {
+		res.Body["error"] = "valid plugin name required"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	pluginName := query["name"][0]
+
+	if err := plugin.RemovePlugin(pluginName); err != nil {
+		res.Body["error"] = "unable to remove plugin"
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	if err := os.RemoveAll(filepath.Join(plugin.PluginDir, pluginName)); err != nil {
+		res.Body["error"] = "unable to remove plugin code"
+		res.Send(http.StatusInternalServerError)
+		return
 	}
 
 	res.Body["status"] = "success"
