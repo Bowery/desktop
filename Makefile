@@ -27,6 +27,7 @@ release:
 	@bash --norc -i ./bowery/scripts/release_agent.sh
 
 clean:
+	rm debug.log
 	rm -rf **/bin
 	rm -rf **/pkg
 	rm -rf **/build
