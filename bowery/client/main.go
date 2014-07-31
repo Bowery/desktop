@@ -4,7 +4,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -17,6 +16,7 @@ import (
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/Bowery/desktop/bowery/client/bpm"
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/localdb"
@@ -177,6 +177,8 @@ func main() {
 		&Route{"PUT", "/applications/{id}", updateAppHandler},
 		&Route{"DELETE", "/applications/{id}", removeAppHandler},
 		&Route{"GET", "/applications/{id}", appHandler},
+		&Route{"GET", "/plugins", listPluginsHandler},
+		&Route{"GET", "/plugins/{version}", showPluginHandler},
 		&Route{"GET", "/logs/{id}", logsHandler},
 		&Route{"GET", "/settings", getSettingsHandler},
 		&Route{"POST", "/settings", updateSettingsHandler},
@@ -372,7 +374,9 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	r.HTML(rw, http.StatusOK, "home", map[string]string{
+		"Title": "Bowery",
+	})
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
@@ -751,16 +755,13 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 	apps := getApps()
 	for i, app := range apps {
 		if app.ID == appId {
-			fmt.Println("found", appId)
 			syncer.Remove(app)
 			logManager.Remove(app)
-			fmt.Println("before", apps)
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 
 			break
 		}
 	}
-	fmt.Println("after", apps)
 	data.Applications = apps
 	db.Save(data)
 
@@ -789,6 +790,51 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 		"Title":       application.Name,
 		"Application": application,
 		"Status":      "Syncing...",
+	})
+}
+
+func listPluginsHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := data.Developer
+	if dev == nil || dev.Token == "" {
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		return
+	}
+
+	plugins := bpm.GetFormulae()
+
+	// TODO (thebyrd) get all plugins
+	r.HTML(rw, http.StatusOK, "plugins", map[string]interface{}{
+		"Title":   "Plugins",
+		"Plugins": plugins,
+	})
+
+}
+
+func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := data.Developer
+	if dev == nil || dev.Token == "" {
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		return
+	}
+
+	version := mux.Vars(req)["version"]
+
+	for _, plugin := range bpm.GetFormulae() {
+		if plugin.Version == version {
+			r.HTML(rw, http.StatusOK, "plugin", map[string]interface{}{
+				"Title":  plugin.Name,
+				"Plugin": plugin,
+				"Apps":   getApps(),
+			})
+			return
+		}
+	}
+	// TODO (thebyrd) get all plugins
+	r.HTML(rw, http.StatusOK, "error", map[string]interface{}{
+		"Title": "Error",
+		"Error": "Plugin not found. See http://github.com/bowery/plugins for a list of availble plugins.",
 	})
 }
 
