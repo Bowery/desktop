@@ -29,9 +29,9 @@ go get \
 # Build Client!
 echo "--> Building Client..."
 cd "${DIR}"
+
 go build \
     -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
-    -v \
     -o bin/client
 cp bin/client ${GOPATHSINGLE}/bin
 DIR=$PWD
