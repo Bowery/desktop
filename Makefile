@@ -2,7 +2,7 @@ DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
 all: deps format
 	@mkdir -p bowery/client/bin
-	@bash --norc -i ./bowery/scripts/build_client.sh
+	@bash --norc -i ./scripts/build_client.sh
 	@echo "--> Building OS X Wrapper..."
 	@cd BoweryMenubarApp && xcodebuild -target Bowery > ../debug.log
 	@echo "--> Opening Toolbar App..."
@@ -24,7 +24,7 @@ test: deps
 	@go test ./...
 
 release:
-	@bash --norc -i ./bowery/scripts/release_agent.sh
+	@bash --norc -i ./scripts/release_agent.sh
 
 clean:
 	rm debug.log
