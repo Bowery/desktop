@@ -3,6 +3,8 @@ bowery/client/client
 bowery/client/gin-bin
 bowery/agent/agent
 UserInterfaceState.xcuserstate
-BoweryMenubarApp/Bowery/Bowery/
+BoweryMenubarApp/Bowery/Bowery/*
 bin/
 pkg/
+build/
+debug.log

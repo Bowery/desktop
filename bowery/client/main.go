@@ -128,10 +128,9 @@ func init() {
 		db.Save(data)
 	}
 
-	if os.Getenv("ENV") != "development" {
-		if err := os.Chdir("Bowery.app/Contents/Resources/Bowery"); err != nil {
-			panic("Wrong Directory!")
-		}
+	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err := os.Chdir(cwd); err != nil {
+		panic("Wrong Directory!")
 	}
 
 	// Make sure log dir is created
