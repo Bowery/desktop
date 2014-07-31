@@ -81,6 +81,19 @@ func TestAddPlugin(t *testing.T) {
 	t.Error("Failed to add plugin.")
 }
 
+func TestRemovePlugin(t *testing.T) {
+	err := testPluginManager.RemovePlugin("another-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, plugin := range testPluginManager.Plugins {
+		if plugin.Name == "another-plugin" {
+			t.Fatal("Failed to remove the plugin")
+		}
+	}
+}
+
 func TestNewPluginWithNoDirectory(t *testing.T) {
 	_, err := NewPlugin(filepath.Join(PluginDir, "invalid-plugin"))
 	if err == nil {

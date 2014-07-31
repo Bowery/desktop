@@ -3,6 +3,7 @@ package plugin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -58,6 +59,10 @@ func NewPluginManager() *PluginManager {
 	}
 }
 
+func SetPluginManager() {
+	pluginManager = NewPluginManager()
+}
+
 // LoadPlugin looks through the PluginDir and loads the plugins.
 func (pm *PluginManager) LoadPlugins() error {
 	// Get contents of PluginDir.
@@ -83,14 +88,39 @@ func (pm *PluginManager) LoadPlugins() error {
 	return nil
 }
 
+func AddPlugin(plugin *Plugin) {
+	pluginManager.AddPlugin(plugin)
+}
+
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
 	pm.Plugins = append(pm.Plugins, plugin)
 }
 
 // RemovePlugin removes a Plugin.
-func (pm *PluginManager) RemovePlugin(plugin *Plugin) error {
-	// todo(steve)
+func RemovePlugin(name string) error {
+	return pluginManager.RemovePlugin(name)
+}
+
+// RemovePlugin removes a Plugin by name.
+func (pm *PluginManager) RemovePlugin(name string) error {
+	index := -1
+	for i, plugin := range pm.Plugins {
+		if plugin.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("invalid plugin name")
+	}
+
+	if err := os.RemoveAll(filepath.Join(PluginDir, name)); err != nil {
+		return err
+	}
+
+	pm.Plugins = append(pm.Plugins[:index], pm.Plugins[index+1:]...)
 	return nil
 }
 
@@ -104,7 +134,7 @@ func (pm *PluginManager) UpdatePlugin(plugin *Plugin) error {
 // listens for events.
 func StartPluginListener() {
 	if pluginManager == nil {
-		pluginManager = NewPluginManager()
+		SetPluginManager()
 	}
 
 	// Load existing plugins.

@@ -18,6 +18,7 @@ import (
 )
 
 func init() {
+	plugin.SetPluginManager()
 	plugin.PluginDir = filepath.Join("test", "plugins")
 	tarPath := filepath.Join("test", "plugin.tar.gz")
 
@@ -110,6 +111,46 @@ func TestUploadPluginHandlerWithValidRequest(t *testing.T) {
 
 	if res.StatusCode != http.StatusOK {
 		t.Error("Failed to add plugin.")
+	}
+}
+
+func TestRemovePluginHandlerWithInvalidQuery(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(RemovePluginHandler))
+	defer server.Close()
+
+	req, err := http.NewRequest("DELETE", server.URL+"?foo=bar", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Error("Completed request with bad query.")
+	}
+}
+
+func TestRemovePluginHandlerWithValidRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(RemovePluginHandler))
+	defer server.Close()
+
+	req, err := http.NewRequest("DELETE", server.URL+"?name=test-plugin", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Error("Response not ok")
 	}
 }
 

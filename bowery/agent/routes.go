@@ -30,6 +30,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
+	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
 
@@ -294,10 +295,9 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var pluginPath string
+	pluginPath := filepath.Join(plugin.PluginDir, name)
 	if attach != nil {
 		defer attach.Close()
-		pluginPath = filepath.Join(plugin.PluginDir, name)
 		if err = tar.Untar(attach, pluginPath); err != nil {
 			res.Body["error"] = err.Error()
 			res.Send(http.StatusInternalServerError)
@@ -305,9 +305,40 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	_, err = plugin.NewPlugin(pluginPath)
+	p, err := plugin.NewPlugin(pluginPath)
 	if err != nil {
-		res.Body["error"] = "unable to add plugin"
+		res.Body["error"] = "unable to create plugin"
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	plugin.AddPlugin(p)
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// DELETE /plugins?name=PLUGIN_NAME, Removes a plugin
+func RemovePluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	query := req.URL.Query()
+
+	if len(query["name"]) < 1 {
+		res.Body["error"] = "valid plugin name required"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	pluginName := query["name"][0]
+
+	if err := plugin.RemovePlugin(pluginName); err != nil {
+		res.Body["error"] = "unable to remove plugin"
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	if err := os.RemoveAll(filepath.Join(plugin.PluginDir, pluginName)); err != nil {
+		res.Body["error"] = "unable to remove plugin code"
 		res.Send(http.StatusInternalServerError)
 		return
 	}
