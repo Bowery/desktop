@@ -75,4 +75,14 @@ $(document).ready(function () {
     if (data.status == 'upload-finish')
       $syncStatusEl.text('Up to date.')
   }
+
+  $('.toggle').click(function (e) {
+    e.preventDefault()
+    if ($(e.target).hasClass("toggle")) {
+      $(e.target).toggleClass("active")
+    } else {
+      $(e.target).parent().toggleClass("active")
+    }
+
+  })
 })
