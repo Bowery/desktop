@@ -2,6 +2,8 @@
 bowery/client/client
 bowery/client/gin-bin
 bowery/agent/agent
+bowery/agent/test/plugins
+bowery/agent/test/*.tar.gz
 UserInterfaceState.xcuserstate
 BoweryMenubarApp/Bowery/Bowery/*
 bin/

@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
-	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 )
 
@@ -22,7 +21,6 @@ const httpMaxMem = 32 << 10
 var (
 	HomeDir    = "/root/"       // Default for ubuntu docker container
 	ServiceDir = "/application" // Directory the service lives in.
-	PluginDir  = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
 )
 
 // List of named routes.
@@ -31,7 +29,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
-	&Route{"/plugins", []string{"POST", UploadPluginHandler}},
+	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
 
@@ -296,14 +294,22 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var pluginPath string
 	if attach != nil {
 		defer attach.Close()
-
-		if err = tar.Untar(attach, filepath.Join(PluginDir, name)); err != nil {
+		pluginPath = filepath.Join(plugin.PluginDir, name)
+		if err = tar.Untar(attach, pluginPath); err != nil {
 			res.Body["error"] = err.Error()
 			res.Send(http.StatusInternalServerError)
 			return
 		}
+	}
+
+	_, err = plugin.NewPlugin(pluginPath)
+	if err != nil {
+		res.Body["error"] = "unable to add plugin"
+		res.Send(http.StatusInternalServerError)
+		return
 	}
 
 	res.Body["status"] = "success"

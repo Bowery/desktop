@@ -16,12 +16,15 @@ import (
 
 var (
 	pluginManager *PluginManager
-	pluginDir     = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+	PluginDir     = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
 )
 
 // Create plugin dir.
 func init() {
-	if err := os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir); err != nil {
+	if PluginDir == "" {
+		filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+	}
+	if err := os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir); err != nil {
 		panic(err)
 	}
 }
@@ -55,10 +58,10 @@ func NewPluginManager() *PluginManager {
 	}
 }
 
-// LoadPlugin looks through the pluginDir and loads the plugins.
+// LoadPlugin looks through the PluginDir and loads the plugins.
 func (pm *PluginManager) LoadPlugins() error {
-	// Get contents of plugindir.
-	files, err := ioutil.ReadDir(pluginDir)
+	// Get contents of PluginDir.
+	files, err := ioutil.ReadDir(PluginDir)
 	if err != nil {
 		return err
 	}
@@ -68,7 +71,7 @@ func (pm *PluginManager) LoadPlugins() error {
 			continue
 		}
 
-		plugin, err := NewPlugin(filepath.Join(pluginDir, file.Name()))
+		plugin, err := NewPlugin(filepath.Join(PluginDir, file.Name()))
 		if err != nil {
 			continue
 		}
@@ -178,7 +181,7 @@ func executeHook(name, path, dir, command string) {
 	env = append(env, fmt.Sprintf("APP_DIR=%s", dir))
 	env = append(env, fmt.Sprintf("FILE_AFFECTED=%s", path))
 	cmd.Env = env
-	cmd.Dir = filepath.Join(pluginDir, name)
+	cmd.Dir = filepath.Join(PluginDir, name)
 	data, err := cmd.CombinedOutput()
 	if err != nil {
 		handlePluginError(name, err)
