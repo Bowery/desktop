@@ -1,5 +1,4 @@
 // Copyright 2013-2014 Bowery, Inc.
-// Contains the routes for satellite.
 package main
 
 import (
@@ -13,15 +12,18 @@ import (
 	"strings"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 )
 
 // 32 MB, same as http.
 const httpMaxMem = 32 << 10
 
-// Directory the service lives in.
-var HomeDir = "/root/" // default for ubuntu docker container
-var ServiceDir = "/application"
+var (
+	HomeDir    = "/root/"       // Default for ubuntu docker container
+	ServiceDir = "/application" // Directory the service lives in.
+	PluginDir  = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+)
 
 // List of named routes.
 var Routes = []*Route{
@@ -29,6 +31,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
+	&Route{"/plugins", []string{"POST", UploadPluginHandler}},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
 
@@ -266,6 +269,37 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	for _, path := range contents {
 		err = os.RemoveAll(filepath.Join(ServiceDir, path.Name()))
 		if err != nil {
+			res.Body["error"] = err.Error()
+			res.Send(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// POST /plugins, Upload a plugin
+func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	attach, _, err := req.FormFile("file")
+	if err != nil && err != http.ErrMissingFile {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	name := req.FormValue("name")
+	if name == "" {
+		res.Body["error"] = "plugin name required"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	if attach != nil {
+		defer attach.Close()
+
+		if err = tar.Untar(attach, filepath.Join(PluginDir, name)); err != nil {
 			res.Body["error"] = err.Error()
 			res.Send(http.StatusInternalServerError)
 			return
