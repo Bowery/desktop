@@ -16,7 +16,7 @@
           <p class="subtitle">{{.RemoteAddr}}</p>
         </a>
       </div>
-      <div class="toggle {{if $activeMap[.ID]]}}active{{end}}" data-app="{{.ID}}" data-plugin="{{$version}}">
+      <div class="toggle {{if $activeMap.ID}}active{{end}}" data-app="{{.ID}}" data-plugin="{{$version}}">
         <div class="toggle-handle"></div>
       </div>
     </li>
