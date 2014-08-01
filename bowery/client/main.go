@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -174,6 +175,7 @@ func main() {
 		&Route{"GET", "/applications/new", newAppHandler},
 		&Route{"POST", "/applications/verify", verifyAppHandler},
 		&Route{"POST", "/applications", createAppHandler},
+		&Route{"POST", "/applications/{id}/plugins/{version}", addPluginHandler},
 		&Route{"PUT", "/applications/{id}", updateAppHandler},
 		&Route{"DELETE", "/applications/{id}", removeAppHandler},
 		&Route{"GET", "/applications/{id}", appHandler},
@@ -708,6 +710,34 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
+}
+
+func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	version := vars["version"]
+	appId := vars["app"]
+
+	fmt.Println(version, appId)
+
+	var plugin string
+	// Install Plugin
+	for _, formula := range bpm.GetFormulae() {
+		if formula.Version == version {
+			plugin = formula.Name
+			if err := bpm.InstallPlugin(formula.Name); err != nil {
+				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
+					"Error": err.Error(),
+				})
+				return
+			}
+			break
+		}
+	}
+	fmt.Println(plugin)
+
+	//TODO (thebyrd) Upload to Agent
+
+	r.JSON(rw, http.StatusOK, map[string]bool{"success": true})
 }
 
 func updateAppHandler(rw http.ResponseWriter, req *http.Request) {

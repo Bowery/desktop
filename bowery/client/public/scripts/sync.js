@@ -78,11 +78,25 @@ $(document).ready(function () {
 
   $('.toggle').click(function (e) {
     e.preventDefault()
+    var target
     if ($(e.target).hasClass("toggle")) {
-      $(e.target).toggleClass("active")
+      target =  $(e.target)
     } else {
-      $(e.target).parent().toggleClass("active")
+      target = $(e.target).parent()
     }
 
+    target.toggleClass("active")
+
+    $.ajax({
+      method: "POST",
+      url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin"),
+      data: {
+        plugin: target.data("version"),
+        app: target.data("app")
+      }
+    })
+    .done(function () {
+      console.log(arguments)
+    })
   })
 })
