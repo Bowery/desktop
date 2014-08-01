@@ -53,7 +53,7 @@ for PLATFORM in $(find "./pkg/${VERSIONDIR}" -mindepth 1 -maxdepth 1 -type d); d
     fi
 
     pushd ${PLATFORM}
-    tar -cvzf "${DIR}/pkg/${VERSIONDIR}/dist/${ARCHIVE_NAME}.tar.gz" ./*
+    tar -czf "${DIR}/pkg/${VERSIONDIR}/dist/${ARCHIVE_NAME}.tar.gz" ./*
     popd
 done
 

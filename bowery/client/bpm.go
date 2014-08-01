@@ -26,8 +26,8 @@ var (
 )
 
 type Author struct {
-	GitHub  string `json:"github"`
-	Name    string `json:"name,omitempty"`
+	Name    string `json:"name"`
+	GitHub  string `json:"github,omitempty"`
 	Email   string `json:"email,omitempty"`
 	Twitter string `json:"twitter,omitempty"`
 }
