@@ -1,5 +1,5 @@
 // Copyright 2013-2014 Bowery, Inc.
-package bpm
+package main
 
 import (
 	"bytes"
@@ -22,7 +22,6 @@ var (
 	pluginDir  = filepath.Join(boweryDir, "plugins")
 	repoName   = "plugins"
 	gitHub     = "https://github.com/"
-	wd         string
 	formulae   map[string]Formula // more efficient than iterating through a slice
 )
 
@@ -59,16 +58,6 @@ type Formula struct {
 	Hooks       `json:"hooks"`
 	Repository  string `json:"repository"`
 	Version     string `json:"version"`
-}
-
-func init() {
-	os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir)
-	wd, _ = os.Getwd() // for changing back into the directory where the code should execute
-
-	// TODO: show the user that there was an error
-	if err := UpdateFormulae(); err != nil {
-		log.Println(err)
-	}
 }
 
 // git, glorified exec. The error returned is Stderr
@@ -116,7 +105,7 @@ func processFormulae() error {
 // If there is, it `git pull`s it. Otherwise, it `git clone`s the repo.
 func UpdateFormulae() error {
 	os.Chdir(boweryDir)
-	defer os.Chdir(wd)
+	defer os.Chdir(TemplateDir)
 
 	if _, err := os.Stat(formulaDir); err == nil {
 		os.Chdir(formulaDir)
@@ -181,7 +170,7 @@ func InstallPlugin(name string) error {
 	}
 
 	os.Chdir(pluginDir)
-	defer os.Chdir(wd)
+	defer os.Chdir(TemplateDir)
 
 	ver := strings.Split(formula.Version, "@")
 	version := ver[0]
