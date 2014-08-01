@@ -125,9 +125,25 @@ func (pm *PluginManager) RemovePlugin(name string) error {
 	return nil
 }
 
+func UpdatePlugin(name string, isEnabled bool) error {
+	return pluginManager.UpdatePlugin(name, isEnabled)
+}
+
 // UpdatePlugin updates a Plugin.
-func (pm *PluginManager) UpdatePlugin(plugin *Plugin) error {
-	// todo(steve)
+func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
+	index := -1
+	for i, plugin := range pm.Plugins {
+		if plugin.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("invalid plugin name")
+	}
+
+	pm.Plugins[index].IsEnabled = isEnabled
 	return nil
 }
 
