@@ -30,6 +30,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
+	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
@@ -315,6 +316,13 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	plugin.AddPlugin(p)
 
 	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// PUT /plugins, Updates a plugin
+func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	res.Body["status"] = "todo"
 	res.Send(http.StatusOK)
 }
 

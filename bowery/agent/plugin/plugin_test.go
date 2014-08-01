@@ -88,7 +88,7 @@ func TestRemovePlugin(t *testing.T) {
 	}
 
 	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "another-plugin" {
+		if plugin.Name == "another-plugin" && plugin.IsEnabled == true {
 			t.Fatal("Failed to remove the plugin")
 		}
 	}

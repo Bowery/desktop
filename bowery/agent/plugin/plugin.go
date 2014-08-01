@@ -43,6 +43,7 @@ func NewPlugin(pathToPlugin string) (*Plugin, error) {
 	// Unmarshal plugin config.
 	plugin := &Plugin{}
 	json.Unmarshal(data, &plugin)
+	plugin.IsEnabled = true
 
 	return plugin, nil
 }
@@ -150,8 +151,10 @@ func StartPluginListener() {
 		case ev := <-pluginManager.Event:
 			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
-				if command := plugin.Hooks[ev.Type]; command != "" {
-					executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
+				if plugin.IsEnabled {
+					if command := plugin.Hooks[ev.Type]; command != "" {
+						executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
+					}
 				}
 			}
 		case err := <-pluginManager.Error:
