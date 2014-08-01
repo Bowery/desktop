@@ -74,6 +74,7 @@ $(document).ready(function () {
       $syncStatusEl.text('Uploading ' + data.application.name + ".")
     if (data.status == 'upload-finish')
       $syncStatusEl.text('Up to date.')
+
   }
 
   $('.toggle').click(function (e) {
