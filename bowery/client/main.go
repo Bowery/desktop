@@ -62,6 +62,7 @@ type Application struct {
 	LocalPath       string
 	LastUpdatedAt   time.Time
 	IsSyncAvailable bool
+	EnabledPlugins  []string // plugin.Name + "@" + plugin.Version
 }
 
 const (
@@ -727,11 +728,11 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	appId := vars["app"]
 
-	var plugin string
+	var formulaName string
 	// Install Plugin
 	for _, formula := range GetFormulae() {
 		if formula.Version == version {
-			plugin = formula.Name
+			formulaName = formula.Name
 			if err := InstallPlugin(formula.Name); err != nil {
 				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
 					"Error": err.Error(),
@@ -742,8 +743,35 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	fmt.Println(plugin, appId)
+	fmt.Println(formulaName, appId)
+	
+
+
 	//TODO (thebyrd) Upload to Agent
+
+	app := getAppById(appId)
+	pluginStr := plugin.Version
+	didRemovePlugin := false
+
+	for i, p := range app.EnabledPlugins {
+		if p == pluginStr { // remove & respond if it exists
+			j := i + 1
+			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
+			didRemovePlugin = true
+			return
+		}
+	}
+
+	if !didRemovePlugin {
+		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+	}
+
+	for i, a := range data.Applications {
+		if a.ID == app.ID {
+			data.Applications[i] = app
+		}
+	}
+	db.Save(data)
 
 	r.JSON(rw, http.StatusOK, map[string]bool{"success": true})
 }
@@ -861,10 +889,24 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	for _, plugin := range GetFormulae() {
 		if plugin.Version == version {
+
+			apps := getApps()
+			activePlugins := map[string]bool{}
+			for _, app := range apps {
+				for _, p := range apps.EnabledPlugins {
+					if plugin.Version == p.Version {
+						activePlugins[app.ID] = true
+					} else {
+						activePlugins[app.ID] = false
+					}
+				}
+			}
+
 			r.HTML(rw, http.StatusOK, "plugin", map[string]interface{}{
-				"Title":  plugin.Name,
-				"Plugin": plugin,
-				"Apps":   getApps(),
+				"Title":            plugin.Name,
+				"Plugin":           plugin,
+				"Apps":             apps,
+				"ActivePluginsMap": activePlugins,
 			})
 			return
 		}
