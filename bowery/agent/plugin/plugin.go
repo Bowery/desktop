@@ -43,6 +43,7 @@ func NewPlugin(pathToPlugin string) (*Plugin, error) {
 	// Unmarshal plugin config.
 	plugin := &Plugin{}
 	json.Unmarshal(data, &plugin)
+	plugin.IsEnabled = true
 
 	return plugin, nil
 }
@@ -124,9 +125,25 @@ func (pm *PluginManager) RemovePlugin(name string) error {
 	return nil
 }
 
+func UpdatePlugin(name string, isEnabled bool) error {
+	return pluginManager.UpdatePlugin(name, isEnabled)
+}
+
 // UpdatePlugin updates a Plugin.
-func (pm *PluginManager) UpdatePlugin(plugin *Plugin) error {
-	// todo(steve)
+func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
+	index := -1
+	for i, plugin := range pm.Plugins {
+		if plugin.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("invalid plugin name")
+	}
+
+	pm.Plugins[index].IsEnabled = isEnabled
 	return nil
 }
 
@@ -150,8 +167,10 @@ func StartPluginListener() {
 		case ev := <-pluginManager.Event:
 			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
-				if command := plugin.Hooks[ev.Type]; command != "" {
-					executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
+				if plugin.IsEnabled {
+					if command := plugin.Hooks[ev.Type]; command != "" {
+						executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
+					}
 				}
 			}
 		case err := <-pluginManager.Error:

@@ -30,6 +30,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"GET"}, GetServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
+	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 }
@@ -313,6 +314,35 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	plugin.AddPlugin(p)
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// PUT /plugins, Updates a plugin
+func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+
+	name := req.FormValue("name")
+	isEnabledStr := req.FormValue("isEnabled")
+	if name == "" || isEnabledStr == "" {
+		res.Body["error"] = "plugin name not provided"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	isEnabled, err := strconv.ParseBool(isEnabledStr)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	if err := plugin.UpdatePlugin(name, isEnabled); err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
 
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
