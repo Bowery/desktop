@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
-	"github.com/Bowery/desktop/bowery/client/bpm"
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/localdb"
@@ -38,6 +37,7 @@ var (
 	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 	keenC        *keen.Client
+	TemplateDir  string
 )
 
 var r = render.New(render.Options{
@@ -129,10 +129,20 @@ func init() {
 		db.Save(data)
 	}
 
-	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err := os.Chdir(cwd); err != nil {
-		panic("Wrong Directory!")
+	TemplateDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+	if err := os.Chdir(TemplateDir); err != nil {
+		panic("Wrong Directory")
 	}
+
+	os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir)
+
+	// TODO (rm) show the user that there was an error
+	if err := UpdateFormulae(); err != nil {
+		log.Println(err)
+	}
+
+	cwd, err := os.Getwd()
+	log.Println(cwd, err)
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
@@ -717,14 +727,12 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	appId := vars["app"]
 
-	fmt.Println(version, appId)
-
 	var plugin string
 	// Install Plugin
-	for _, formula := range bpm.GetFormulae() {
+	for _, formula := range GetFormulae() {
 		if formula.Version == version {
 			plugin = formula.Name
-			if err := bpm.InstallPlugin(formula.Name); err != nil {
+			if err := InstallPlugin(formula.Name); err != nil {
 				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
 					"Error": err.Error(),
 				})
@@ -733,8 +741,8 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-	fmt.Println(plugin)
 
+	fmt.Println(plugin, appId)
 	//TODO (thebyrd) Upload to Agent
 
 	r.JSON(rw, http.StatusOK, map[string]bool{"success": true})
@@ -831,7 +839,7 @@ func listPluginsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	plugins := bpm.GetFormulae()
+	plugins := GetFormulae()
 
 	// TODO (thebyrd) get all plugins
 	r.HTML(rw, http.StatusOK, "plugins", map[string]interface{}{
@@ -851,7 +859,7 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	version := mux.Vars(req)["version"]
 
-	for _, plugin := range bpm.GetFormulae() {
+	for _, plugin := range GetFormulae() {
 		if plugin.Version == version {
 			r.HTML(rw, http.StatusOK, "plugin", map[string]interface{}{
 				"Title":  plugin.Name,
