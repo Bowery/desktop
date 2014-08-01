@@ -728,11 +728,11 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	appId := vars["app"]
 
-	var formulaName string
+	var pluginStr string
 	// Install Plugin
 	for _, formula := range GetFormulae() {
 		if formula.Version == version {
-			formulaName = formula.Name
+			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
 			if err := InstallPlugin(formula.Name); err != nil {
 				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
 					"Error": err.Error(),
@@ -743,16 +743,13 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	fmt.Println(formulaName, appId)
-	
-
+	fmt.Println(pluginStr)
 
 	//TODO (thebyrd) Upload to Agent
 
 	app := getAppById(appId)
-	pluginStr := plugin.Version
-	didRemovePlugin := false
 
+	didRemovePlugin := false
 	for i, p := range app.EnabledPlugins {
 		if p == pluginStr { // remove & respond if it exists
 			j := i + 1
@@ -893,8 +890,8 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 			apps := getApps()
 			activePlugins := map[string]bool{}
 			for _, app := range apps {
-				for _, p := range apps.EnabledPlugins {
-					if plugin.Version == p.Version {
+				for _, p := range app.EnabledPlugins {
+					if plugin.Name+"@"+strings.Split(plugin.Version, "@")[0] == p {
 						activePlugins[app.ID] = true
 					} else {
 						activePlugins[app.ID] = false
