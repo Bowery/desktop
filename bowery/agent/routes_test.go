@@ -114,6 +114,55 @@ func TestUploadPluginHandlerWithValidRequest(t *testing.T) {
 	}
 }
 
+func TestUpdatePluginHandlerWithNoName(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(UpdatePluginHandler))
+	defer server.Close()
+
+	req, err := http.NewRequest("PUT", server.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Error("Accepted a plugin with no name provided.")
+	}
+}
+
+func TestUpdatePluginHandlerWithValidRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(UpdatePluginHandler))
+	defer server.Close()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	writer.WriteField("name", "test-plugin")
+	writer.WriteField("isEnabled", "true")
+	writer.Close()
+
+	req, err := http.NewRequest("PUT", server.URL, &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if req != nil {
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Error("Failed to update plugin.")
+	}
+}
+
 func TestRemovePluginHandlerWithInvalidQuery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(RemovePluginHandler))
 	defer server.Close()
