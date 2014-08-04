@@ -7,16 +7,15 @@
   <ul class="list">
 
   {{$version := .Plugin.Version}}
-  {{$activeMap := .ActivePluginsMap}}
   {{range .Apps}}
     <li class="item borderless">
       <div class="item-title">
-        <a href="/applications/{{.ID}}">
-          <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
-          <p class="subtitle">{{.RemoteAddr}}</p>
+        <a href="/applications/{{.App.ID}}">
+          <h3>{{if .App.Name}}{{.App.Name}}{{else}}{{.App.LocalPath}}{{end}}</h3>
+          <p class="subtitle">{{.App.RemoteAddr}}</p>
         </a>
       </div>
-      <div class="toggle {{if $activeMap.ID}}active{{end}}" data-app="{{.ID}}" data-plugin="{{$version}}">
+      <div class="toggle {{if .IsActive}}active{{end}}" data-app="{{.App.ID}}" data-plugin="{{$version}}">
         <div class="toggle-handle"></div>
       </div>
     </li>

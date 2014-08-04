@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"github.com/Bowery/gopackages/localdb"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
+	"github.com/Bowery/gopackages/tar"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -63,6 +65,11 @@ type Application struct {
 	LastUpdatedAt   time.Time
 	IsSyncAvailable bool
 	EnabledPlugins  []string // plugin.Name + "@" + plugin.Version
+}
+
+type AppPluginWrapper struct {
+	App      *Application
+	IsActive bool
 }
 
 const (
@@ -135,7 +142,7 @@ func init() {
 		panic("Wrong Directory")
 	}
 
-	os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir)
+	os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir)
 
 	// TODO (rm) show the user that there was an error
 	if err := UpdateFormulae(); err != nil {
@@ -723,10 +730,55 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
+// newUploadRequest creates a new request with file uploads.
+func newUploadRequest(url string, uploads map[string]string, params map[string]string) (*http.Request, error) {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	// Write all given uploads.
+	if uploads != nil {
+		for k, p := range uploads {
+			file, err := os.Open(p)
+			if err != nil {
+				return nil, err
+			}
+			defer file.Close()
+
+			// Create a part for the form and copy contents.
+			part, err := writer.CreateFormFile(k, filepath.Base(p))
+			if err == nil {
+				_, err = io.Copy(part, file)
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Write all the given params.
+	if params != nil {
+		for k, v := range params {
+			err := writer.WriteField(k, v)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	writer.Close()
+
+	// Just send POST, it doesn't matter since we're calling handers directly.
+	req, err := http.NewRequest("POST", url, &body)
+	if req != nil {
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
+
+	return req, err
+}
+
 func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	version := vars["version"]
-	appId := vars["app"]
+	appId := vars["id"]
 
 	var pluginStr string
 	// Install Plugin
@@ -734,20 +786,47 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		if formula.Version == version {
 			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
 			if err := InstallPlugin(formula.Name); err != nil {
-				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
-					"Error": err.Error(),
-				})
+				r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 				return
 			}
 			break
 		}
 	}
 
-	fmt.Println(pluginStr)
-
-	//TODO (thebyrd) Upload to Agent
-
 	app := getAppById(appId)
+
+	// Create Tarball
+	upload, err := tar.Tar(filepath.Join(PluginDir, pluginStr), []string{})
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+
+	uploadFilePath := filepath.Join("/tmp", pluginStr)
+	file, err := os.Create(uploadFilePath)
+	if _, err := io.Copy(file, upload); err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+
+	host := "http://" + app.RemoteAddr + ":" + app.SyncPort
+	// Send Tarball to Agent
+	req, err = newUploadRequest(host+"/plugins", map[string]string{
+		"file": uploadFilePath,
+	}, map[string]string{
+		"name": pluginStr,
+	})
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+	defer res.Body.Close()
 
 	didRemovePlugin := false
 	for i, p := range app.EnabledPlugins {
@@ -755,12 +834,38 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 			j := i + 1
 			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
 			didRemovePlugin = true
-			return
+			break
 		}
 	}
-
 	if !didRemovePlugin {
 		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+	}
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	writer.WriteField("name", pluginStr)
+	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
+	writer.Close()
+
+	req, err = http.NewRequest("PUT", host+"/plugins", &body)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+	if req != nil {
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
+	res, err = http.DefaultClient.Do(req)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		body, err := ioutil.ReadAll(res.Body)
+		fmt.Println("Agent Says: ", string(body), err)
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": "Agent Gave 500"})
+		return
 	}
 
 	for i, a := range data.Applications {
@@ -770,7 +875,7 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	db.Save(data)
 
-	r.JSON(rw, http.StatusOK, map[string]bool{"success": true})
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
 func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
@@ -888,22 +993,21 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		if plugin.Version == version {
 
 			apps := getApps()
-			activePlugins := map[string]bool{}
+			wrappers := []AppPluginWrapper{}
 			for _, app := range apps {
+				wrapper := AppPluginWrapper{app, false}
 				for _, p := range app.EnabledPlugins {
 					if plugin.Name+"@"+strings.Split(plugin.Version, "@")[0] == p {
-						activePlugins[app.ID] = true
-					} else {
-						activePlugins[app.ID] = false
+						wrapper.IsActive = true
 					}
 				}
+				wrappers = append(wrappers, wrapper)
 			}
 
 			r.HTML(rw, http.StatusOK, "plugin", map[string]interface{}{
-				"Title":            plugin.Name,
-				"Plugin":           plugin,
-				"Apps":             apps,
-				"ActivePluginsMap": activePlugins,
+				"Title":  plugin.Name,
+				"Plugin": plugin,
+				"Apps":   wrappers,
 			})
 			return
 		}
