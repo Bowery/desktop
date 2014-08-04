@@ -5,13 +5,7 @@
 // Note(steve): Not completed yet.
 package plugin
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
-)
+import "testing"
 
 var (
 	testPlugin = &Plugin{
@@ -31,19 +25,6 @@ var (
 
 func init() {
 	PluginDir = "plugins"
-
-	data, err := json.Marshal(testPlugin)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := os.MkdirAll(filepath.Join(PluginDir, "test-plugin"), os.ModePerm|os.ModeDir); err != nil {
-		panic(err)
-	}
-
-	if err = ioutil.WriteFile(filepath.Join(PluginDir, "test-plugin", "plugin.json"), data, 0644); err != nil {
-		panic(err)
-	}
 }
 
 func TestNewPluginManager(t *testing.T) {
@@ -54,26 +35,11 @@ func TestNewPluginManager(t *testing.T) {
 	}
 }
 
-func TestLoadPlugins(t *testing.T) {
-	if err := testPluginManager.LoadPlugins(); err != nil {
-		t.Error(err)
-	}
-
-	if len(testPluginManager.Plugins) != 1 {
-		t.Fatal("Failed to load plugins.")
-	}
-}
-
 func TestAddPlugin(t *testing.T) {
-	testPluginManager.AddPlugin(&Plugin{
-		Name: "another-plugin",
-		Author: PluginAuthor{
-			Name: "j-money",
-		},
-	})
+	testPluginManager.AddPlugin(testPlugin)
 
 	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "another-plugin" {
+		if plugin.Name == "test-plugin" {
 			return
 		}
 	}
@@ -82,53 +48,27 @@ func TestAddPlugin(t *testing.T) {
 }
 
 func TestUpdatePlugin(t *testing.T) {
-	err := testPluginManager.UpdatePlugin("another-plugin", true)
+	err := testPluginManager.UpdatePlugin("test-plugin", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "another-plugin" && !plugin.IsEnabled {
+		if plugin.Name == "test-plugin" && !plugin.IsEnabled {
 			t.Error("Failed to update plugin.")
 		}
 	}
 }
 
 func TestRemovePlugin(t *testing.T) {
-	err := testPluginManager.RemovePlugin("another-plugin")
+	err := testPluginManager.RemovePlugin("test-plugin")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "another-plugin" && plugin.IsEnabled == true {
+		if plugin.Name == "test-plugin" && plugin.IsEnabled == true {
 			t.Fatal("Failed to remove the plugin")
 		}
 	}
-}
-
-func TestNewPluginWithNoDirectory(t *testing.T) {
-	_, err := NewPlugin(filepath.Join(PluginDir, "invalid-plugin"))
-	if err == nil {
-		t.Fatal("A new plugin was created without valid plugin.json file.", err)
-	}
-}
-
-func TestNewPluginWithValidDirectory(t *testing.T) {
-	plugin, err := NewPlugin(filepath.Join(PluginDir, "test-plugin"))
-	if err != nil {
-		t.Error(err)
-	}
-
-	if plugin.Name != "test-plugin" ||
-		plugin.Hooks[AFTER_APP_RESTART] != "echo Restart" ||
-		plugin.Author.Name != "Steve Kaliski" ||
-		plugin.Author.Email != "steve@bowery.io" ||
-		plugin.Author.Twitter != "@stevekaliski" ||
-		plugin.Author.Github != "github.com/sjkaliski" {
-		t.Error("Plugin properties not properly set.")
-	}
-
-	// cleanup
-	os.RemoveAll("plugins")
 }

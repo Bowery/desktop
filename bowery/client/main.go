@@ -800,8 +800,6 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	log.Println(pluginHooks)
-
 	app := getAppById(appId)
 
 	// Send a PUT /plugins request to the agent. If it is successful, that means
