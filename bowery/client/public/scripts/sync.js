@@ -74,5 +74,30 @@ $(document).ready(function () {
       $syncStatusEl.text('Uploading ' + data.application.name + ".")
     if (data.status == 'upload-finish')
       $syncStatusEl.text('Up to date.')
+
   }
+
+  $('.toggle').click(function (e) {
+    e.preventDefault()
+    var target
+    if ($(e.target).hasClass("toggle")) {
+      target =  $(e.target)
+    } else {
+      target = $(e.target).parent()
+    }
+
+    target.toggleClass("active")
+
+    $.ajax({
+      method: "POST",
+      url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin"),
+      data: {
+        plugin: target.data("version"),
+        app: target.data("app")
+      }
+    })
+    .done(function () {
+      console.log(arguments)
+    })
+  })
 })

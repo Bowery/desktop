@@ -37,6 +37,7 @@ var (
 	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 	keenC        *keen.Client
+	TemplateDir  string
 )
 
 var r = render.New(render.Options{
@@ -61,6 +62,7 @@ type Application struct {
 	LocalPath       string
 	LastUpdatedAt   time.Time
 	IsSyncAvailable bool
+	EnabledPlugins  []string // plugin.Name + "@" + plugin.Version
 }
 
 const (
@@ -128,10 +130,20 @@ func init() {
 		db.Save(data)
 	}
 
-	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err := os.Chdir(cwd); err != nil {
-		panic("Wrong Directory!")
+	TemplateDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+	if err := os.Chdir(TemplateDir); err != nil {
+		panic("Wrong Directory")
 	}
+
+	os.MkdirAll(pluginDir, os.ModePerm|os.ModeDir)
+
+	// TODO (rm) show the user that there was an error
+	if err := UpdateFormulae(); err != nil {
+		log.Println(err)
+	}
+
+	cwd, err := os.Getwd()
+	log.Println(cwd, err)
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
@@ -174,9 +186,12 @@ func main() {
 		&Route{"GET", "/applications/new", newAppHandler},
 		&Route{"POST", "/applications/verify", verifyAppHandler},
 		&Route{"POST", "/applications", createAppHandler},
+		&Route{"POST", "/applications/{id}/plugins/{version}", addPluginHandler},
 		&Route{"PUT", "/applications/{id}", updateAppHandler},
 		&Route{"DELETE", "/applications/{id}", removeAppHandler},
 		&Route{"GET", "/applications/{id}", appHandler},
+		&Route{"GET", "/plugins", listPluginsHandler},
+		&Route{"GET", "/plugins/{version}", showPluginHandler},
 		&Route{"GET", "/logs/{id}", logsHandler},
 		&Route{"GET", "/settings", getSettingsHandler},
 		&Route{"POST", "/settings", updateSettingsHandler},
@@ -372,7 +387,9 @@ func indexHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	r.HTML(rw, http.StatusOK, "home", map[string]string{
+		"Title": "Bowery",
+	})
 }
 
 func signupHandler(rw http.ResponseWriter, req *http.Request) {
@@ -706,6 +723,56 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
+func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	version := vars["version"]
+	appId := vars["app"]
+
+	var pluginStr string
+	// Install Plugin
+	for _, formula := range GetFormulae() {
+		if formula.Version == version {
+			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
+			if err := InstallPlugin(formula.Name); err != nil {
+				r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
+					"Error": err.Error(),
+				})
+				return
+			}
+			break
+		}
+	}
+
+	fmt.Println(pluginStr)
+
+	//TODO (thebyrd) Upload to Agent
+
+	app := getAppById(appId)
+
+	didRemovePlugin := false
+	for i, p := range app.EnabledPlugins {
+		if p == pluginStr { // remove & respond if it exists
+			j := i + 1
+			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
+			didRemovePlugin = true
+			return
+		}
+	}
+
+	if !didRemovePlugin {
+		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+	}
+
+	for i, a := range data.Applications {
+		if a.ID == app.ID {
+			data.Applications[i] = app
+		}
+	}
+	db.Save(data)
+
+	r.JSON(rw, http.StatusOK, map[string]bool{"success": true})
+}
+
 func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 	app := getAppById(req.FormValue("id"))
 	if app.ID == "" {
@@ -751,16 +818,13 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 	apps := getApps()
 	for i, app := range apps {
 		if app.ID == appId {
-			fmt.Println("found", appId)
 			syncer.Remove(app)
 			logManager.Remove(app)
-			fmt.Println("before", apps)
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 
 			break
 		}
 	}
-	fmt.Println("after", apps)
 	data.Applications = apps
 	db.Save(data)
 
@@ -789,6 +853,65 @@ func appHandler(rw http.ResponseWriter, req *http.Request) {
 		"Title":       application.Name,
 		"Application": application,
 		"Status":      "Syncing...",
+	})
+}
+
+func listPluginsHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := data.Developer
+	if dev == nil || dev.Token == "" {
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		return
+	}
+
+	plugins := GetFormulae()
+
+	// TODO (thebyrd) get all plugins
+	r.HTML(rw, http.StatusOK, "plugins", map[string]interface{}{
+		"Title":   "Plugins",
+		"Plugins": plugins,
+	})
+
+}
+
+func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	// If there is no logged in user, show login page.
+	dev := data.Developer
+	if dev == nil || dev.Token == "" {
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		return
+	}
+
+	version := mux.Vars(req)["version"]
+
+	for _, plugin := range GetFormulae() {
+		if plugin.Version == version {
+
+			apps := getApps()
+			activePlugins := map[string]bool{}
+			for _, app := range apps {
+				for _, p := range app.EnabledPlugins {
+					if plugin.Name+"@"+strings.Split(plugin.Version, "@")[0] == p {
+						activePlugins[app.ID] = true
+					} else {
+						activePlugins[app.ID] = false
+					}
+				}
+			}
+
+			r.HTML(rw, http.StatusOK, "plugin", map[string]interface{}{
+				"Title":            plugin.Name,
+				"Plugin":           plugin,
+				"Apps":             apps,
+				"ActivePluginsMap": activePlugins,
+			})
+			return
+		}
+	}
+	// TODO (thebyrd) get all plugins
+	r.HTML(rw, http.StatusOK, "error", map[string]interface{}{
+		"Title": "Error",
+		"Error": "Plugin not found. See http://github.com/bowery/plugins for a list of availble plugins.",
 	})
 }
 

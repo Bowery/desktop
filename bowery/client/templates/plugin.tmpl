@@ -1,0 +1,25 @@
+<div class="group plugin">
+  <h3>Description</h4>
+  <p class="subtitle">{{.Plugin.Description}}</p>
+</div>
+
+<div class="group plugin">
+  <ul class="list">
+
+  {{$version := .Plugin.Version}}
+  {{$activeMap := .ActivePluginsMap}}
+  {{range .Apps}}
+    <li class="item borderless">
+      <div class="item-title">
+        <a href="/applications/{{.ID}}">
+          <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
+          <p class="subtitle">{{.RemoteAddr}}</p>
+        </a>
+      </div>
+      <div class="toggle {{if $activeMap.ID}}active{{end}}" data-app="{{.ID}}" data-plugin="{{$version}}">
+        <div class="toggle-handle"></div>
+      </div>
+    </li>
+  {{end}}
+  </ul>
+</div>
