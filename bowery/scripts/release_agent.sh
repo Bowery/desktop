@@ -58,7 +58,7 @@ for PLATFORM in $(find "./pkg/${VERSIONDIR}" -mindepth 1 -maxdepth 1 -type d); d
 done
 
 echo $VERSION > "./pkg/${VERSIONDIR}/dist/VERSION"
-cp "${DIR}/agent.conf" "./pkg/${VERSIONDIR}/dist/"
+cp -r "${DIR}/init/" "./pkg/${VERSIONDIR}/dist/"
 cp "${DIR}/install_agent.sh" "./pkg/${VERSIONDIR}/dist/"
 
 # Make the checksums

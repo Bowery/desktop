@@ -81,18 +81,24 @@ function linux_install {
     esac
 
     case $NAME in
-        "Fedora")
-            # move the bash file in
-            # start the srvice
-            os_error ;;
-        "CentOS"|"RedHat")
-            os_error ;;
+        "Fedora"|"RedHat"|"CentOS") # logs `journalctl _SYSTEMD_UNIT=bowery-agent.service`
+            curl -so $dir/bowery-agent.service http://${bucket}.${s3url}/systemd.agent.service
+            sudo mv $dir/bowery-agent.service /etc/systemd/user/
+            sudo systemctl disable /etc/systemd/user/bowery-agent.service # just in case
+            sudo systemctl enable /etc/systemd/user/bowery-agent.service
+            sudo systemctl start bowery-agent.service > /dev/null ;;
+        "Ubuntu")
+            curl -so $dir/bowery-agent.conf http://${bucket}.${s3url}/upstart.agent.conf
+            sudo mv $dir/bowery-agent.conf /etc/init/
+            sudo service bowery-agent start > /dev/null ;;
+        "Debian") # logs /var/log/bowery-agent.log 
+            curl -so $dir/bowery-agent http://${bucket}.${s3url}/sysvinit.agent
+            sudo mv $dir/bowery-agent /etc/init.d/
+            sudo chmod 755 /etc/init.d/bowery-agent
+            sudo ln -sf /etc/init.d/bowery-agent /etc/rc3.d/S95bowery-agent
+            sudo /etc/init.d/bowery-agent start > /dev/null ;;
         "SUSE")
             os_error ;;
-        "Ubuntu"|"Debian")
-            curl -so $dir/bowery-agent.conf http://${bucket}.${s3url}/agent.conf
-            sudo mv $dir/bowery-agent.conf /etc/init/
-            sudo service bowery-agent start ;;
     esac
 }
 
