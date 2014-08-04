@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -31,18 +30,12 @@ func init() {
 }
 
 // NewPlugin creates a new plugin.
-func NewPlugin(pathToPlugin string) (*Plugin, error) {
-	// Read plugin config.
-	data, err := ioutil.ReadFile(filepath.Join(pathToPlugin, "plugin.json"))
-	if err != nil {
-		// todo(steve): handle case where plugin.json is an invalid file.
-		// and also add validation of the file.
-		return nil, err
-	}
-
+func NewPlugin(name, hooks string) (*Plugin, error) {
 	// Unmarshal plugin config.
+	data := []byte(hooks)
 	plugin := &Plugin{}
-	json.Unmarshal(data, &plugin)
+	plugin.Name = name
+	json.Unmarshal(data, &plugin.Hooks)
 	plugin.IsEnabled = true
 
 	return plugin, nil
@@ -64,31 +57,6 @@ func SetPluginManager() {
 	pluginManager = NewPluginManager()
 }
 
-// LoadPlugin looks through the PluginDir and loads the plugins.
-func (pm *PluginManager) LoadPlugins() error {
-	// Get contents of PluginDir.
-	files, err := ioutil.ReadDir(PluginDir)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		if !file.IsDir() {
-			continue
-		}
-
-		plugin, err := NewPlugin(filepath.Join(PluginDir, file.Name()))
-		if err != nil {
-			continue
-		}
-
-		pm.AddPlugin(plugin)
-		log.Println(fmt.Sprintf("Loaded plugin: `%s`", plugin.Name))
-	}
-
-	return nil
-}
-
 func AddPlugin(plugin *Plugin) {
 	pluginManager.AddPlugin(plugin)
 }
@@ -96,6 +64,7 @@ func AddPlugin(plugin *Plugin) {
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
 	pm.Plugins = append(pm.Plugins, plugin)
+	log.Println(pm.Plugins)
 }
 
 // RemovePlugin removes a Plugin.
@@ -115,10 +84,6 @@ func (pm *PluginManager) RemovePlugin(name string) error {
 
 	if index == -1 {
 		return errors.New("invalid plugin name")
-	}
-
-	if err := os.RemoveAll(filepath.Join(PluginDir, name)); err != nil {
-		return err
 	}
 
 	pm.Plugins = append(pm.Plugins[:index], pm.Plugins[index+1:]...)
@@ -144,6 +109,7 @@ func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
 	}
 
 	pm.Plugins[index].IsEnabled = isEnabled
+	log.Println(pm.Plugins)
 	return nil
 }
 
@@ -152,12 +118,6 @@ func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
 func StartPluginListener() {
 	if pluginManager == nil {
 		SetPluginManager()
-	}
-
-	// Load existing plugins.
-	if err := pluginManager.LoadPlugins(); err != nil {
-		// todo(steve): do something with error
-		log.Println(err)
 	}
 
 	// On Event and Error events, execute commands for
