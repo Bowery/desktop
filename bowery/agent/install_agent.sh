@@ -91,7 +91,7 @@ function linux_install {
             curl -so $dir/bowery-agent.conf http://${bucket}.${s3url}/upstart.agent.conf
             sudo mv $dir/bowery-agent.conf /etc/init/
             sudo service bowery-agent start > /dev/null ;;
-        "Debian") # logs /var/log/bowery-agent.log 
+        "Debian") # logs /var/log/bowery-agent.log
             curl -so $dir/bowery-agent http://${bucket}.${s3url}/sysvinit.agent
             sudo mv $dir/bowery-agent /etc/init.d/
             sudo chmod 755 /etc/init.d/bowery-agent
@@ -99,6 +99,7 @@ function linux_install {
             sudo /etc/init.d/bowery-agent start > /dev/null ;;
         "SUSE")
             os_error ;;
+
     esac
 }
 
@@ -109,7 +110,15 @@ function darwin_install {
 }
 
 function solaris_install {
-    :
+  # Commands: http://wiki.smartos.org/display/DOC/Basic+SMF+Commands
+  # File Format: http://wiki.smartos.org/display/DOC/Building+Manifests
+  # see logs at: /var/svc/log/bowery-bowery:default.log
+    curl -so $dir/bowery.xml http://${bucket}.${s3url}/bowery.xml
+    svccfg validate $dir/bowery.xml
+    svccfg import $dir/bowery.xml
+
+    svcadm enable /bowery/bowery
+
 }
 
 colecho -g "Thanks for using Bowery!"
@@ -125,8 +134,7 @@ case $OSTYPE in
         OS=darwin
         os_error ;;
     *solaris*)
-        OS=solaris
-        os_error ;;
+        OS=solaris ;;
     *)
         os_error ;;
 esac
@@ -140,6 +148,10 @@ case "$(uname -m)" in
     *)
         ARCH=386 ;;
 esac
+
+
+# Assume Solaris is amd64. uname -m wont work for SmartOS
+if [ $OS == 'solaris' ]; then ARCH=amd64; fi;
 
 bucket=bowery.sh
 s3url=s3.amazonaws.com
