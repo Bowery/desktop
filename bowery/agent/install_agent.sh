@@ -106,7 +106,8 @@ function linux_install {
 function darwin_install {
     # download plist file
     # move it where it needs to go
-    :
+    curl -so $dir/com.bowery.bowery.plist http://${bucket}.${s3url}/com.bowery.bowery.plist
+    sudo launchctl load -Fw $dir/com.bowery.bowery.plist
 }
 
 function solaris_install {
@@ -131,8 +132,7 @@ case $OSTYPE in
     *linux*)
         OS=linux ;;
     *darwin*)
-        OS=darwin
-        os_error ;;
+        OS=darwin ;;
     *solaris*)
         OS=solaris ;;
     *)
