@@ -19,7 +19,7 @@ import (
 var (
 	boweryDir  = filepath.Join(os.Getenv(sys.HomeVar), ".bowery")
 	formulaDir = filepath.Join(boweryDir, "formulae")
-	pluginDir  = filepath.Join(boweryDir, "plugins")
+	PluginDir  = filepath.Join(boweryDir, "plugins")
 	repoName   = "plugins"
 	gitHub     = "https://github.com/"
 	formulae   map[string]Formula // more efficient than iterating through a slice
@@ -169,7 +169,7 @@ func InstallPlugin(name string) error {
 		return errors.New(fmt.Sprintf("No formula by name `%s`.", name))
 	}
 
-	os.Chdir(pluginDir)
+	os.Chdir(PluginDir)
 	defer os.Chdir(TemplateDir)
 
 	ver := strings.Split(formula.Version, "@")
@@ -201,7 +201,7 @@ func InstallPlugin(name string) error {
 	}
 
 	// cd a level up
-	if err := os.Chdir(pluginDir); err != nil {
+	if err := os.Chdir(PluginDir); err != nil {
 		return err
 	}
 
