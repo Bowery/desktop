@@ -785,13 +785,16 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	appId := vars["id"]
 
+	var err error
+	var pluginPath string
 	var pluginStr string
 	var pluginHooks Hooks
 	// Install Plugin
 	for _, formula := range GetFormulae() {
 		if formula.Version == version {
 			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
-			if err := InstallPlugin(formula.Name); err != nil {
+			pluginPath, err = InstallPlugin(formula.Name)
+			if err != nil {
 				r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 				return
 			}
@@ -825,7 +828,7 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	writer.Close()
 
 	host := fmt.Sprintf("http://%s:%s", app.RemoteAddr, app.SyncPort)
-	req, err := http.NewRequest("PUT", host+"/plugins", &body)
+	req, err = http.NewRequest("PUT", host+"/plugins", &body)
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
@@ -888,7 +891,7 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Create Tarball
-	upload, err := tar.Tar(filepath.Join(PluginDir, pluginStr), []string{})
+	upload, err := tar.Tar(pluginPath, []string{})
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
