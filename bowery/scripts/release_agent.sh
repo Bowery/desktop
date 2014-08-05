@@ -18,13 +18,6 @@ VERSION=$(cat ../VERSION)
 VERSIONDIR="${VERSION}"
 echo "Version: ${VERSION}"
 
-# Determine the arch/os combos we're building for
-XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
-XC_OS=${XC_OS:-linux}
-
-echo "Arch: ${XC_ARCH}"
-echo "OS: ${XC_OS}"
-
 # Make sure that if we're killed, we kill all our subprocseses
 trap "kill 0" SIGINT SIGTERM EXIT
 
@@ -34,8 +27,6 @@ go get github.com/laher/goxc
 # This function builds whatever directory we're in...
 goxc \
     -tasks-="validate" \
-    -arch="$XC_ARCH" \
-    -os="$XC_OS" \
     -d="${DIR}/pkg" \
     -pv="${VERSION}" \
     $XC_OPTS \
