@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,7 +20,7 @@ import (
 var (
 	boweryDir  = filepath.Join(os.Getenv(sys.HomeVar), ".bowery")
 	formulaDir = filepath.Join(boweryDir, "formulae")
-	pluginDir  = filepath.Join(boweryDir, "plugins")
+	PluginDir  = filepath.Join(boweryDir, "plugins")
 	repoName   = "plugins"
 	gitHub     = "https://github.com/"
 	formulae   map[string]Formula // more efficient than iterating through a slice
@@ -163,13 +164,13 @@ func SearchFormulae(terms ...string) ([]Formula, error) {
 
 // InstallPlugin, given the name of a plugin, it installs the latest version. TODO:
 // allow for specific versions to be installable, also send to agent
-func InstallPlugin(name string) error {
+func InstallPlugin(name string) (string, error) {
 	formula, ok := GetFormulaByName(name)
 	if !ok {
-		return errors.New(fmt.Sprintf("No formula by name `%s`.", name))
+		return "", errors.New(fmt.Sprintf("No formula by name `%s`.", name))
 	}
 
-	os.Chdir(pluginDir)
+	os.Chdir(PluginDir)
 	defer os.Chdir(TemplateDir)
 
 	ver := strings.Split(formula.Version, "@")
@@ -178,32 +179,44 @@ func InstallPlugin(name string) error {
 	dirName := formula.Name + "@" + version
 
 	if _, err := os.Stat(formula.Name + "@" + version); err == nil {
-		return nil
+		return filepath.Join(PluginDir, dirName), nil
 	}
 
-	if err := git("clone", formula.Repository, dirName); err != nil {
-		return err
+	// Determine if the repository is hosted or on the local machine.
+	u, err := url.Parse(formula.Repository)
+	// Is git repo.
+	if err == nil && u.Host != "" {
+		if err := git("clone", formula.Repository, dirName); err != nil {
+			return "", err
+		}
+
+		// cd into repo
+		if err := os.Chdir(dirName); err != nil {
+			return "", err
+		}
+
+		// checkout the right version
+		if err := git("checkout", commit); err != nil {
+			return "", err
+		}
+
+		// remove the .git directory
+		if err := os.RemoveAll(".git"); err != nil {
+			return "", err
+		}
+
+		// cd a level up
+		if err := os.Chdir(PluginDir); err != nil {
+			return "", err
+		}
+
+		return filepath.Join(PluginDir, dirName), nil
+		// Is on local machine
+	} else if err == nil && u.Host == "" {
+		return formula.Repository, nil
+	} else if err != nil {
+		return "", err
 	}
 
-	// cd into repo
-	if err := os.Chdir(dirName); err != nil {
-		return err
-	}
-
-	// checkout the right version
-	if err := git("checkout", commit); err != nil {
-		return err
-	}
-
-	// remove the .git directory
-	if err := os.RemoveAll(".git"); err != nil {
-		return err
-	}
-
-	// cd a level up
-	if err := os.Chdir(pluginDir); err != nil {
-		return err
-	}
-
-	return nil
+	return "", err
 }
