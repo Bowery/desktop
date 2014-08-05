@@ -37,13 +37,21 @@ func NewPlugin(name, hooks string) (*Plugin, error) {
 	plugin.Name = name
 	json.Unmarshal(data, &plugin.Hooks)
 	plugin.IsEnabled = true
-
+	plugin.Init()
 	return plugin, nil
+}
+
+func (p *Plugin) Init() {
+	if command := p.Hooks[ON_PLUGIN_INIT]; command != "" {
+		executeHook(p, "", "", command, false)
+	}
+	if command := p.Hooks[BACKGROUND]; command != "" {
+		executeHook(p, "", "", command, true)
+	}
 }
 
 // NewPluginManager creates a PluginManager.
 func NewPluginManager() *PluginManager {
-	// todo(steve): read through plugin dir and AddPlugin's.
 	plugins := make([]*Plugin, 0)
 
 	return &PluginManager{
@@ -112,6 +120,11 @@ func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
 	return nil
 }
 
+// GetPlugins returns a slice of Plugins.
+func GetPlugins() []*Plugin {
+	return pluginManager.Plugins
+}
+
 // StartPluginListener creates a new plugin manager and
 // listens for events.
 func StartPluginListener() {
@@ -128,7 +141,11 @@ func StartPluginListener() {
 			for _, plugin := range pluginManager.Plugins {
 				if plugin.IsEnabled {
 					if command := plugin.Hooks[ev.Type]; command != "" {
-						executeHook(plugin.Name, ev.FilePath, ev.AppDir, command)
+						if ev.Type == BACKGROUND {
+							executeHook(plugin, ev.FilePath, ev.AppDir, command, true)
+						} else {
+							executeHook(plugin, ev.FilePath, ev.AppDir, command, false)
+						}
 					}
 				}
 			}
@@ -140,7 +157,8 @@ func StartPluginListener() {
 
 // executeHook runs the specified command and returns the
 // resulting output.
-func executeHook(name, path, dir, command string) {
+func executeHook(plugin *Plugin, path, dir, command string, background bool) {
+	name := plugin.Name
 	log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", name, command))
 
 	var (
@@ -188,16 +206,44 @@ func executeHook(name, path, dir, command string) {
 	cmd := exec.Command(cmds[0], cmds[1:]...)
 	env = append(env, fmt.Sprintf("APP_DIR=%s", dir))
 	env = append(env, fmt.Sprintf("FILE_AFFECTED=%s", path))
-	cmd.Env = env
 	cmd.Dir = filepath.Join(PluginDir, name)
-	data, err := cmd.CombinedOutput()
-	if err != nil {
-		handlePluginError(name, err)
-		return
-	}
 
-	// debugging
-	log.Println(string(data))
+	// If it is not a background process, execute immediately
+	// and wait for it to complete. If it is a background process
+	// pipe the agent's Stdin into the command and run.
+
+	if !background {
+		cmd.Env = env
+		data, err := cmd.CombinedOutput()
+		if err != nil {
+			handlePluginError(name, err)
+			return
+		}
+
+		// debugging
+		log.Println(string(data))
+	} else {
+		// Start the process. If there is an issue starting, alert
+		// the client.
+		//
+		// Add the stdout/stderr files as ENV variables.
+		stdoutPath := filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log", "stdout.log")
+		stderrPath := filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log", "stderr.log")
+		env = append(env, fmt.Sprintf("STDOUT=%s", stdoutPath))
+		env = append(env, fmt.Sprintf("STDERR=%s", stderrPath))
+		cmd.Env = env
+
+		plugin.BackgroundCommand = cmd
+		go func() {
+			if err := cmd.Start(); err != nil {
+				handlePluginError(name, err)
+				return
+			}
+			if err := cmd.Wait(); err != nil {
+				handlePluginError(name, err)
+			}
+		}()
+	}
 }
 
 // handlePluginError handles plugin errors that may occur when loading
