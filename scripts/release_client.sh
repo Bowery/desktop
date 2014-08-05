@@ -6,35 +6,23 @@ trap "kill 0" SIGINT SIGTERM EXIT
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../"
 version="$(cat "${root}/bowery/VERSION")"
-mkdir -p "${root}/bowery/agent/pkg/${version}/dist"
-cd "${root}/bowery/agent"
+mkdir -p "${root}/BoweryMenubarApp/pkg/${version}/dist"
+cd "${root}"
 echo "Version: ${version}"
 
-# Setup goxc for compiling.
-go get github.com/laher/goxc
-XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
-XC_OS=${XC_OS:-linux}
-echo "Arch: ${XC_ARCH}"
-echo "OS: ${XC_OS}"
+# Build the main app.
+./scripts/build_client.sh
+cd BoweryMenubarApp
+xcodebuild -target Bowery
 
-goxc -arch="${XC_ARCH}" -os="${XC_OS}" -pv="${version}" -d=pkg xc
-
-# Compress the binaries.
-for platform in "pkg/${version}/"*; do
-  platform="$(basename "${platform}")"
-  if [[ "${platform}" == dist ]]; then
-    continue
-  fi
-  archive="${version}_${platform}.tar.gz"
-
-  cd "pkg/${version}/${platform}"
-  tar -czf "../dist/${archive}" *
-  cd -
-done
+# Compress the app.
+cd build/Release
+tar -czf "../../pkg/${version}/dist/${version}.tar.gz" Bowery.app
+cd -
+cp "pkg/${version}/dist/${version}.tar.gz" "pkg/${version}/dist/latest.tar.gz"
 
 # Write release support files.
 echo "${version}" > "pkg/${version}/dist/VERSION"
-cp -r install_agent.sh init "pkg/${version}/dist"
 cd "pkg/${version}/dist"
 shasum -a256 * > "${version}_SHA256SUMS"
 cd -
@@ -42,7 +30,7 @@ cd -
 for path in "pkg/${version}/dist/"*; do
   file="$(basename "${path}")"
   echo "Uploading: ${file} from ${path}"
-  bucket=bowery.sh
+  bucket=mac.bowery.io
   resource="/${bucket}/${file}"
   contentType="application/octet-stream"
   dateValue=`date -u +"%a, %d %h %Y %T +0000"`
