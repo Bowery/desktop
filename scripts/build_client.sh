@@ -9,7 +9,7 @@ SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do SOURCE="$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 CGO_ENABLED=0
-DIR=$DIR/client
+DIR=$DIR/bowery/client
 
 # Change into that directory
 cd "$DIR"
@@ -27,21 +27,16 @@ go get \
   ./...
 
 # Build Client!
-echo "--> Building Client..."
+echo "--> Building client..."
 cd "${DIR}"
+mkdir -p ../../bin
 
 go build \
     -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
-    -o bin/client
-cp bin/client ${GOPATHSINGLE}/bin
-DIR=$PWD
+    -o ../../bin/client
 
-# Move it to the XCode proj
-while [ ! -e BoweryMenubarApp ]; do cd ..; done
-XCODE_DIR=$PWD
 
-BOWERY_DIR=BoweryMenubarApp/Bowery/Bowery
-mkdir -p $BOWERY_DIR
-cp "$DIR/bin/client" $BOWERY_DIR/
-cp -r "$DIR/public" $BOWERY_DIR/
-cp -r "$DIR/templates" $BOWERY_DIR/
+
+echo "--> Moving assets and templates..."
+cp -r public ../../bin/
+cp -r templates ../../bin/

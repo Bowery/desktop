@@ -7,6 +7,10 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/*button {
+  -webkit-app-region: no-drag;
+}*/
+
 body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -97,6 +101,11 @@ ul.list .item .status.alert {
   float: left;
   line-height: 1;
   margin-top: 1px;
+
+  /*
+  https://github.com/atom/atom-shell/blob/master/docs/api/frameless-window.md
+  -webkit-user-select: none;
+  -webkit-app-region: drag;*/
 }
 
 .sub-heading {

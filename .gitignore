@@ -6,9 +6,8 @@ bowery/agent/test/plugins
 bowery/agent/test/*.tar.gz
 UserInterfaceState.xcuserstate
 BoweryMenubarApp/Bowery/Bowery/*
-bin/
 pkg/
-build/
+bin/
 debug.log
 build/atom-shell
 build/node_modules
