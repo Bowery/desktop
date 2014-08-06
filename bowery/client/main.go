@@ -34,7 +34,6 @@ import (
 var (
 	AuthEndpoint = "http://broome.io"
 	syncer       = NewSyncer()
-	logManager   = NewLogManager()
 	db           *localdb.DB
 	data         *localData
 	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
@@ -164,7 +163,6 @@ func init() {
 
 func main() {
 	defer syncer.Close()
-	defer logManager.Close()
 
 	var Routes = []*Route{
 		&Route{"GET", "/", indexHandler},
@@ -273,7 +271,6 @@ func main() {
 	if data.Applications != nil {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
-			logManager.Connect(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
 			uploadAppPlugins(app)
 		}
@@ -798,7 +795,6 @@ func pauseSyncHandler(rw http.ResponseWriter, req *http.Request) {
 
 	for _, app := range data.Applications {
 		syncer.Remove(app)
-		logManager.Remove(app)
 	}
 
 	keenC.AddEvent("bowery/desktop sync pause", map[string]*schemas.Developer{"user": data.Developer})
@@ -812,7 +808,6 @@ func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
 
 	for _, app := range data.Applications {
 		syncer.Watch(app)
-		logManager.Connect(app)
 		broadcastJSON(&Event{Application: app, Status: "upload-start"})
 	}
 
@@ -920,7 +915,6 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Watch(app)
-	logManager.Connect(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
@@ -1014,9 +1008,7 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Remove(app)
-	logManager.Remove(app)
 	syncer.Watch(app)
-	logManager.Connect(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
@@ -1031,7 +1023,6 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 	for i, app := range apps {
 		if app.ID == appId {
 			syncer.Remove(app)
-			logManager.Remove(app)
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 
 			break

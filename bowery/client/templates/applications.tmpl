@@ -5,7 +5,7 @@
       <a href="/applications/{{.ID}}">
         <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
         <span class="status"></span>
-        <p class="subtitle"><a href="/logs/{{.ID}}">logs</a> • {{.RemoteAddr}}</p>
+        <p class="subtitle">{{.RemoteAddr}}</p>
       </a>
     </li>
     {{end}}
