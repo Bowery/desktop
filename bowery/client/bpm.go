@@ -3,7 +3,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
+	"github.com/Bowery/gopackages/util"
 )
 
 var (
@@ -41,35 +41,39 @@ func git(args ...string) error {
 }
 
 // processFormulae, reads all the json files and makes the appropriate data structure
-func processFormulae() error {
+func processFormulae(isDev bool) error {
 	files, err := ioutil.ReadDir(formulaDir)
 	if err != nil {
 		return err
 	}
 
 	formulae = map[string]schemas.Formula{}
+	devFormulae := map[string]schemas.Formula{}
 	for _, fileInfo := range files {
 		if strings.Contains(fileInfo.Name(), ".json") {
+			var err error
 			file, err := ioutil.ReadFile(filepath.Join(formulaDir, fileInfo.Name()))
 			if err != nil {
 				log.Printf("%v cannot be opened", fileInfo.Name())
 				continue
 			}
 
-			var formula schemas.Formula
-			if err := json.Unmarshal(file, &formula); err != nil {
-				log.Printf("%v cannot be parsed", fileInfo.Name())
+			var formula *schemas.Formula
+			if formula, err = util.ValidateFormula(file); err != nil {
+				log.Printf("%v is not valid. Error: %s", fileInfo.Name(), err.Error())
 				continue
 			}
 
-			versionCommit := strings.Split(formula.Version, "@")
-			if len(versionCommit) > 1 {
-				formula.Version = versionCommit[0]
-				formula.Commit = versionCommit[1]
+			if isDev && strings.Contains(fileInfo.Name(), ".dev") {
+				devFormulae[formula.Name] = *formula
+			} else {
+				formulae[formula.Name] = *formula
 			}
-
-			formulae[formula.Name] = formula
 		}
+	}
+	// overwrite formula where dev formula exist
+	for name, formula := range devFormulae {
+		formulae[name] = formula
 	}
 
 	return nil
@@ -77,7 +81,7 @@ func processFormulae() error {
 
 // UpdateFormulae, checks to see if there's a directory for the formulae already.
 // If there is, it `git pull`s it. Otherwise, it `git clone`s the repo.
-func UpdateFormulae() error {
+func UpdateFormulae(isDev bool) error {
 	os.Chdir(boweryDir)
 	defer os.Chdir(TemplateDir)
 
@@ -88,14 +92,14 @@ func UpdateFormulae() error {
 			return err
 		}
 
-		return processFormulae()
+		return processFormulae(isDev)
 	}
 
 	if err := git("clone", gitHub+"Bowery/"+repoName+".git", "formulae"); err != nil {
 		return err
 	}
 
-	return processFormulae()
+	return processFormulae(isDev)
 }
 
 // GetFormulae, returns a slice of all the schemas.Formula. Even though, internally, formulae

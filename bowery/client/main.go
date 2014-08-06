@@ -82,6 +82,7 @@ const (
 type localData struct {
 	Developer    *schemas.Developer
 	Applications []*Application
+	DevMode      bool `json:"devMode"`
 }
 
 type wsError struct {
@@ -138,6 +139,12 @@ func init() {
 	if err = db.Load(data); err == io.EOF || os.IsNotExist(err) {
 		// Get developer.
 		data.Developer = &schemas.Developer{}
+
+		// If DevMode not true, set false.
+		if data.DevMode != true {
+			data.DevMode = false
+		}
+
 		db.Save(data)
 	}
 
@@ -148,8 +155,14 @@ func init() {
 
 	os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir)
 
+	go func() {
+		if err := UpdateFormulae(data.DevMode); err != nil {
+			log.Println(err)
+		}
+		<-time.After(30 * time.Minute)
+	}()
 	// TODO (rm) show the user that there was an error
-	if err := UpdateFormulae(); err != nil {
+	if err := UpdateFormulae(data.DevMode); err != nil {
 		log.Println(err)
 	}
 
@@ -183,9 +196,12 @@ func main() {
 		&Route{"DELETE", "/applications/{id}", removeAppHandler},
 		&Route{"GET", "/applications/{id}", appHandler},
 		&Route{"GET", "/plugins", listPluginsHandler},
+		&Route{"POST", "/plugins", createPluginHandler},
+		&Route{"GET", "/plugins/new", newPluginHandler},
 		&Route{"GET", "/plugins/{name}/{version}", showPluginHandler},
 		&Route{"GET", "/settings", getSettingsHandler},
 		&Route{"POST", "/settings", updateSettingsHandler},
+		&Route{"POST", "/settings/dev-mode", updateDevModeHandler},
 		&Route{"GET", "/_/ws", wsHandler},
 	}
 
@@ -849,7 +865,7 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	r.HTML(rw, http.StatusOK, "new", map[string]interface{}{
+	r.HTML(rw, http.StatusOK, "new-app", map[string]interface{}{
 		"Title": "New Application",
 	})
 }
@@ -1085,8 +1101,37 @@ func listPluginsHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "plugins", map[string]interface{}{
 		"Title":   "Plugins",
 		"Plugins": plugins,
+		"DevMode": data.DevMode,
 	})
+}
 
+func newPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	dev := data.Developer
+	if dev == nil || dev.Token == "" {
+		http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		return
+	}
+
+	r.HTML(rw, http.StatusOK, "new-plugin", map[string]interface{}{
+		"Title": "New Plugin",
+	})
+}
+
+func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
+	requestProblems := map[string]string{}
+	name := req.FormValue("name")
+
+	if name == "" {
+		requestProblems["name"] = "Valid name required."
+	}
+
+	if _, ok := GetFormulaByName(name); ok {
+		requestProblems["name"] = fmt.Sprintf("`%s` already taken.", name)
+	}
+
+	// todo(rm): create plugin, write file, etc.
+
+	r.JSON(rw, http.StatusOK, requestProblems)
 }
 
 func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
@@ -1141,6 +1186,7 @@ func getSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "settings", map[string]interface{}{
 		"Title":     "Settings",
 		"Developer": dev,
+		"DevMode":   data.DevMode,
 	})
 }
 
@@ -1167,6 +1213,17 @@ func updateSettingsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+}
+
+func updateDevModeHandler(rw http.ResponseWriter, req *http.Request) {
+	data.DevMode = !data.DevMode
+	db.Save(data)
+
+	if err := UpdateFormulae(data.DevMode); err != nil {
+		log.Println(err)
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}

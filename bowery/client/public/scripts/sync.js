@@ -82,23 +82,33 @@ $(document).ready(function () {
     e.preventDefault()
     var target
     if ($(e.target).hasClass("toggle")) {
-      target =  $(e.target)
+      target = $(e.target)
     } else {
       target = $(e.target).parent()
     }
 
     target.toggleClass("active")
 
-    $.ajax({
-      method: "POST",
-      url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin-name") + "/" + target.data("plugin-version"),
-      data: {
-        plugin: target.data("version"),
-        app: target.data("app")
-      }
-    })
-    .done(function () {
-      console.log(arguments)
-    })
+    if (target.closest('.group.plugin').length > 0) {
+      $.ajax({
+        method: "POST",
+        url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin-name") + "/" + target.data("plugin-version"),
+        data: {
+          plugin: target.data("version"),
+          app: target.data("app")
+        }
+      })
+      .done(function () {
+        console.log(arguments)
+      })
+    } else if (target.closest('.group.settings').length > 0) {
+      $.ajax({
+        method: 'POST',
+        url: '/settings/dev-mode'
+      })
+      .done(function() {
+        console.log(arguments)
+      })      
+    }
   })
 })
