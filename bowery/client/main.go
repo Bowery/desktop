@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -159,24 +160,6 @@ func init() {
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
-
-	go func() {
-		for {
-			<-time.After(5 * time.Second)
-			if data.Applications == nil {
-				continue
-			}
-
-			for _, app := range data.Applications {
-				status := "connect"
-				if err := DelanceyCheck(app.RemoteAddr + ":" + app.SyncPort); err != nil {
-					status = "disconnect"
-				}
-
-				broadcastJSON(&Event{Application: app, Status: status})
-			}
-		}
-	}()
 }
 
 func main() {
@@ -245,11 +228,54 @@ func main() {
 		}
 	}()
 
+	// Monitor connections to remote agents.
+	go func() {
+		// Check connections every 5 seconds.
+		for {
+			<-time.After(5 * time.Second)
+			// If there are no applications, skip.
+			if data.Applications == nil {
+				continue
+			}
+
+			// Iterate through all applications. Send a GET request to /healthz
+			// on the remote agent. If the request fails, flag as disconnected.
+			for _, app := range data.Applications {
+				connected := true
+				status := "connect"
+				addr := fmt.Sprintf("http://%s:%s/healthz", app.RemoteAddr, app.SyncPort)
+				res, err := http.Get(addr)
+
+				if err != nil || res.StatusCode != http.StatusOK {
+					connected = false
+					status = "disconnect"
+				}
+
+				// If we can connected, but the application was previously
+				// flagged as disconnected, re-upload all application code
+				// and all enabled plugins.
+				if connected && !app.IsSyncAvailable {
+					log.Println(fmt.Sprintf("reconnecting: %s", addr))
+					uploadAppPlugins(app)
+					uploadApp(app)
+				}
+
+				// Update app state and broadcast.
+				app.IsSyncAvailable = connected
+				broadcastJSON(&Event{Application: app, Status: status})
+			}
+
+			// Save state.
+			db.Save(data)
+		}
+	}()
+
 	if data.Applications != nil {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
 			logManager.Connect(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
+			uploadAppPlugins(app)
 		}
 	}
 
@@ -393,6 +419,168 @@ func updateDev(oldpass, newpass string) error {
 
 	keenC.AddEvent("bowery/desktop user update", map[string]*schemas.Developer{"user": data.Developer})
 	return db.Save(data)
+}
+
+func uploadApp(app *Application) error {
+	watcher, err := syncer.GetWatcher(app)
+	if err != nil {
+		return err
+	}
+
+	return watcher.Upload()
+}
+
+func uploadAppPlugins(app *Application) error {
+	var err error
+	for _, p := range app.EnabledPlugins {
+		if err = uploadPlugin(app, p); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uploadPlugin(app *Application, version string) error {
+	var err error
+	var pluginPath string
+	var pluginStr string
+	var pluginHooks Hooks
+
+	// Install Plugin
+	for _, formula := range GetFormulae() {
+		if formula.Version == version {
+			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
+			pluginPath, err = InstallPlugin(formula.Name)
+			if err != nil {
+				return err
+			}
+			pluginHooks = formula.Hooks
+			break
+		}
+	}
+
+	// Send a PUT /plugins request to the agent. If it is successful, that means
+	// the agent has the appropriate code and has successfully toggled the
+	// "isEnabled" state of the plugin. If it fails,
+	didRemovePlugin := false
+	for i, p := range app.EnabledPlugins {
+		if p == pluginStr { // remove & respond if it exists
+			j := i + 1
+			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
+			didRemovePlugin = true
+			break
+		}
+	}
+	if !didRemovePlugin {
+		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+	}
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	writer.WriteField("name", pluginStr)
+	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
+	writer.Close()
+
+	host := fmt.Sprintf("http://%s:%s", app.RemoteAddr, app.SyncPort)
+	req, err := http.NewRequest("PUT", host+"/plugins", &body)
+	if err != nil {
+		return err
+	}
+	if req != nil {
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// Parse response. If the error is "invalid plugin name" then
+	// upload the entire plugin.
+	updateRes := new(agentResponse)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(updateRes)
+	if err != nil {
+		return err
+	}
+
+	// If StatusOK, the plugin software is in place, and the plugin
+	// has been updated appropiately. Update the local db and
+	// send a successful a response.
+	if res.StatusCode == http.StatusOK {
+		for i, a := range data.Applications {
+			if a.ID == app.ID {
+				data.Applications[i] = app
+			}
+		}
+		db.Save(data)
+		return nil
+	}
+
+	// If there is an unexpected error, fail.
+	if updateRes.Error != "invalid plugin name" {
+		return errors.New(updateRes.Error)
+	}
+
+	// If the plugin has been toggled to off and the plugin data
+	// isn't on the, update the local db and respond successfully.
+	// Otherwise, upload the plugin.
+	if didRemovePlugin {
+		for i, a := range data.Applications {
+			if a.ID == app.ID {
+				data.Applications[i] = app
+			}
+		}
+		db.Save(data)
+		return nil
+	}
+
+	// Create Tarball
+	upload, err := tar.Tar(pluginPath, []string{})
+	if err != nil {
+		return err
+	}
+
+	uploadFilePath := filepath.Join("/tmp", pluginStr)
+	file, err := os.Create(uploadFilePath)
+	if _, err := io.Copy(file, upload); err != nil {
+		return err
+	}
+
+	// Convert hooks to string.
+	pluginHooksByte, err := json.Marshal(pluginHooks)
+	if err != nil {
+		return err
+	}
+	pluginHooksStr := string(pluginHooksByte)
+
+	// Send Tarball to Agent
+	req, err = newUploadRequest(host+"/plugins", map[string]string{
+		"file": uploadFilePath,
+	}, map[string]string{
+		"name":  pluginStr,
+		"hooks": pluginHooksStr,
+	})
+	if err != nil {
+		return err
+	}
+
+	res, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// Update local db and respond successfully.
+	for i, a := range data.Applications {
+		if a.ID == app.ID {
+			data.Applications[i] = app
+		}
+	}
+	db.Save(data)
+	return nil
 }
 
 func indexHandler(rw http.ResponseWriter, req *http.Request) {
@@ -788,161 +976,12 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	version := vars["version"]
 	appId := vars["id"]
-
-	var err error
-	var pluginPath string
-	var pluginStr string
-	var pluginHooks Hooks
-	// Install Plugin
-	for _, formula := range GetFormulae() {
-		if formula.Version == version {
-			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
-			pluginPath, err = InstallPlugin(formula.Name)
-			if err != nil {
-				r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-				return
-			}
-			pluginHooks = formula.Hooks
-			break
-		}
-	}
-
 	app := getAppById(appId)
 
-	// Send a PUT /plugins request to the agent. If it is successful, that means
-	// the agent has the appropriate code and has successfully toggled the
-	// "isEnabled" state of the plugin. If it fails,
-	didRemovePlugin := false
-	for i, p := range app.EnabledPlugins {
-		if p == pluginStr { // remove & respond if it exists
-			j := i + 1
-			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
-			didRemovePlugin = true
-			break
-		}
-	}
-	if !didRemovePlugin {
-		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
-	}
-
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	writer.WriteField("name", pluginStr)
-	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
-	writer.Close()
-
-	host := fmt.Sprintf("http://%s:%s", app.RemoteAddr, app.SyncPort)
-	req, err = http.NewRequest("PUT", host+"/plugins", &body)
-	if err != nil {
+	if err := uploadPlugin(app, version); err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
-	if req != nil {
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-	}
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-	defer res.Body.Close()
-
-	// Parse response. If the error is "invalid plugin name" then
-	// upload the entire plugin.
-	updateRes := new(agentResponse)
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(updateRes)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-
-	// If StatusOK, the plugin software is in place, and the plugin
-	// has been updated appropiately. Update the local db and
-	// send a successful a response.
-	if res.StatusCode == http.StatusOK {
-		for i, a := range data.Applications {
-			if a.ID == app.ID {
-				data.Applications[i] = app
-			}
-		}
-		db.Save(data)
-
-		r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
-		return
-	}
-
-	// If there is an unexpected error, fail.
-	if updateRes.Error != "invalid plugin name" {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": "Agent Gave 500"})
-		return
-	}
-
-	// If the plugin has been toggled to off and the plugin data
-	// isn't on the, update the local db and respond successfully.
-	// Otherwise, upload the plugin.
-	if didRemovePlugin {
-		for i, a := range data.Applications {
-			if a.ID == app.ID {
-				data.Applications[i] = app
-			}
-		}
-		db.Save(data)
-
-		r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
-		return
-	}
-
-	// Create Tarball
-	upload, err := tar.Tar(pluginPath, []string{})
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-
-	uploadFilePath := filepath.Join("/tmp", pluginStr)
-	file, err := os.Create(uploadFilePath)
-	if _, err := io.Copy(file, upload); err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-
-	// Convert hooks to string.
-	pluginHooksByte, err := json.Marshal(pluginHooks)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-	pluginHooksStr := string(pluginHooksByte)
-
-	// Send Tarball to Agent
-	req, err = newUploadRequest(host+"/plugins", map[string]string{
-		"file": uploadFilePath,
-	}, map[string]string{
-		"name":  pluginStr,
-		"hooks": pluginHooksStr,
-	})
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-
-	res, err = http.DefaultClient.Do(req)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
-		return
-	}
-	defer res.Body.Close()
-
-	// Update local db and respond successfully.
-	for i, a := range data.Applications {
-		if a.ID == app.ID {
-			data.Applications[i] = app
-		}
-	}
-	db.Save(data)
-
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
 }
 

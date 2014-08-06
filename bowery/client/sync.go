@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -292,6 +293,17 @@ func NewSyncer() *Syncer {
 		Error:    make(chan error),
 		Watchers: make([]*Watcher, 0),
 	}
+}
+
+// GetWatcher gets a watcher for a specific application.
+func (syncer *Syncer) GetWatcher(app *Application) (*Watcher, error) {
+	for _, watcher := range syncer.Watchers {
+		if watcher != nil && watcher.Application.ID == app.ID {
+			return watcher, nil
+		}
+	}
+
+	return nil, errors.New("invalid app")
 }
 
 // Watch starts watching the given application syncing changes.
