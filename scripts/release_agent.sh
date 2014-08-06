@@ -7,7 +7,7 @@ while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )/../" && pwd )"
 CGO_ENABLED=0
 
-DIR="$DIR/agent"
+DIR="$DIR/bowery/agent"
 
 # Change into that dir because we expect that
 cd "$DIR"

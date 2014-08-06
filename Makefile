@@ -20,7 +20,7 @@ test: deps
 	@go test ./...
 
 release:
-	@bash --norc -i ./bowery/scripts/release_agent.sh
+	@bash --norc -i ./scripts/release_agent.sh
 
 clean:
 	rm debug.log
