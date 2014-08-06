@@ -10,3 +10,5 @@ bin/
 pkg/
 build/
 debug.log
+build/atom-shell
+build/node_modules
