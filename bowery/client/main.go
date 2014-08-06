@@ -275,6 +275,7 @@ func main() {
 			syncer.Watch(app)
 			logManager.Connect(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
+			uploadAppPlugins(app)
 		}
 	}
 
