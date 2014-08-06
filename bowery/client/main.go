@@ -324,6 +324,10 @@ func getToken() error {
 }
 
 func getDev() *schemas.Developer {
+	if data == nil || data.Developer == nil {
+		return nil
+	}
+
 	res, err := http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", data.Developer.Token, -1))
 	if err != nil {
 		return data.Developer
