@@ -91,7 +91,7 @@ $(document).ready(function () {
 
     $.ajax({
       method: "POST",
-      url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin"),
+      url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin-name") + "/" + target.data("plugin-version"),
       data: {
         plugin: target.data("version"),
         app: target.data("app")
