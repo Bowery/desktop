@@ -99,27 +99,32 @@ function linux_install {
             sudo /etc/init.d/bowery-agent start > /dev/null ;;
         "SUSE")
             os_error ;;
-
     esac
 }
 
 function darwin_install {
-    # download plist file
-    # move it where it needs to go
-    curl -so $dir/com.bowery.bowery.plist http://${bucket}.${s3url}/com.bowery.bowery.plist
-    sudo launchctl load -Fw $dir/com.bowery.bowery.plist
+    # curl -so $dir/com.bowery.bowery.plist http://${bucket}.${s3url}/com.bowery.bowery.plist
+    # sudo mv $dir/com.bowery.bowery.plist /Library/LaunchAgents
+    # sudo launchctl load -Fw /Library/LaunchAgents/com.bowery.bowery.plist
+    default_install
 }
 
 function solaris_install {
-  # Commands: http://wiki.smartos.org/display/DOC/Basic+SMF+Commands
-  # File Format: http://wiki.smartos.org/display/DOC/Building+Manifests
-  # see logs at: /var/svc/log/bowery-bowery:default.log
+    # Commands: http://wiki.smartos.org/display/DOC/Basic+SMF+Commands
+    # File Format: http://wiki.smartos.org/display/DOC/Building+Manifests
+    # see logs at: /var/svc/log/bowery-bowery:default.log
     curl -so $dir/bowery.xml http://${bucket}.${s3url}/bowery.xml
     svccfg validate $dir/bowery.xml
     svccfg import $dir/bowery.xml
 
     svcadm enable /bowery/bowery
+}
 
+function default_install {
+    curl -so $dir/bowery-run http://${bucket}.${s3url}/default.sh
+    sudo mv $dir/bowery-run /usr/local/bin/
+    sudo chmod 755 /usr/local/bin/bowery-run
+    sudo /usr/local/bin/bowery-run
 }
 
 colecho -g "Thanks for using Bowery!"
@@ -161,8 +166,7 @@ printf "Downloading agent... "
 curl -so $dir/bowery-agent.tar.gz http://${bucket}.${s3url}/${VERSION}_${OS}_${ARCH}.tar.gz
 printf "Installing... "
 tar -xzf $dir/bowery-agent.tar.gz
-mv agent $dir/bowery-agent
-sudo mv $dir/bowery-agent /usr/local/bin/
+sudo mv agent /usr/local/bin/bowery-agent
 colecho -c "Done!"
 
 printf "Setting up daemon... "
@@ -173,6 +177,8 @@ case $OS in
         darwin_install ;;
     "solaris")
         solaris_install ;;
+    *)
+        default_install ;;
 esac
 
 colecho -c "Done!"
