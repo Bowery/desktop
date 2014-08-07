@@ -17,6 +17,9 @@ type Plugin struct {
 	// Hooks and associated handlers.
 	Hooks map[string]string
 
+	// Required software and dependencies.
+	Requirements string
+
 	// Whether the plugin is being used or not.
 	IsEnabled bool
 

@@ -53,13 +53,13 @@ type Hooks struct {
 }
 
 type Formula struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Deps        string `json:"deps,omitempty"`
-	Author      `json:"author"`
-	Hooks       `json:"hooks"`
-	Repository  string `json:"repository"`
-	Version     string `json:"version"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Requirements string `json:"requirements,omitempty"`
+	Author       `json:"author"`
+	Hooks        `json:"hooks"`
+	Repository   string `json:"repository"`
+	Version      string `json:"version"`
 }
 
 // git, glorified exec. The error returned is Stderr
@@ -152,7 +152,7 @@ func SearchFormulae(terms ...string) ([]Formula, error) {
 	for _, formula := range formulae {
 		for _, term := range terms {
 			if strings.Contains(strings.Join([]string{
-				formula.Name, formula.Description, formula.Deps,
+				formula.Name, formula.Description, formula.Requirements,
 			}, " "), term) {
 				results = append(results, formula)
 				break

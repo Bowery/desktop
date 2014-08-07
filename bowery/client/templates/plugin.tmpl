@@ -3,6 +3,13 @@
   <p class="subtitle">{{.Plugin.Description}}</p>
 </div>
 
+{{if .Plugin.Requirements}}
+<div class="group plugin">
+  <h3>Requirements</h3>
+  <p class="subtitle">{{.Plugin.Requirements}}</p>
+</div>
+{{end}}
+
 <div class="group plugin">
   <ul class="list">
 
