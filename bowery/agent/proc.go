@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ImageScriptsDir = "/image_scripts"
+	ImageScriptsDir = filepath.Join(BoweryDir, "image_scripts")
 	mutex           sync.Mutex
 )
 
@@ -101,8 +101,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		cmds := make([]*exec.Cmd, 0)
 
 		// Get the image_scripts and start them.
-		scriptPath := filepath.Join(ImageScriptsDir)
-		dir, _ := os.Open(scriptPath)
+		dir, _ := os.Open(ImageScriptsDir)
 		if dir != nil {
 			infos, _ := dir.Readdir(0)
 			if infos != nil {
@@ -111,7 +110,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 						continue
 					}
 
-					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), scriptPath, stdoutWriter, stderrWriter)
+					cmd := ParseCmd(filepath.Join(ImageScriptsDir, info.Name()), scriptPath, stdoutWriter, stderrWriter)
 					if cmd != nil {
 						err := startProc(cmd, stdoutWriter, stderrWriter)
 						if err == nil {
