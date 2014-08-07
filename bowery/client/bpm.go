@@ -56,10 +56,12 @@ type Formula struct {
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	Requirements string `json:"requirements,omitempty"`
+	Deps         string `json:"deps,omitempty"`
 	Author       `json:"author"`
 	Hooks        `json:"hooks"`
 	Repository   string `json:"repository"`
 	Version      string `json:"version"`
+	Commit       string `json:"commit"`
 }
 
 // git, glorified exec. The error returned is Stderr
@@ -96,6 +98,13 @@ func processFormulae() error {
 				log.Printf("%v cannot be parsed", fileInfo.Name())
 				continue
 			}
+
+			versionCommit := strings.Split(formula.Version, "@")
+			if len(versionCommit) > 1 {
+				formula.Version = versionCommit[0]
+				formula.Commit = versionCommit[1]
+			}
+
 			formulae[formula.Name] = formula
 		}
 	}
@@ -174,12 +183,8 @@ func InstallPlugin(name string) (string, error) {
 	os.Chdir(PluginDir)
 	defer os.Chdir(TemplateDir)
 
-	ver := strings.Split(formula.Version, "@")
-	version := ver[0]
-	commit := ver[1]
-	dirName := formula.Name + "@" + version
-
-	if _, err := os.Stat(formula.Name + "@" + version); err == nil {
+	dirName := fmt.Sprintf("%s@%s", formula.Name, formula.Version)
+	if _, err := os.Stat(dirName); err == nil {
 		return filepath.Join(PluginDir, dirName), nil
 	}
 
@@ -196,9 +201,11 @@ func InstallPlugin(name string) (string, error) {
 			return "", err
 		}
 
-		// checkout the right version
-		if err := git("checkout", commit); err != nil {
-			return "", err
+		// if a commit is specified, checkout.
+		if formula.Commit != "" {
+			if err := git("checkout", formula.Commit); err != nil {
+				return "", err
+			}
 		}
 
 		// remove the .git directory

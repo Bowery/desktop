@@ -13,6 +13,7 @@
 <div class="group plugin">
   <ul class="list">
 
+  {{$name := .Plugin.Name}}
   {{$version := .Plugin.Version}}
   {{range .Apps}}
     <li class="item borderless">
@@ -22,7 +23,7 @@
           <p class="subtitle">{{.App.RemoteAddr}}</p>
         </a>
       </div>
-      <div class="toggle {{if .IsActive}}active{{end}}" data-app="{{.App.ID}}" data-plugin="{{$version}}">
+      <div class="toggle {{if .IsActive}}active{{end}}" data-app="{{.App.ID}}" data-plugin-name="{{$name}}" data-plugin-version="{{$version}}">
         <div class="toggle-handle"></div>
       </div>
     </li>

@@ -179,12 +179,12 @@ func main() {
 		&Route{"GET", "/applications/new", newAppHandler},
 		&Route{"POST", "/applications/verify", verifyAppHandler},
 		&Route{"POST", "/applications", createAppHandler},
-		&Route{"POST", "/applications/{id}/plugins/{version}", addPluginHandler},
+		&Route{"POST", "/applications/{id}/plugins/{name}/{version}", addPluginHandler},
 		&Route{"PUT", "/applications/{id}", updateAppHandler},
 		&Route{"DELETE", "/applications/{id}", removeAppHandler},
 		&Route{"GET", "/applications/{id}", appHandler},
 		&Route{"GET", "/plugins", listPluginsHandler},
-		&Route{"GET", "/plugins/{version}", showPluginHandler},
+		&Route{"GET", "/plugins/{name}/{version}", showPluginHandler},
 		&Route{"GET", "/logs/{id}", logsHandler},
 		&Route{"GET", "/settings", getSettingsHandler},
 		&Route{"POST", "/settings", updateSettingsHandler},
@@ -438,7 +438,7 @@ func uploadAppPlugins(app *Application) error {
 	return nil
 }
 
-func uploadPlugin(app *Application, version string) error {
+func uploadPlugin(app *Application, name string) error {
 	var err error
 	var pluginPath string
 	var pluginStr string
@@ -446,8 +446,8 @@ func uploadPlugin(app *Application, version string) error {
 
 	// Install Plugin
 	for _, formula := range GetFormulae() {
-		if formula.Version == version {
-			pluginStr = formula.Name + "@" + strings.Split(formula.Version, "@")[0]
+		if fmt.Sprintf("%s@%s", formula.Name, formula.Version) == name {
+			pluginStr = fmt.Sprintf("%s@%s", formula.Name, formula.Version)
 			pluginPath, err = InstallPlugin(formula.Name)
 			if err != nil {
 				return err
@@ -968,11 +968,12 @@ func newUploadRequest(url string, uploads map[string]string, params map[string]s
 
 func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
+	name := vars["name"]
 	version := vars["version"]
-	appId := vars["id"]
-	app := getAppById(appId)
+	app := getAppById(vars["id"])
 
-	if err := uploadPlugin(app, version); err != nil {
+	if err := uploadPlugin(app, fmt.Sprintf("%s@%s", name, version)); err != nil {
+		log.Println(err)
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
@@ -1085,17 +1086,19 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	version := mux.Vars(req)["version"]
+	vars := mux.Vars(req)
+	name := vars["name"]
+	version := vars["version"]
 
 	for _, plugin := range GetFormulae() {
-		if plugin.Version == version {
-
+		if plugin.Name == name && plugin.Version == version {
 			apps := getApps()
 			wrappers := []AppPluginWrapper{}
 			for _, app := range apps {
 				wrapper := AppPluginWrapper{app, false}
 				for _, p := range app.EnabledPlugins {
-					if plugin.Name+"@"+strings.Split(plugin.Version, "@")[0] == p {
+					name := fmt.Sprintf("%s@%s", plugin.Name, plugin.Version)
+					if name == p {
 						wrapper.IsActive = true
 					}
 				}
