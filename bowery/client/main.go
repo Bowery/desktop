@@ -155,19 +155,15 @@ func init() {
 
 	os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir)
 
+	UpdateFormulae()
 	go func() {
-		if err := UpdateFormulae(data.DevMode); err != nil {
-			log.Println(err)
-		}
 		<-time.After(30 * time.Minute)
+		if !data.DevMode {
+			if err := UpdateFormulae(); err != nil {
+				log.Println(err)
+			}
+		}
 	}()
-	// TODO (rm) show the user that there was an error
-	if err := UpdateFormulae(data.DevMode); err != nil {
-		log.Println(err)
-	}
-
-	cwd, err := os.Getwd()
-	log.Println(cwd, err)
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
