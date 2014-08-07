@@ -22,7 +22,7 @@ echo "Version: ${VERSION}"
 trap "kill 0" SIGINT SIGTERM EXIT
 
 # Make sure goxc is installed
-go get github.com/laher/goxc
+go get -u github.com/laher/goxc
 
 # This function builds whatever directory we're in...
 goxc \
@@ -76,7 +76,6 @@ for ARCHIVE in ./pkg/${VERSION}/dist/*; do
         -H "Content-Type: ${contentType}" \
         -H "Authorization: AWS ${s3Key}:${signature}" \
         https://${bucket}.s3.amazonaws.com/${file}
-    echo
 done
 
 exit 0

@@ -9,5 +9,8 @@ BoweryMenubarApp/Bowery/Bowery/*
 pkg/
 bin/
 debug.log
+goxc.log
 build/atom-shell
 build/node_modules
+build/cache
+dist/
