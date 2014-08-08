@@ -1,5 +1,3 @@
-// +build !darwin,!windows
-
 // Copyright 2013-2014 Bowery, Inc.
 // Contains system specific routines.
 package main

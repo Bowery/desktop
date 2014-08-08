@@ -110,7 +110,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 						continue
 					}
 
-					cmd := ParseCmd(filepath.Join(ImageScriptsDir, info.Name()), scriptPath, stdoutWriter, stderrWriter)
+					cmd := ParseCmd(filepath.Join(ImageScriptsDir, info.Name()), ImageScriptsDir, stdoutWriter, stderrWriter)
 					if cmd != nil {
 						err := startProc(cmd, stdoutWriter, stderrWriter)
 						if err == nil {
