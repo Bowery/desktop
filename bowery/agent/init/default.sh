@@ -11,7 +11,7 @@ if [ -f bowery-agent.pid ] ; then
         rm -f bowery-agent.pid
     else
         echo "Killing current bowery-agent with pid=${PID}..."
-        kill $PID 2>/dev/null
+        sudo kill $PID 2>/dev/null
     fi
 fi
 if [ -f bowery-agent.new ] ; then
