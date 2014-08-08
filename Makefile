@@ -20,10 +20,10 @@ test: deps
 
 agent:
 	@echo "--> Releasing agent..."
-	@bash --norc -i ./scripts/release_agent.sh
+	@bash --norc ./scripts/release_agent.sh
 
 client:
-	@bash --norc -i ./scripts/release_client.sh
+	@bash --norc ./scripts/release_client.sh
 
 release: agent client
 	@echo "Done."

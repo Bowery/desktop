@@ -1,6 +1,7 @@
 #!/bin/bash
-set -e
 
+
+echo "here 1"
 # Get the parent directory of where this script is.
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
@@ -9,6 +10,7 @@ CGO_ENABLED=0
 
 DIR="$DIR/bowery/agent"
 
+echo "here $DIR"
 # Change into that dir because we expect that
 cd "$DIR"
 
@@ -19,7 +21,7 @@ VERSIONDIR="${VERSION}"
 echo "Version: ${VERSION}"
 
 # Make sure that if we're killed, we kill all our subprocseses
-trap "kill 0" SIGINT SIGTERM EXIT
+# trap "kill 0" SIGINT SIGTERM EXIT
 
 # Make sure goxc is installed
 go get -u github.com/laher/goxc
@@ -78,4 +80,3 @@ for ARCHIVE in ./pkg/${VERSION}/dist/*; do
         https://${bucket}.s3.amazonaws.com/${file}
 done
 
-exit 0
