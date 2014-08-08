@@ -117,6 +117,7 @@ function solaris_install {
     svccfg validate $dir/bowery.xml
     svccfg import $dir/bowery.xml
 
+    svcadm disable /bowery/bowery
     svcadm enable /bowery/bowery
 }
 
