@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bowery Delancey agent install script
-# curl -s bowery.sh | bash
+# curl -fsS bowery.sh | bash
 
 set -e
 
@@ -82,17 +82,17 @@ function linux_install {
 
     case $NAME in
         "Fedora"|"RedHat"|"CentOS") # logs `journalctl _SYSTEMD_UNIT=bowery-agent.service`
-            curl -so $dir/bowery-agent.service http://${bucket}.${s3url}/systemd.agent.service
+            curl -fsSo $dir/bowery-agent.service http://${bucket}.${s3url}/systemd.agent.service
             sudo mv $dir/bowery-agent.service /etc/systemd/user/
             sudo systemctl disable /etc/systemd/user/bowery-agent.service # just in case
             sudo systemctl enable /etc/systemd/user/bowery-agent.service
             sudo systemctl start bowery-agent.service > /dev/null ;;
         "Ubuntu")
-            curl -so $dir/bowery-agent.conf http://${bucket}.${s3url}/upstart.agent.conf
+            curl -fsSo $dir/bowery-agent.conf http://${bucket}.${s3url}/upstart.agent.conf
             sudo mv $dir/bowery-agent.conf /etc/init/
             sudo service bowery-agent start > /dev/null ;;
         "Debian") # logs /var/log/bowery-agent.log
-            curl -so $dir/bowery-agent http://${bucket}.${s3url}/sysvinit.agent
+            curl -fsSo $dir/bowery-agent http://${bucket}.${s3url}/sysvinit.agent
             sudo mv $dir/bowery-agent /etc/init.d/
             sudo chmod 755 /etc/init.d/bowery-agent
             sudo ln -sf /etc/init.d/bowery-agent /etc/rc3.d/S95bowery-agent
@@ -103,7 +103,7 @@ function linux_install {
 }
 
 function darwin_install {
-    # curl -so $dir/com.bowery.bowery.plist http://${bucket}.${s3url}/com.bowery.bowery.plist
+    # curl -fsSo $dir/com.bowery.bowery.plist http://${bucket}.${s3url}/com.bowery.bowery.plist
     # sudo mv $dir/com.bowery.bowery.plist /Library/LaunchAgents
     # sudo launchctl load -Fw /Library/LaunchAgents/com.bowery.bowery.plist
     default_install
@@ -113,7 +113,7 @@ function solaris_install {
     # Commands: http://wiki.smartos.org/display/DOC/Basic+SMF+Commands
     # File Format: http://wiki.smartos.org/display/DOC/Building+Manifests
     # see logs at: /var/svc/log/bowery-bowery:default.log
-    curl -so $dir/bowery.xml http://${bucket}.${s3url}/bowery.xml
+    curl -fsSo $dir/bowery.xml http://${bucket}.${s3url}/bowery.xml
     svccfg validate $dir/bowery.xml
     svccfg import $dir/bowery.xml
 
@@ -122,7 +122,7 @@ function solaris_install {
 }
 
 function default_install {
-    curl -so $dir/bowery-run http://${bucket}.${s3url}/default.sh
+    curl -fsSo $dir/bowery-run http://${bucket}.${s3url}/default.sh
     sudo mv $dir/bowery-run /usr/local/bin/
     sudo chmod 755 /usr/local/bin/bowery-run
     sudo /usr/local/bin/bowery-run
@@ -161,10 +161,10 @@ if [ $OS == 'solaris' ]; then ARCH=amd64; fi;
 
 bucket=bowery.sh
 s3url=s3.amazonaws.com
-VERSION=$(curl -s http://${bucket}.${s3url}/VERSION)
+VERSION=$(curl -fsS http://${bucket}.${s3url}/VERSION)
 
 printf "Downloading agent... "
-curl -so $dir/bowery-agent.tar.gz http://${bucket}.${s3url}/${VERSION}_${OS}_${ARCH}.tar.gz
+curl -fsSo $dir/bowery-agent.tar.gz http://${bucket}.${s3url}/${VERSION}_${OS}_${ARCH}.tar.gz
 printf "Installing... "
 tar -xzf $dir/bowery-agent.tar.gz
 sudo mv agent /usr/local/bin/bowery-agent

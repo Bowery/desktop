@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 )
 
@@ -19,8 +20,9 @@ import (
 const httpMaxMem = 32 << 10
 
 var (
-	HomeDir    = "/root/"       // Default for ubuntu docker container
-	ServiceDir = "/application" // Directory the service lives in.
+	HomeDir    = os.Getenv(sys.HomeVar)
+	BoweryDir  = filepath.Join(HomeDir, ".bowery")
+	ServiceDir = filepath.Join(BoweryDir, "application")
 )
 
 // List of named routes.

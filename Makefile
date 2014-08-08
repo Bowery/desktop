@@ -20,10 +20,10 @@ test: deps
 
 agent:
 	@echo "--> Releasing agent..."
-	@bash --norc -i ./scripts/release_agent.sh
+	@bash --norc ./scripts/release_agent.sh
 
 client:
-	@bash --norc -i ./scripts/release_client.sh
+	@bash --norc ./scripts/release_client.sh
 
 release: agent client
 	@echo "Done."
@@ -37,7 +37,7 @@ clean:
 	-rm -rf bin
 	-rm -f debug.log
 	-rm -f goxc.log
-	-pkill -f client
+	-pkill -f bin/client
 
 extra-clean: clean
 	-rm -rf build/node_modules

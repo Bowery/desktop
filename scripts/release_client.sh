@@ -13,7 +13,7 @@ VERSIONDIR="${VERSION}"
 
 
 # Make sure that if we're killed, we kill all our subprocseses
-trap "kill 0" SIGINT SIGTERM EXIT
+# trap "kill 0" SIGINT SIGTERM EXIT
 
 # Make sure goxc is installed
 go get -u github.com/laher/goxc
@@ -131,5 +131,3 @@ for ARCHIVE in ./dist/${VERSION}/*; do
 
   echo "* http://desktop.bowery.io/${ARCHIVE_NAME} is available for download."
 done
-
-echo "Done. Son."
