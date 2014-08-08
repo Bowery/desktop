@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "devDependencies": {
     "grunt": "^0.4.4",
-    "grunt-download-atom-shell": "^0.8.2"
+    "grunt-download-atom-shell": "^0.8.2",
+    "grunt-atom-shell-app-builder": "^0.0.2"
   }
 }

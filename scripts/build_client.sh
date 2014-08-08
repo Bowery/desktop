@@ -9,6 +9,7 @@ SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do SOURCE="$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 CGO_ENABLED=0
+ROOT_DIR=$DIR
 DIR=$DIR/bowery/client
 
 # Change into that directory
@@ -34,8 +35,6 @@ mkdir -p ../../bin
 go build \
     -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
     -o ../../bin/client
-
-
 
 echo "--> Moving assets and templates..."
 cp -r public ../../bin/
