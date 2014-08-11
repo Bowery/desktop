@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-echo "here 1"
 # Get the parent directory of where this script is.
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
@@ -52,7 +50,7 @@ done
 
 echo $VERSION > "./pkg/${VERSIONDIR}/dist/VERSION"
 cp -r "${DIR}/init/" "./pkg/${VERSIONDIR}/dist/"
-cp "${DIR}/install_agent.sh" "./pkg/${VERSIONDIR}/dist/"
+cp "../../scripts/install_agent.sh" "./pkg/${VERSIONDIR}/dist/"
 
 # Make the checksums
 pushd "./pkg/${VERSIONDIR}/dist"
