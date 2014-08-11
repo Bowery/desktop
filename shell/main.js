@@ -34,8 +34,9 @@ app.on('ready', function() {
 });
 
 // Start Client and Agent
+var extension = /^win/.test(process.platform) ? ".exe" : ""
 ["client", "agent"].forEach(function (binary) {
-  var path = require('path').join(__dirname, "../bin/", binary)
+  var path = require('path').join(__dirname, "../bin/", binary + extension)
   var proc = require('child_process').spawn(path, [])
 
   console.log("Launching", path)
