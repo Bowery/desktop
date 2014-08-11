@@ -31,20 +31,23 @@ app.on('ready', function() {
   mainWindow.on('closed', function() {
     mainWindow = null
   })
-})
+});
 
-// Start Client Binary
-var clientPath = require('path').join(__dirname, "../bin/client")
-console.log("Launching", clientPath)
-var clientProcess = require('child_process').spawn(clientPath, [])
+// Start Client and Agent
+["client", "agent"].forEach(function (binary) {
+  var path = require('path').join(__dirname, "../bin/", binary)
+  var proc = require('child_process').spawn(path, [])
 
-clientProcess.on('close', function (code) {
-  console.log('client process exited with code:', code)
-  process.exit(code)
-})
-clientProcess.stdout.on('data', function (data) {
-  process.stdout.write(data)
-})
-clientProcess.stderr.on('data', function (data) {
-  process.stderr.write(data)
+  console.log("Launching", path)
+
+  proc.on('close', function (code) {
+    console.log('client process exited with code:', code)
+    process.exit(code)
+  })
+  proc.stdout.on('data', function (data) {
+    process.stdout.write(data)
+  })
+  proc.stderr.on('data', function (data) {
+    process.stderr.write(data)
+  })
 })

@@ -77,4 +77,3 @@ for ARCHIVE in ./pkg/${VERSION}/dist/*; do
         -H "Authorization: AWS ${s3Key}:${signature}" \
         https://${bucket}.s3.amazonaws.com/${file}
 done
-

@@ -1070,7 +1070,6 @@ func listPluginsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	plugins := GetFormulae()
 
-	// TODO (thebyrd) get all plugins
 	r.HTML(rw, http.StatusOK, "plugins", map[string]interface{}{
 		"Title":   "Plugins",
 		"Plugins": plugins,
@@ -1113,7 +1112,6 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	// TODO (thebyrd) get all plugins
 	r.HTML(rw, http.StatusOK, "error", map[string]interface{}{
 		"Title": "Error",
 		"Error": "Plugin not found. See http://github.com/bowery/plugins for a list of availble plugins.",
