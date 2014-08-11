@@ -40,7 +40,7 @@ func git(args ...string) error {
 	return nil
 }
 
-// Processschemas.Formulae, reads all the json files and makes the appropriate data structure
+// processFormulae, reads all the json files and makes the appropriate data structure
 func processFormulae() error {
 	files, err := ioutil.ReadDir(formulaDir)
 	if err != nil {
@@ -75,7 +75,7 @@ func processFormulae() error {
 	return nil
 }
 
-// Updateschemas.Formulae, checks to see if there's a directory for the formulae already.
+// UpdateFormulae, checks to see if there's a directory for the formulae already.
 // If there is, it `git pull`s it. Otherwise, it `git clone`s the repo.
 func UpdateFormulae() error {
 	os.Chdir(boweryDir)
@@ -98,7 +98,7 @@ func UpdateFormulae() error {
 	return processFormulae()
 }
 
-// Getschemas.Formulae, returns a slice of all the schemas.Formula. Even though, internally, formulae
+// GetFormulae, returns a slice of all the schemas.Formula. Even though, internally, formulae
 // is a map (for effeciency), it is returned as a slice to the caller
 func GetFormulae() []schemas.Formula {
 	results := make([]schemas.Formula, len(formulae))
@@ -110,13 +110,13 @@ func GetFormulae() []schemas.Formula {
 	return results
 }
 
-// Getschemas.FormulaByName, given an input string, it returns a formula with that name
+// GetFormulaByName, given an input string, it returns a formula with that name
 func GetFormulaByName(name string) (schemas.Formula, bool) {
 	i, ok := formulae[name]
 	return i, ok
 }
 
-// Searchschemas.Formulae, variadic function that takes any number of search terms. Is a
+// SearchFormulae, variadic function that takes any number of search terms. Is a
 // very, very naive search where any plugin where the name, description, or
 // dependancies contains a search term makes the plugin a result
 func SearchFormulae(terms ...string) ([]schemas.Formula, error) {
