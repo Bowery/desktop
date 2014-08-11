@@ -20,5 +20,5 @@ fi
  
 sleep 2
  
-sudo /usr/local/bin/bowery-agent >> bowery-agent.log 2>&1 &
+/usr/local/bin/bowery-agent >> bowery-agent.log 2>&1 &
 echo $! > bowery-agent.pid
