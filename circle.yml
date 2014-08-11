@@ -8,3 +8,8 @@ test:
     - cp -r /home/ubuntu/desktop /home/ubuntu/.go_workspace/src/github.com/Bowery/desktop
     - cd /home/ubuntu/.go_workspace/src/github.com/Bowery/desktop/bowery/agent && go get && go test ./...
     - cd /home/ubuntu/.go_workspace/src/github.com/Bowery/desktop/bowery/client && go get && go test ./...
+deployment:
+  production:
+    branch: master
+    commands:
+      - make release
