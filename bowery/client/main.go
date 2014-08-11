@@ -722,7 +722,7 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
+	http.Redirect(rw, req, "/", http.StatusSeeOther)
 }
 
 func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
