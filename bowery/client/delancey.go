@@ -39,8 +39,11 @@ func DelanceyUpload(app *Application, file *os.File) error {
 		return err
 	}
 
-	// Add commands and env to body.
-	err = writer.WriteField("build", app.Build)
+	// Add ID, commands, and env to body.
+	err = writer.WriteField("id", app.ID)
+	if err == nil {
+		err = writer.WriteField("build", app.Build)
+	}
 	if err == nil {
 		err = writer.WriteField("start", app.Start)
 	}
@@ -82,7 +85,10 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
-	err := writer.WriteField("type", status)
+	err := writer.WriteField("id", app.ID)
+	if err == nil {
+		err = writer.WriteField("type", status)
+	}
 	if err == nil {
 		err = writer.WriteField("path", path.Join(strings.Split(name, string(filepath.Separator))...))
 	}
