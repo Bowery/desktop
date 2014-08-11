@@ -71,7 +71,7 @@ function linux_install {
         *Red\ Hat*)
             NAME=RedHat ;;
         *SUSE*)
-            NAME=SUSE;;
+            NAME=SUSE ;;
         *Ubuntu*)
             NAME=Ubuntu ;;
         *Debian*)

@@ -28,7 +28,6 @@ client:
 release: agent client
 	@echo "Done."
 
-
 clean:
 	-rm -rf pkg
 	-rm -rf bowery/client/pkg
