@@ -442,7 +442,7 @@ func uploadPlugin(app *Application, name string) error {
 	var err error
 	var pluginPath string
 	var pluginStr string
-	var pluginHooks Hooks
+	var pluginHooks schemas.Hooks
 
 	// Install Plugin
 	for _, formula := range GetFormulae() {
