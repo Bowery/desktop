@@ -155,11 +155,11 @@ func init() {
 
 	os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir)
 
-	UpdateFormulae()
+	UpdateFormulae(data.DevMode)
 	go func() {
 		<-time.After(30 * time.Minute)
 		if !data.DevMode {
-			if err := UpdateFormulae(); err != nil {
+			if err := UpdateFormulae(data.DevMode); err != nil {
 				log.Println(err)
 			}
 		}
@@ -1140,7 +1140,6 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// todo(rm): create plugin, write file, etc.
-
 	r.JSON(rw, http.StatusOK, requestProblems)
 }
 
