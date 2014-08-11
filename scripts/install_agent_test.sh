@@ -21,5 +21,5 @@ ssh -l root -t 72.2.119.204 'curl -s bowery.sh | bash'
 echo $'\n===> FreeBSD'
 ssh -i ~/.ssh/bowery.pem -l ec2-user -t 54.86.97.228 'curl -s bowery.sh | bash'
 
-echo $'\n===> Localhost (Mac/Windows)'
-curl -s bowery.sh | bash
+# echo $'\n===> Localhost (Mac/Windows)'
+# curl -s bowery.sh | bash

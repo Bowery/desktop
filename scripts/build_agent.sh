@@ -1,17 +1,14 @@
 #!/bin/bash
 #
-# This script builds the client from source.
+# This script builds the agent from source.
 #
-set -e
-
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do SOURCE="$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 CGO_ENABLED=0
 ROOT_DIR=$DIR
-DIR=$DIR/bowery/client
+DIR=$DIR/bowery/agent
 
-# Change into that directory
 cd "$DIR"
 
 # Get the git commit
@@ -26,15 +23,11 @@ go get \
   -ldflags "${CGO_LDFLAGS}" \
   ./...
 
-# Build Client!
-echo "--> Building client..."
+# Build Agent!
+echo "--> Building agent..."
 cd "${DIR}"
 mkdir -p ../../bin
 
 go build \
     -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
-    -o ../../bin/client
-
-echo "--> Moving assets and templates..."
-cp -r public ../../bin/
-cp -r templates ../../bin/
+    -o ../../bin/agent

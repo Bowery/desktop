@@ -19,15 +19,27 @@ VERSIONDIR="${VERSION}"
 go get -u github.com/laher/goxc
 
 # This function builds whatever directory we're in...
-echo "--> Cross compling client binary..."
+echo "--> Cross compling client..."
 goxc \
     -tasks-="validate" \
     -d="${DIR}/pkg" \
-    -bc="linux,!arm windows,386 darwin,amd64" \
+    -bc="linux windows,386 darwin,amd64" \
     -pv="${VERSION}" \
-    $XC_OPTS \
     go-install \
     xc &> "${DIR}/goxc.log"
+
+
+cd "$DIR/bowery/agent"
+echo "--> Cross compling agent..."
+goxc \
+    -tasks-="validate" \
+    -d="${DIR}/pkg" \
+    -bc="linux windows,386 darwin,amd64" \
+    -pv="${VERSION}" \
+    go-install \
+    xc &> "${DIR}/goxc.log"
+
+cd "$DIR/bowery/client"
 
 echo "--> Downloading shells..."
 mkdir -p "${DIR}/pkg" "${DIR}/pkg/darwin_amd64" "${DIR}/pkg/linux_amd64" "${DIR}/pkg/linux_386" "${DIR}/pkg/windows_386" /tmp/atom/
