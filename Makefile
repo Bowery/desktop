@@ -38,6 +38,7 @@ clean:
 	-rm -f debug.log
 	-rm -f goxc.log
 	-pkill -f bin/client
+	-pkill -f bin/agent
 
 extra-clean: clean
 	-rm -rf build/node_modules
