@@ -1,13 +1,13 @@
 <form class="form verify-application">
   <div class="field">
-    <input type="text" class="field-input" name="ip-addr" id="ip-addr" autofocus>
-    <label for="ip-addr" class="field-label">Remote IP Address</label>
+    <input type="text" class="field-input remote-addr-field-input" name="ip-addr" id="ip-addr" autofocus>
+    <label for="ip-addr" class="field-label">Agent IP Address</label>
   </div>
   <div class="field">
     <input type="text" class="field-input" name="local-dir" id="local-dir">
     <label for="local-dir" class="field-label">Local Directory</label>
   </div>
-  <div class="field">
+  <div class="field remote-dir-field">
     <input type="text" class="field-input" name="remote-dir" id="remote-dir">
     <label for="remote-dir" class="field-label">Remote Directory</label>
   </div>
@@ -44,8 +44,15 @@
  * on
  */
 $(document).ready(function () {
-  verifyFormEl = $('.verify-application')
-  createFormEl = $('.create-application')
+  var verifyFormEl = $('.verify-application')
+  var createFormEl = $('.create-application')
+
+
+  // Hide Remote addr is Remote IP is localhost
+  var remoteDirFieldEl = $('.remote-dir-field')
+  $('.remote-addr-field-input').on('blur', function (e) {
+    remoteDirFieldEl[/^localhost/.test(e.target.value) ? 'addClass' : 'removeClass']('hidden')
+  })
 
   $('.submit.verify').click(function (e) {
     e.preventDefault()
