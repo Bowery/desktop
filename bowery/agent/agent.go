@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 
@@ -60,6 +61,12 @@ func main() {
 
 	// Start event listening.
 	go plugin.StartPluginListener()
+
+	// Set up debug http port, temporary.
+	// todo(steve): remove once we know what the issue is.
+	go func() {
+		log.Println(http.ListenAndServe(":3004", nil))
+	}()
 
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())
