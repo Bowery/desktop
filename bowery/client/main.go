@@ -479,7 +479,9 @@ func uploadPlugin(app *Application, name string, init bool) error {
 		}
 	}
 
-	didRemovePlugin = !didRemovePlugin
+	if init {
+		didRemovePlugin = !didRemovePlugin
+	}
 
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
@@ -925,6 +927,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Watch(app)
+	uploadApp(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})

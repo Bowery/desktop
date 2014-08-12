@@ -39,15 +39,6 @@ func NewPlugin(name, hooks string) (*Plugin, error) {
 	return plugin, nil
 }
 
-func (p *Plugin) Init() {
-	if command := p.Hooks[ON_PLUGIN_INIT]; command != "" {
-		executeHook(p, "", "", command, false)
-	}
-	if command := p.Hooks[BACKGROUND]; command != "" {
-		executeHook(p, "", "", command, true)
-	}
-}
-
 // NewPluginManager creates a PluginManager.
 func NewPluginManager() *PluginManager {
 	plugins := make([]*Plugin, 0)

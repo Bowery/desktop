@@ -277,6 +277,10 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	// on the application.
 	app.EnabledPlugins = append(app.EnabledPlugins, name)
 
+	// Fire off init and background plugin events.
+	go plugin.EmitPluginEvent(plugin.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
+	go plugin.EmitPluginEvent(plugin.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
+
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
 }
@@ -318,8 +322,11 @@ func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	// Add/remove from enabled plugins.
 	if isEnabled {
-		// todo(steve): make sure it runs init and background.
 		app.EnabledPlugins = append(app.EnabledPlugins, p.Name)
+
+		// Fire off init and background events.
+		go plugin.EmitPluginEvent(plugin.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
+		go plugin.EmitPluginEvent(plugin.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
 	} else {
 		for i, ep := range app.EnabledPlugins {
 			if ep == p.Name {

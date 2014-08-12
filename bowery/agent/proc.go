@@ -59,10 +59,6 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 	finish := make(chan bool, 1)
 	log.Println(fmt.Sprintf("restart beginning: %s", app.ID))
 
-	if err := os.Chdir(app.Path); err != nil {
-		finish <- false
-	}
-
 	init := app.Init
 	build := app.Build
 	test := app.Test
@@ -79,13 +75,18 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		app.CmdStrs = [4]string{init, build, test, start}
 	}
 
-	initCmd := ParseCmd(app.CmdStrs[0], stdoutWriter, stderrWriter)
-	buildCmd := ParseCmd(app.CmdStrs[1], stdoutWriter, stderrWriter)
-	testCmd := ParseCmd(app.CmdStrs[2], stdoutWriter, stderrWriter)
-	startCmd := ParseCmd(app.CmdStrs[3], stdoutWriter, stderrWriter)
+	initCmd := ParseCmd(app.CmdStrs[0], app.Path, stdoutWriter, stderrWriter)
+	buildCmd := ParseCmd(app.CmdStrs[1], app.Path, stdoutWriter, stderrWriter)
+	testCmd := ParseCmd(app.CmdStrs[2], app.Path, stdoutWriter, stderrWriter)
+	startCmd := ParseCmd(app.CmdStrs[3], app.Path, stdoutWriter, stderrWriter)
+
+	app.InitCmd = initCmd
+	app.BuildCmd = buildCmd
+	app.TestCmd = testCmd
+	app.StartCmd = startCmd
 
 	// Kill existing commands.
-	err := killCmds(initReset, app, initCmd, buildCmd, testCmd, startCmd)
+	err := killAppCmds(initReset, app)
 	if err != nil {
 		mutex.Unlock()
 		finish <- false
@@ -110,7 +111,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 						continue
 					}
 
-					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), stdoutWriter, stderrWriter)
+					cmd := ParseCmd(filepath.Join(scriptPath, info.Name()), scriptPath, stdoutWriter, stderrWriter)
 					if cmd != nil {
 						err := startProc(cmd, stdoutWriter, stderrWriter)
 						if err == nil {
@@ -131,7 +132,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 			if err != nil {
 				stderrWriter.Write([]byte(err.Error() + "\n"))
 
-				killCmds(initReset, app, initCmd, buildCmd, testCmd, startCmd)
+				killAppCmds(initReset, app)
 				finish <- false
 				return
 			}
@@ -151,7 +152,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		if initReset && initCmd != nil {
 			err := startProc(initCmd, stdoutWriter, stderrWriter)
 			if err == nil {
-				app.ExistingCommand = initCmd
+				app.InitCmd = initCmd
 			}
 		}
 
@@ -169,13 +170,13 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		wg.Add(len(cmds))
 
 		// Wait for the init process to end
-		if initReset && app.ExistingCommand != nil {
+		if initReset && app.InitCmd != nil {
 			wg.Add(1)
 
 			go func(c *exec.Cmd) {
 				waitProc(c, stdoutWriter, stderrWriter)
 				wg.Done()
-			}(app.ExistingCommand)
+			}(app.InitCmd)
 		}
 
 		// Loop the commands and wait for them in parallel.
@@ -211,9 +212,9 @@ func startProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) error {
 	return err
 }
 
-// killCmds kills the running processes and resets them, the init cmd
+// killAppCmds kills the running processes and resets them, the init cmd
 // is only killed if init is true.
-func killCmds(init bool, app *Application, initCmd, buildCmd, testCmd, startCmd *exec.Cmd) error {
+func killAppCmds(init bool, app *Application) error {
 	// On restart the build, test, start (and if init is true, init) commands,
 	// as well as any processes they have started must be killed.
 	//
@@ -222,26 +223,26 @@ func killCmds(init bool, app *Application, initCmd, buildCmd, testCmd, startCmd 
 
 	// Init
 	if init {
-		err = killCmdAndSubProcesses(initCmd)
+		err = killCmdAndSubProcesses(app.InitCmd)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Build
-	err = killCmdAndSubProcesses(buildCmd)
+	err = killCmdAndSubProcesses(app.BuildCmd)
 	if err != nil {
 		return err
 	}
 
 	// Test
-	err = killCmdAndSubProcesses(testCmd)
+	err = killCmdAndSubProcesses(app.TestCmd)
 	if err != nil {
 		return err
 	}
 
 	// Start
-	err = killCmdAndSubProcesses(startCmd)
+	err = killCmdAndSubProcesses(app.StartCmd)
 	if err != nil {
 		return err
 	}
@@ -252,16 +253,10 @@ func killCmds(init bool, app *Application, initCmd, buildCmd, testCmd, startCmd 
 func killCmdAndSubProcesses(cmd *exec.Cmd) error {
 	if cmd != nil && cmd.Process != nil {
 		proc, err := GetPidTree(cmd.Process.Pid)
-		for _, proc := range proc.Children {
-			err = proc.Kill()
-			if err != nil {
-				return err
-			}
-		}
-		err = proc.Kill()
 		if err != nil {
 			return err
 		}
+		return proc.Kill()
 	}
 
 	return nil
@@ -269,7 +264,7 @@ func killCmdAndSubProcesses(cmd *exec.Cmd) error {
 
 // ParseCmd converts a string to a command, connecting stdio to a
 // tcp connection.
-func ParseCmd(command string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cmd {
+func ParseCmd(command, path string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cmd {
 	if command == "" {
 		return nil
 	}
@@ -315,6 +310,7 @@ func ParseCmd(command string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cm
 
 	cmd := exec.Command(cmds[0], cmds[1:]...)
 	cmd.Env = env
+	cmd.Dir = path
 	if stdoutWriter != nil && stderrWriter != nil {
 		cmd.Stdout = stdoutWriter
 		cmd.Stderr = stderrWriter

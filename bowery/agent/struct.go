@@ -19,14 +19,26 @@ type Application struct {
 	// Init command. Ran on start and in background.
 	Init string `json:"init,omitempty"`
 
+	// Existing init command.
+	InitCmd *exec.Cmd `json:"initCmd,omitempty"`
+
 	// Build command. Ran prior to test.
 	Build string `json:"build,omitempty"`
+
+	// Existing build command.
+	BuildCmd *exec.Cmd `json:"buildCmd,omitempty"`
 
 	// Test command. Ran prior to start.
 	Test string `json:"test,omitempty"`
 
+	// Existing test command.
+	TestCmd *exec.Cmd `json:"testCmd,omitempty"`
+
 	// Start command. Ran in the background.
 	Start string `json:"start,omitempty"`
+
+	// Existing start command.
+	StartCmd *exec.Cmd `json:"startCmd,omitempty"`
 
 	// The location of the application's code.
 	Path string `json:"path,omitempty"`
@@ -34,11 +46,12 @@ type Application struct {
 	// Commands.
 	CmdStrs [4]string `json:"cmdStrs,omitempty"`
 
-	// Existing background command.
-	ExistingCommand *exec.Cmd `json:"existingCommand,omitempty"`
-
 	// Enabled plugins: name@version.
 	EnabledPlugins []string `json:"enabledPlugins,omitempty"`
+
+	// Plugin processes. Maps a plugin to background and init
+	// process pids.
+	PluginProcesses map[string]map[string]int `json:"pluginProcesses,omitempty"`
 
 	// State of process (e.g. building, testing, running, etc.)
 	State string `json:"processState,omitempty"`
@@ -63,11 +76,7 @@ func NewApplication(id, init, build, test, start, path string) (*Application, er
 		if string(root[0]) != "/" {
 			root = filepath.Join(os.Getenv(sys.HomeVar), root)
 		}
-		if err := os.RemoveAll(root); err != nil {
-			return nil, err
-		}
-		err := os.MkdirAll(root, os.ModePerm|os.ModeDir)
-		if err != nil {
+		if err := os.MkdirAll(root, os.ModePerm|os.ModeDir); err != nil {
 			return nil, err
 		}
 	} else {
