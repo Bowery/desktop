@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -271,8 +270,6 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Println(p)
-
 	// Add it to the plugin manager.
 	plugin.AddPlugin(p)
 
@@ -335,15 +332,6 @@ func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
-}
-
-func AppendIfMissing(slice []string, s string) []string {
-	for _, ele := range slice {
-		if ele == s {
-			return slice
-		}
-	}
-	return append(slice, s)
 }
 
 // DELETE /plugins?name=PLUGIN_NAME, Removes a plugin

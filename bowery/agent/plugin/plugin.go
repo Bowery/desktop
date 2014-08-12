@@ -70,7 +70,6 @@ func AddPlugin(plugin *Plugin) {
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
 	pm.Plugins = append(pm.Plugins, plugin)
-	log.Println(pm.Plugins)
 }
 
 // RemovePlugin removes a Plugin.
