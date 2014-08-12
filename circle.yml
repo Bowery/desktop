@@ -12,4 +12,4 @@ deployment:
   production:
     branch: master
     commands:
-      - make release
+      - cd /home/ubuntu/.go_workspace/src/github.com/Bowery/desktop/ && make release
