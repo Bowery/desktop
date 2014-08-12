@@ -36,8 +36,6 @@ func NewPlugin(name, hooks string) (*Plugin, error) {
 	plugin := &Plugin{}
 	plugin.Name = name
 	json.Unmarshal(data, &plugin.Hooks)
-	plugin.IsEnabled = true
-	plugin.Init()
 	return plugin, nil
 }
 
@@ -72,6 +70,7 @@ func AddPlugin(plugin *Plugin) {
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
 	pm.Plugins = append(pm.Plugins, plugin)
+	log.Println(pm.Plugins)
 }
 
 // RemovePlugin removes a Plugin.
@@ -97,32 +96,23 @@ func (pm *PluginManager) RemovePlugin(name string) error {
 	return nil
 }
 
-func UpdatePlugin(name string, isEnabled bool) error {
-	return pluginManager.UpdatePlugin(name, isEnabled)
-}
-
-// UpdatePlugin updates a Plugin.
-func (pm *PluginManager) UpdatePlugin(name string, isEnabled bool) error {
-	index := -1
-	for i, plugin := range pm.Plugins {
-		if plugin.Name == name {
-			index = i
-			break
-		}
-	}
-
-	if index == -1 {
-		return errors.New("invalid plugin name")
-	}
-
-	pm.Plugins[index].IsEnabled = isEnabled
-	log.Println(pm.Plugins)
-	return nil
-}
-
 // GetPlugins returns a slice of Plugins.
 func GetPlugins() []*Plugin {
 	return pluginManager.Plugins
+}
+
+func GetPlugin(name string) *Plugin {
+	return pluginManager.GetPlugin(name)
+}
+
+func (pm *PluginManager) GetPlugin(name string) *Plugin {
+	for _, plugin := range pm.Plugins {
+		if plugin.Name == name {
+			return plugin
+		}
+	}
+
+	return nil
 }
 
 // StartPluginListener creates a new plugin manager and
@@ -133,18 +123,21 @@ func StartPluginListener() {
 	}
 
 	// On Event and Error events, execute commands for
-	// plugins that have appropriate handlers.
+	// plugins that have appropriate handlers and are
+	// enabled by the specified application.
 	for {
 		select {
 		case ev := <-pluginManager.Event:
 			log.Println(fmt.Sprintf("plugin event: %s", ev.Type))
 			for _, plugin := range pluginManager.Plugins {
-				if plugin.IsEnabled {
-					if command := plugin.Hooks[ev.Type]; command != "" {
-						if ev.Type == BACKGROUND {
-							executeHook(plugin, ev.FilePath, ev.AppDir, command, true)
-						} else {
-							executeHook(plugin, ev.FilePath, ev.AppDir, command, false)
+				for _, ep := range ev.EnabledPlugins {
+					if ep == plugin.Name {
+						if command := plugin.Hooks[ev.Type]; command != "" {
+							if ev.Type == BACKGROUND {
+								executeHook(plugin, ev.FilePath, ev.AppDir, command, true)
+							} else {
+								executeHook(plugin, ev.FilePath, ev.AppDir, command, false)
+							}
 						}
 					}
 				}
@@ -255,11 +248,13 @@ func handlePluginError(name string, err error) {
 
 // EmitPluginEvent creates a new PluginEvent and sends it
 // to the pluginManager Event channel.
-func EmitPluginEvent(typ, path, dir string) {
+func EmitPluginEvent(typ, path, dir, id string, enabledPlugins []string) {
 	// todo(steve): handle error
 	pluginManager.Event <- &PluginEvent{
-		Type:     typ,
-		FilePath: path,
-		AppDir:   dir,
+		Type:           typ,
+		FilePath:       path,
+		AppDir:         dir,
+		Identifier:     id,
+		EnabledPlugins: enabledPlugins,
 	}
 }

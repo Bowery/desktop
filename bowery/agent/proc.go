@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -11,26 +12,12 @@ import (
 	"sync"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
-	"github.com/Bowery/gopackages/sys"
 )
 
 var (
 	ImageScriptsDir = "/image_scripts"
 	mutex           sync.Mutex
-	cmdStrs         = [4]string{} // Order: init, build, test start.
-	// Only assign here if the process has been started.
-	prevInitCmd  *exec.Cmd
-	outputPath   = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log")
-	stdoutPath   = filepath.Join(outputPath, "stdout.log")
-	stderrPath   = filepath.Join(outputPath, "stderr.log")
-	stdoutWriter *OutputWriter
-	stderrWriter *OutputWriter
 )
-
-func init() {
-	stdoutWriter, _ = NewOutputWriter(stdoutPath)
-	stderrWriter, _ = NewOutputWriter(stderrPath)
-}
 
 // Proc describes a processes ids and its children.
 type Proc struct {
@@ -66,36 +53,46 @@ func (proc *Proc) Kill() error {
 // Restart restarts the services processes, the init cmd is only restarted
 // if initReset is true. Commands to run are only updated if reset is true.
 // A channel is returned and signaled if the commands start or the build fails.
-
-func Restart(initReset, reset bool, init, build, test, start string) chan bool {
-	plugin.EmitPluginEvent(plugin.BEFORE_APP_RESTART, "", ServiceDir)
+func Restart(app *Application, initReset, reset bool) chan bool {
+	plugin.EmitPluginEvent(plugin.BEFORE_APP_RESTART, "", app.Path, app.ID, app.EnabledPlugins)
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)
-	log.Println("Restarting")
+	log.Println(fmt.Sprintf("restart beginning: %s", app.ID))
 
-	err := killCmds(initReset)
+	if err := os.Chdir(app.Path); err != nil {
+		finish <- false
+	}
+
+	init := app.Init
+	build := app.Build
+	test := app.Test
+	start := app.Start
+	stdoutWriter := app.StdoutWriter
+	stderrWriter := app.StderrWriter
+
+	// Create cmds.
+	if reset {
+		if !initReset {
+			init = app.CmdStrs[0]
+		}
+
+		app.CmdStrs = [4]string{init, build, test, start}
+	}
+
+	initCmd := ParseCmd(app.CmdStrs[0], stdoutWriter, stderrWriter)
+	buildCmd := ParseCmd(app.CmdStrs[1], stdoutWriter, stderrWriter)
+	testCmd := ParseCmd(app.CmdStrs[2], stdoutWriter, stderrWriter)
+	startCmd := ParseCmd(app.CmdStrs[3], stdoutWriter, stderrWriter)
+
+	// Kill existing commands.
+	err := killCmds(initReset, app, initCmd, buildCmd, testCmd, startCmd)
 	if err != nil {
 		mutex.Unlock()
 		finish <- false
 		return finish
 	}
 
-	// Create cmds.
-	if reset {
-		if !initReset {
-			init = cmdStrs[0]
-		}
-
-		cmdStrs = [4]string{init, build, test, start}
-	}
-
-	initCmd := ParseCmd(cmdStrs[0], stdoutWriter, stderrWriter)
-	buildCmd := ParseCmd(cmdStrs[1], stdoutWriter, stderrWriter)
-	testCmd := ParseCmd(cmdStrs[2], stdoutWriter, stderrWriter)
-	startCmd := ParseCmd(cmdStrs[3], stdoutWriter, stderrWriter)
-
-	// Run in goroutine so commands can run in the background with the tcp
-	// connection open.
+	// Run in goroutine so commands can run in the background.
 	go func() {
 		var wg sync.WaitGroup
 		defer wg.Wait()
@@ -128,12 +125,13 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Run the build command, only proceed if successful.
 		if buildCmd != nil {
+			app.State = "building"
 			log.Println("Running Build Command")
 			err := buildCmd.Run()
 			if err != nil {
 				stderrWriter.Write([]byte(err.Error() + "\n"))
 
-				killCmds(initReset)
+				killCmds(initReset, app, initCmd, buildCmd, testCmd, startCmd)
 				finish <- false
 				return
 			}
@@ -142,6 +140,7 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 
 		// Start the test command.
 		if testCmd != nil {
+			app.State = "testing"
 			err := startProc(testCmd, stdoutWriter, stderrWriter)
 			if err == nil {
 				cmds = append(cmds, testCmd)
@@ -152,12 +151,13 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 		if initReset && initCmd != nil {
 			err := startProc(initCmd, stdoutWriter, stderrWriter)
 			if err == nil {
-				prevInitCmd = initCmd
+				app.ExistingCommand = initCmd
 			}
 		}
 
 		// Start the start command.
 		if startCmd != nil {
+			app.State = "running"
 			err := startProc(startCmd, stdoutWriter, stderrWriter)
 			if err == nil {
 				cmds = append(cmds, startCmd)
@@ -169,13 +169,13 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 		wg.Add(len(cmds))
 
 		// Wait for the init process to end
-		if initReset && prevInitCmd != nil {
+		if initReset && app.ExistingCommand != nil {
 			wg.Add(1)
 
 			go func(c *exec.Cmd) {
 				waitProc(c, stdoutWriter, stderrWriter)
 				wg.Done()
-			}(prevInitCmd)
+			}(app.ExistingCommand)
 		}
 
 		// Loop the commands and wait for them in parallel.
@@ -186,10 +186,10 @@ func Restart(initReset, reset bool, init, build, test, start string) chan bool {
 			}(cmd)
 		}
 
-		log.Println("Restart complete")
+		log.Println(fmt.Sprintf("restart completed: %s", app.ID))
 	}()
 
-	plugin.EmitPluginEvent(plugin.AFTER_APP_RESTART, "", ServiceDir)
+	plugin.EmitPluginEvent(plugin.AFTER_APP_RESTART, "", app.Path, app.ID, app.EnabledPlugins)
 	return finish
 }
 
@@ -213,39 +213,51 @@ func startProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) error {
 
 // killCmds kills the running processes and resets them, the init cmd
 // is only killed if init is true.
-func killCmds(init bool) error {
-	proc, err := GetPidTree(os.Getpid())
-	if err != nil {
-		return nil
+func killCmds(init bool, app *Application, initCmd, buildCmd, testCmd, startCmd *exec.Cmd) error {
+	// On restart the build, test, start (and if init is true, init) commands,
+	// as well as any processes they have started must be killed.
+	//
+	// todo(steve): figure out plugins.
+	var err error
+
+	// Init
+	if init {
+		err = killCmdAndSubProcesses(initCmd)
+		if err != nil {
+			return err
+		}
 	}
 
-	for _, proc := range proc.Children {
-		// Manage the previous init command properly.
-		if prevInitCmd != nil && prevInitCmd.Process != nil &&
-			prevInitCmd.Process.Pid == proc.Pid {
-			if init {
-				prevInitCmd = nil
-			} else {
-				continue
+	// Build
+	err = killCmdAndSubProcesses(buildCmd)
+	if err != nil {
+		return err
+	}
+
+	// Test
+	err = killCmdAndSubProcesses(testCmd)
+	if err != nil {
+		return err
+	}
+
+	// Start
+	err = killCmdAndSubProcesses(startCmd)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func killCmdAndSubProcesses(cmd *exec.Cmd) error {
+	if cmd != nil && cmd.Process != nil {
+		proc, err := GetPidTree(cmd.Process.Pid)
+		for _, proc := range proc.Children {
+			err = proc.Kill()
+			if err != nil {
+				return err
 			}
 		}
-
-		// Don't kill any plugin background processes.
-		isPluginBackgroundProcess := false
-		for _, p := range plugin.GetPlugins() {
-			log.Println(p)
-			if p.BackgroundCommand != nil {
-				if p.BackgroundCommand.Process.Pid == proc.Pid {
-					isPluginBackgroundProcess = true
-					break
-				}
-			}
-		}
-
-		if isPluginBackgroundProcess {
-			continue
-		}
-
 		err = proc.Kill()
 		if err != nil {
 			return err

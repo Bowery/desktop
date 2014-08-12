@@ -254,8 +254,8 @@ func main() {
 				// and all enabled plugins.
 				if connected && !app.IsSyncAvailable {
 					log.Println(fmt.Sprintf("reconnecting: %s", addr))
-					uploadAppPlugins(app)
 					uploadApp(app)
+					uploadAppPlugins(app)
 				}
 
 				// Update app state and broadcast.
@@ -475,6 +475,7 @@ func uploadPlugin(app *Application, name string) error {
 
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	writer.WriteField("appID", app.ID)
 	writer.WriteField("name", pluginStr)
 	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
 	writer.Close()
@@ -557,6 +558,7 @@ func uploadPlugin(app *Application, name string) error {
 	req, err = newUploadRequest(host+"/plugins", map[string]string{
 		"file": uploadFilePath,
 	}, map[string]string{
+		"appID": app.ID,
 		"name":  pluginStr,
 		"hooks": pluginHooksStr,
 	})

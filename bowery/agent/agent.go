@@ -18,6 +18,7 @@ import (
 var (
 	Env           = flag.String("env", "production", "If you want to run the agent in development mode uses different ports")
 	InDevelopment = false
+	Applications  = map[string]*Application{}
 )
 
 func main() {

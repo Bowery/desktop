@@ -47,19 +47,6 @@ func TestAddPlugin(t *testing.T) {
 	t.Error("Failed to add plugin.")
 }
 
-func TestUpdatePlugin(t *testing.T) {
-	err := testPluginManager.UpdatePlugin("test-plugin", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "test-plugin" && !plugin.IsEnabled {
-			t.Error("Failed to update plugin.")
-		}
-	}
-}
-
 func TestRemovePlugin(t *testing.T) {
 	err := testPluginManager.RemovePlugin("test-plugin")
 	if err != nil {
@@ -67,7 +54,7 @@ func TestRemovePlugin(t *testing.T) {
 	}
 
 	for _, plugin := range testPluginManager.Plugins {
-		if plugin.Name == "test-plugin" && plugin.IsEnabled == true {
+		if plugin.Name == "test-plugin" {
 			t.Fatal("Failed to remove the plugin")
 		}
 	}
