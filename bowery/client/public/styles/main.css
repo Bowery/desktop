@@ -302,7 +302,8 @@ ul.list .item .status.alert {
   margin-left: 10px;
 }
 
-.create-application {
+.create-application,
+.hidden {
   display: none;
 }
 
