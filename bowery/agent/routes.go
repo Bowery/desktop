@@ -286,6 +286,7 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 // PUT /plugins, Updates a plugin
 func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
+	// TODO (sjkaliski or rm): edit hooks
 	res := NewResponder(rw, req)
 
 	appID := req.FormValue("appID")

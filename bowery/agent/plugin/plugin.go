@@ -60,6 +60,14 @@ func AddPlugin(plugin *Plugin) {
 
 // AddPlugin adds a new Plugin.
 func (pm *PluginManager) AddPlugin(plugin *Plugin) {
+	// makes sure that when dev-mode is turned on the dev plugins overwrite the old ones
+	for i, p := range pm.Plugins {
+		if p.Name == plugin.Name {
+			pm.Plugins[i] = plugin
+			return
+		}
+	}
+
 	pm.Plugins = append(pm.Plugins, plugin)
 }
 
