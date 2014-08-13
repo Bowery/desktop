@@ -14,3 +14,5 @@ build/atom-shell
 build/node_modules
 build/cache
 dist/
+scripts/zip.exe
+bowery/agent/choco
