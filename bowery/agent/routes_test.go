@@ -18,6 +18,10 @@ import (
 )
 
 func init() {
+	Applications["some-app-id"] = &Application{
+		ID: "some-app-id",
+	}
+
 	plugin.SetPluginManager()
 	plugin.PluginDir = filepath.Join("test", "plugins")
 	tarPath := filepath.Join("test", "plugin.tar.gz")
@@ -100,7 +104,8 @@ func TestUploadPluginHandlerWithValidRequest(t *testing.T) {
 	req, err := newUploadRequest(server.URL, map[string]string{
 		"file": filepath.Join("test", "plugin.tar.gz"),
 	}, map[string]string{
-		"name": "test-plugin",
+		"appID": "some-app-id",
+		"name":  "test-plugin",
 	})
 
 	res, err := http.DefaultClient.Do(req)
@@ -140,6 +145,7 @@ func TestUpdatePluginHandlerWithValidRequest(t *testing.T) {
 
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	writer.WriteField("appID", "some-app-id")
 	writer.WriteField("name", "test-plugin")
 	writer.WriteField("isEnabled", "true")
 	writer.Close()

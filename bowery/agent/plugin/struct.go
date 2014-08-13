@@ -20,9 +20,6 @@ type Plugin struct {
 	// Required software and dependencies.
 	Requirements string
 
-	// Whether the plugin is being used or not.
-	IsEnabled bool
-
 	// BackgroundProcess is the long standing background
 	// process for a given plugin. The application's
 	// Stdout and Stderr are piped to this process.
@@ -69,6 +66,12 @@ type PluginEvent struct {
 
 	// The directory of the application code.
 	AppDir string
+
+	// A unique identifier (typically the application id).
+	Identifier string
+
+	// The set of plugins applicable to this event.
+	EnabledPlugins []string
 }
 
 // Error describes a plugin error along with

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -185,7 +184,6 @@ func main() {
 		&Route{"GET", "/applications/{id}", appHandler},
 		&Route{"GET", "/plugins", listPluginsHandler},
 		&Route{"GET", "/plugins/{name}/{version}", showPluginHandler},
-		&Route{"GET", "/logs/{id}", logsHandler},
 		&Route{"GET", "/settings", getSettingsHandler},
 		&Route{"POST", "/settings", updateSettingsHandler},
 		&Route{"GET", "/_/ws", wsHandler},
@@ -254,8 +252,8 @@ func main() {
 				// and all enabled plugins.
 				if connected && !app.IsSyncAvailable {
 					log.Println(fmt.Sprintf("reconnecting: %s", addr))
-					uploadAppPlugins(app)
 					uploadApp(app)
+					uploadAppPlugins(app, true)
 				}
 
 				// Update app state and broadcast.
@@ -272,7 +270,9 @@ func main() {
 		for _, app := range data.Applications {
 			syncer.Watch(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
-			uploadAppPlugins(app)
+			uploadApp(app)
+			broadcastJSON(&Event{Application: app, Status: "upload-finish"})
+			uploadAppPlugins(app, true)
 		}
 	}
 
@@ -427,10 +427,10 @@ func uploadApp(app *Application) error {
 	return watcher.Upload()
 }
 
-func uploadAppPlugins(app *Application) error {
+func uploadAppPlugins(app *Application, init bool) error {
 	var err error
 	for _, p := range app.EnabledPlugins {
-		if err = uploadPlugin(app, p); err != nil {
+		if err = uploadPlugin(app, p, init); err != nil {
 			return err
 		}
 	}
@@ -438,7 +438,7 @@ func uploadAppPlugins(app *Application) error {
 	return nil
 }
 
-func uploadPlugin(app *Application, name string) error {
+func uploadPlugin(app *Application, name string, init bool) error {
 	var err error
 	var pluginPath string
 	var pluginStr string
@@ -459,22 +459,33 @@ func uploadPlugin(app *Application, name string) error {
 
 	// Send a PUT /plugins request to the agent. If it is successful, that means
 	// the agent has the appropriate code and has successfully toggled the
-	// "isEnabled" state of the plugin. If it fails,
+	// "isEnabled" state of the plugin. If it fails, attempt to upload
+	// the plugin with a POST request to /plugins. If init is true, this means
+	// the state shouldn't be toggled. Just update the state on the remote agent.
 	didRemovePlugin := false
 	for i, p := range app.EnabledPlugins {
 		if p == pluginStr { // remove & respond if it exists
 			j := i + 1
-			app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
+			if !init {
+				app.EnabledPlugins = append(app.EnabledPlugins[:i], app.EnabledPlugins[j:]...)
+			}
 			didRemovePlugin = true
 			break
 		}
 	}
 	if !didRemovePlugin {
-		app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+		if !init {
+			app.EnabledPlugins = append(app.EnabledPlugins, pluginStr)
+		}
+	}
+
+	if init {
+		didRemovePlugin = !didRemovePlugin
 	}
 
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	writer.WriteField("appID", app.ID)
 	writer.WriteField("name", pluginStr)
 	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
 	writer.Close()
@@ -557,6 +568,7 @@ func uploadPlugin(app *Application, name string) error {
 	req, err = newUploadRequest(host+"/plugins", map[string]string{
 		"file": uploadFilePath,
 	}, map[string]string{
+		"appID": app.ID,
 		"name":  pluginStr,
 		"hooks": pluginHooksStr,
 	})
@@ -915,6 +927,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	db.Save(data)
 
 	syncer.Watch(app)
+	uploadApp(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
@@ -972,8 +985,7 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	app := getAppById(vars["id"])
 
-	if err := uploadPlugin(app, fmt.Sprintf("%s@%s", name, version)); err != nil {
-		log.Println(err)
+	if err := uploadPlugin(app, fmt.Sprintf("%s@%s", name, version), false); err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
@@ -1115,21 +1127,6 @@ func showPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	r.HTML(rw, http.StatusOK, "error", map[string]interface{}{
 		"Title": "Error",
 		"Error": "Plugin not found. See http://github.com/bowery/plugins for a list of availble plugins.",
-	})
-}
-
-func logsHandler(rw http.ResponseWriter, req *http.Request) {
-	// Parse application ID.
-	appID := mux.Vars(req)["id"]
-
-	// Read from file.
-	logs, err := ioutil.ReadFile(filepath.Join(logDir, appID+".log"))
-	if err != nil {
-		log.Println(err)
-	}
-
-	externalViewRenderer.HTML(rw, http.StatusOK, "logs", map[string]string{
-		"Logs": string(bytes.Trim(logs, "\x00")),
 	})
 }
 
