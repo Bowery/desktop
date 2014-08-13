@@ -10,4 +10,11 @@
     </li>
     {{end}}
   </ul>
+  {{if .DevMode}}
+  <form class="form" method="get" action="/plugins/new">
+    <div class="field-submit">
+      <input class="submit" type="submit" value="Add Plugin">
+    </div>
+  </form>
+  {{end}}
 </div>
