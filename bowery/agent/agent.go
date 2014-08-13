@@ -12,6 +12,7 @@ import (
 	"runtime"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/config"
 	"github.com/gorilla/mux"
 )
 
@@ -45,14 +46,14 @@ func main() {
 		route.HandlerFunc(r.Handler)
 	}
 
-	port := "3001"
+	port := config.BoweryAgentPort
 	if InDevelopment {
 		port = "3003"
 	}
 
 	// Start the server.
 	server := &http.Server{
-		Addr:    ":" + port,
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: &SlashHandler{&LogHandler{os.Stdout, router}},
 	}
 
