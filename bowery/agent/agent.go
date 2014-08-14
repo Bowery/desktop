@@ -29,15 +29,6 @@ func main() {
 		InDevelopment = true
 	}
 
-	err := os.MkdirAll(ServiceDir, os.ModePerm|os.ModeDir)
-	if err == nil {
-		err = os.Chdir(ServiceDir)
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
 	// Register routes.
 	router := mux.NewRouter()
 	router.NotFoundHandler = NotFoundHandler
