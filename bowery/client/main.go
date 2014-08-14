@@ -297,9 +297,9 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = fmt.Sprintf(":%s", config.BoweryClientPort)
+		port = "32055"
 	}
-	app.Run(port)
+	app.Run(":" + port)
 }
 
 func broadcastJSON(data interface{}) {
@@ -875,7 +875,7 @@ func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	remoteAddr := req.FormValue("ip-addr")
 
-	defaultSyncPort := fmt.Sprintf(":%s", config.BoweryAgentPort)
+	defaultSyncPort := ":3001"
 	if os.Getenv("AGENT") == "development" {
 		defaultSyncPort = ":3003"
 	}
@@ -923,7 +923,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	hostAndPort := strings.Split(ipAddr, ":")
 	if len(hostAndPort) == 1 {
 		app.RemoteAddr = ipAddr
-		app.SyncPort = config.BoweryAgentPort
+		app.SyncPort = "3001"
 		if os.Getenv("AGENT") == "development" {
 			app.SyncPort = "3003"
 		}
