@@ -157,11 +157,13 @@ func init() {
 
 	UpdateFormulae(data.DevMode)
 	go func() {
-		<-time.After(30 * time.Minute)
-		if !data.DevMode {
-			if err := UpdateFormulae(data.DevMode); err != nil {
-				log.Println(err)
+		for {
+			if !data.DevMode {
+				if err := UpdateFormulae(data.DevMode); err != nil {
+					log.Println(err)
+				}
 			}
+			<-time.After(30 * time.Minute)
 		}
 	}()
 
@@ -442,12 +444,9 @@ func uploadApp(app *Application) error {
 }
 
 func uploadAppPlugins(app *Application, init, force bool) error {
-	log.Println(app.EnabledPlugins)
 	var err error
 	for _, p := range app.EnabledPlugins {
-		log.Println("\nuploadappplugins\n")
 		if err = uploadPlugin(app, p, init, force); err != nil {
-			log.Println("\nuploadappplugins\n")
 			return err
 		}
 	}
@@ -464,7 +463,6 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		pluginRepo  string
 	)
 
-	log.Println("\n0\n")
 	// Install Plugin on the local machine
 	for _, formula := range GetFormulae() {
 		if fmt.Sprintf("%s@%s", formula.Name, formula.Version) == name {
@@ -1132,6 +1130,7 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	name := req.FormValue("name")
 	repository := req.FormValue("repository")
 	description := req.FormValue("description")
+	requirements := req.FormValue("requirements")
 
 	if name == "" {
 		requestProblems["name"] = "Valid name required."
@@ -1160,6 +1159,15 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if description == "" {
 		requestProblems["description"] = "Valid description required."
+	}
+
+	// If there are no problems, create plugin template.
+	if len(requestProblems) == 0 {
+		dev := getDev()
+		err := CreateFormulae(name, description, requirements, repository, dev)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, nil)
+		}
 	}
 
 	// todo(rm): create plugin, write file, etc.

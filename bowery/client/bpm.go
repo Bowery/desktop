@@ -3,8 +3,10 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -79,6 +81,53 @@ func processFormulae(isDev bool) error {
 
 	return nil
 }
+
+// CreateFormulae creates a new dev formula.
+func CreateFormulae(name, desc, req, repo string, dev *schemas.Developer) error {
+	formulae := schemas.Formula{
+		Name:         name,
+		Description:  desc,
+		Requirements: req,
+		Author: schemas.Author{
+			Name:  dev.Name,
+			Email: dev.Email,
+		},
+		Hooks: schemas.Hooks{
+			OnPluginInit: "echo 'Put Your Hook Here'",
+		},
+		Version:    "1.0.0",
+		Repository: repo,
+	}
+
+	file, err := os.OpenFile(filepath.Join(formulaDir, fmt.Sprintf("%s.dev.json", name)),
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := json.MarshalIndent(formulae, "", "  ")
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(data)
+	_, err = io.Copy(file, buf)
+
+	if err != nil {
+		return err
+	}
+
+	return processFormulae(true)
+}
+
+// func watchDevFormula(name string) error {
+// 	formula, ok := GetFormulaByName(name)
+// 	if !ok {
+// 		return errors.New("invalid plugin name")
+// 	}
+
+// 	return nil
+// }
 
 // UpdateFormulae, checks to see if there's a directory for the formulae already.
 // If there is, it `git pull`s it. Otherwise, it `git clone`s the repo.
