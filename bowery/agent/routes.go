@@ -21,9 +21,8 @@ import (
 const httpMaxMem = 32 << 10
 
 var (
-	HomeDir    = os.Getenv(sys.HomeVar)
-	BoweryDir  = filepath.Join(HomeDir, ".bowery")
-	ServiceDir = filepath.Join(BoweryDir, "application")
+	HomeDir   = os.Getenv(sys.HomeVar)
+	BoweryDir = filepath.Join(HomeDir, ".bowery")
 )
 
 // List of named routes.
