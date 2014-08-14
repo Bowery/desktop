@@ -1,10 +1,12 @@
+# Usage: powershell -ExecutionPolicy unrestricted -File .\release_agent.ps1
+#        .\release_agent.ps1(while in powershell cli)
 $ErrorActionPreference = "Stop"
 $origpwd = $pwd
 
 # Get and cd into the directory containing this script.
 $cmd = $MyInvocation.MyCommand
 $root = $cmd.Definition.Replace($cmd.Name, "..")
-$dir = $root + "\bowery\agent"
+$dir = "$root\bowery\agent"
 
 # Build utility for zip aws upload.
 cd "$root\scripts"
@@ -25,7 +27,7 @@ if ($LastExitCode -gt 0) {
     cd $origpwd
     exit 1
 }
-goxc -tasks-=validate "-d=$dir\pkg" "-pv=$version" -os=windows xc
+goxc -tasks-=validate "-d=$dir\pkg" "-pv=$version" "-arch=386 amd64" -os=windows xc
 if ($LastExitCode -gt 0) {
   cd $origpwd
   exit 1
@@ -39,6 +41,8 @@ ForEach ($platform in Get-ChildItem "$dir\pkg\$version") {
     continue
   }
 
+  Remove-Item "$dir\pkg\$version\$name\bowery-agent.exe" -Force -ErrorAction SilentlyContinue
+  Rename-Item "$dir\pkg\$version\$name\agent.exe" "bowery-agent.exe" -Force
   ..\..\scripts\winutil.exe zip "$dir\pkg\$version\$name" "$dir\pkg\$version\dist\$($version)_$name.zip"
   if ($LastExitCode -gt 0) {
     cd $origpwd
@@ -47,12 +51,15 @@ ForEach ($platform in Get-ChildItem "$dir\pkg\$version") {
 }
 
 # Pack the choco pkg.
+Copy-Item "$dir\icon.png" "$dir\pkg\$version\dist" -Force
 New-Item "$dir\choco\tools" -Force -ItemType directory
 New-Item "$dir\choco\bowery-agent.nuspec" -Force -ItemType file -Value ""
-$nuspec = (Get-Content "$dir\bowery-agent.nuspec") -replace "{{version}}","$version"
+$nuspec = (Get-Content "$dir\bowery-agent.nuspec") -replace "{{version}}", "$version"
 [System.IO.File]::WriteAllLines("$dir\choco\bowery-agent.nuspec", $nuspec)
-$install = (Get-Content "$dir\tools\chocolateyInstall.ps1") -replace "{{version}}","$version"
-[System.IO.File]::WriteAllLines("$dir\choco\tools\chocolateyInstall.ps1", $install)
+ForEach ($file in Get-ChildItem "$dir\tools") {
+  $content = (Get-Content "$dir\tools\$($file.name)") -replace "{{version}}", "$version"
+  [System.IO.File]::WriteAllLines("$dir\choco\tools\$($file.name)", $content)
+}
 cd "$dir\choco"
 cpack
 if ($LastExitCode -gt 0) {
@@ -62,13 +69,21 @@ if ($LastExitCode -gt 0) {
 
 # Push the choco pkg.
 cinst nuget.commandline
-nuget SetApiKey "2e664545-c457-4d43-afc2-6faa65203bf4" -source http://chocolatey.org
+if ($LastExitCode -gt 0) {
+  cd $origpwd
+  exit 1
+}
+nuget setApiKey "2e664545-c457-4d43-afc2-6faa65203bf4" -Source "http://chocolatey.org/"
+if ($LastExitCode -gt 0) {
+  cd $origpwd
+  exit 1
+}
 cpush "bowery-agent.$($version).nupkg"
-
-ForEach ($archive in Get-ChildItem "$dir\pkg\$version\dist") {
-  $path = "$dir\pkg\$version\dist\$($archive.name)"
-  echo "Uploading $file from $path"
-  .\scripts\winutil.exe aws "$path"
+if ($LastExitCode -gt 0) {
+  cd $origpwd
+  exit 1
 }
 
+cd $dir
+..\..\scripts\winutil.exe aws "$dir\pkg\$version\dist"
 cd $origpwd
