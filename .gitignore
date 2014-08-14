@@ -14,5 +14,5 @@ build/atom-shell
 build/node_modules
 build/cache
 dist/
-scripts/zip.exe
+scripts/winutil.exe
 bowery/agent/choco

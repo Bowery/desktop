@@ -6,12 +6,12 @@ $cmd = $MyInvocation.MyCommand
 $root = $cmd.Definition.Replace($cmd.Name, "..")
 $dir = $root + "\bowery\agent"
 
-# Build the winzip program, otherwise we'd have to use shitty vbscript.
+# Build utility for zip aws upload.
 cd "$root\scripts"
-go build -o zip.exe winzip.go
+go build winutil.go
 if ($LastExitCode -gt 0) {
-    cd $origpwd
-    exit 1
+  cd $origpwd
+  exit 1
 }
 cd $dir
 
@@ -20,31 +20,30 @@ $version = Get-Content ..\VERSION
 echo "Version: $version"
 
 # Build the agent.
-#TODO: go get -u github.com/laher/goxc
+go get -u github.com/laher/goxc
 if ($LastExitCode -gt 0) {
     cd $origpwd
     exit 1
 }
-echo "build"
-#TODO: goxc -tasks-=validate "-d=$dir\pkg" "-pv=$version" -os=windows xc
+goxc -tasks-=validate "-d=$dir\pkg" "-pv=$version" -os=windows xc
 if ($LastExitCode -gt 0) {
-    cd $origpwd
-    exit 1
+  cd $origpwd
+  exit 1
 }
 
 # Zip up the binaries.
-New-Item "$dir\pkg\$version\dist" -Force -ItemType directory 
+New-Item "$dir\pkg\$version\dist" -Force -ItemType directory
 ForEach ($platform in Get-ChildItem "$dir\pkg\$version") {
-    $name = $platform.name
-    if ($name -eq "dist") {
-        continue
-    }
+  $name = $platform.name
+  if ($name -eq "dist") {
+    continue
+  }
 
-    ..\..\scripts\zip.exe "$dir\pkg\$version\$name" "$dir\pkg\$version\dist\$($version)_$name.zip"
-    if ($LastExitCode -gt 0) {
-        cd $origpwd
-        exit 1
-    }
+  ..\..\scripts\winutil.exe zip "$dir\pkg\$version\$name" "$dir\pkg\$version\dist\$($version)_$name.zip"
+  if ($LastExitCode -gt 0) {
+    cd $origpwd
+    exit 1
+  }
 }
 
 # Pack the choco pkg.
@@ -57,8 +56,8 @@ $install = (Get-Content "$dir\tools\chocolateyInstall.ps1") -replace "{{version}
 cd "$dir\choco"
 cpack
 if ($LastExitCode -gt 0) {
-    cd $origpwd
-    exit 1
+  cd $origpwd
+  exit 1
 }
 
 # Push the choco pkg.
@@ -66,6 +65,10 @@ cinst nuget.commandline
 nuget SetApiKey "2e664545-c457-4d43-afc2-6faa65203bf4" -source http://chocolatey.org
 cpush "bowery-agent.$($version).nupkg"
 
-# loop dist and upload
+ForEach ($archive in Get-ChildItem "$dir\pkg\$version\dist") {
+  $path = "$dir\pkg\$version\dist\$($archive.name)"
+  echo "Uploading $file from $path"
+  .\scripts\winutil.exe aws "$path"
+}
 
 cd $origpwd
