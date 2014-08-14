@@ -1130,6 +1130,8 @@ func newPluginHandler(rw http.ResponseWriter, req *http.Request) {
 func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 	name := req.FormValue("name")
+	repository := req.FormValue("repository")
+	description := req.FormValue("description")
 
 	if name == "" {
 		requestProblems["name"] = "Valid name required."
@@ -1137,6 +1139,27 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if _, ok := GetFormulaByName(name); ok {
 		requestProblems["name"] = fmt.Sprintf("`%s` already taken.", name)
+	}
+
+	// Repository required. If provided, determine if it is
+	// on the local file system or hosted. If it is on the
+	// local file system, make sure it's a existing directory.
+	if repository == "" {
+		requestProblems["repository"] = "Valid repository required."
+	} else {
+		u, err := url.Parse(repository)
+		if err == nil && u.Host == "" {
+			if len(repository) >= 2 && repository[:2] == "~/" {
+				repository = strings.Replace(repository, "~", os.Getenv(sys.HomeVar), 1)
+			}
+			if stat, err := os.Stat(repository); os.IsNotExist(err) || !stat.IsDir() {
+				requestProblems["repository"] = fmt.Sprintf("%s is not a valid directory", repository)
+			}
+		}
+	}
+
+	if description == "" {
+		requestProblems["description"] = "Valid description required."
 	}
 
 	// todo(rm): create plugin, write file, etc.
