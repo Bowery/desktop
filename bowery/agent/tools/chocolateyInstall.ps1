@@ -23,16 +23,12 @@ try {
   }
 
   # Reinstall the Windows Service.
-  net stop "Bowery Agent" | Out-Null
-  nssm remove "Bowery Agent" confirm | Out-Null
-  nssm install "Bowery Agent" "$root\bowery-agent.exe"
-  if ($LastExitCode -gt 0) {
-    throw "Command 'nssm install' returned $LastExitCode"
+  if (Get-Service "Bowery-Agent" -ErrorAction SilentlyContinue) {
+    Start-ChocolateyProcessAsAdmin 'stop Bowery-Agent' net | Out-Null
+    Start-ChocolateyProcessAsAdmin 'remove Bowery-Agent confirm' nssm | Out-Null
   }
-  net start "Bowery Agent" | Out-Null
-  if ($LastExitCode -gt 0) {
-    throw "Command 'net start' returned $LastExitCode"
-  }
+  Start-ChocolateyProcessAsAdmin 'install Bowery-Agent $root\bowery-agent.exe' nssm | Out-Null
+  Start-ChocolateyProcessAsAdmin 'start Bowery-Agent' net | Out-Null
 
   Write-ChocolateySuccess "$packageName"
 } catch {

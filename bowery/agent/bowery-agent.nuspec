@@ -10,7 +10,7 @@
     <description>
 Bowery code sync and process management server.
 
-This installation runs the Bowery agent as a Windows Service named "Bowery Agent". Because it adds a Windows Service you must install while running as an Administrator.
+This installation runs the Bowery agent as a Windows Service named "Bowery-Agent".
 
 The server listens on port 3001, so when using the Bowery client and creating an application make sure you provide the port.
     </description>
