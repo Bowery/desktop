@@ -257,7 +257,9 @@ func main() {
 				status := "connect"
 				addr := fmt.Sprintf("http://%s:%s/healthz", app.RemoteAddr, app.SyncPort)
 				res, err := http.Get(addr)
-
+				if err == nil {
+					res.Body.Close()
+				}
 				if err != nil || res.StatusCode != http.StatusOK {
 					connected = false
 					status = "disconnect"
