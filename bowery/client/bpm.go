@@ -71,6 +71,7 @@ func processFormulae(isDev bool) error {
 			}
 		}
 	}
+
 	// overwrite formula where dev formula exist
 	for name, formula := range devFormulae {
 		formulae[name] = formula
@@ -150,15 +151,15 @@ func InstallPlugin(name string) (string, error) {
 	os.Chdir(PluginDir)
 	defer os.Chdir(TemplateDir)
 
-	dirName := fmt.Sprintf("%s@%s", formula.Name, formula.Version)
-	if _, err := os.Stat(dirName); err == nil {
-		return filepath.Join(PluginDir, dirName), nil
-	}
-
 	// Determine if the repository is hosted or on the local machine.
 	u, err := url.Parse(formula.Repository)
 	// Is git repo.
 	if err == nil && u.Host != "" {
+		dirName := fmt.Sprintf("%s@%s", formula.Name, formula.Version)
+		if _, err := os.Stat(dirName); err == nil {
+			return filepath.Join(PluginDir, dirName), nil
+		}
+
 		if err := git("clone", formula.Repository, dirName); err != nil {
 			return "", err
 		}
