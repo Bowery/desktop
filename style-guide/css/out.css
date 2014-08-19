@@ -27,28 +27,35 @@ a {
 h1,
 h2 {
   font-size: 42px;
-  color: #444;
-  letter-spacing: -2px;
-  font-weight: bold
+  color: #2B2B2B;
+  letter-spacing: -1px;
   margin: 0;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+h1 {
+  font-size: 50px;
 }
 
 h2 {
   font-size: 36px;
-  font-weight: 200;
 }
 
 h3 {
-  font-size: 31px;
-  color: #444;
+  font-size: 30px;
 }
 
 h4 {
-  font-size: 14px;
-  text-transform: uppercase;
-  font-weight: 700;
+  font-size: 18px;
+  font-family: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   letter-spacing: 0;
   color: #e5e5e5;
+}
+
+h5 {
+  font-family: "Lucida Grande", sans-serif;
+  color: #999999;
+  font-size: 16px;
 }
 
 .container {
@@ -147,9 +154,11 @@ li.navigation-item {
 }
 
 .btn-info {
-  color: #444;
+  color: #999999;
   background-color: white;
-  border-color: #444;
+  border-color: #e5e5e5;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px 0px rgba(137,137,137,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
 }
 
 .btn-warning {
@@ -158,21 +167,25 @@ li.navigation-item {
 }
 
 .btn-link {
-  color: #444;
+  color: #999999;
   border: none;
   border-radius: 0;
   background-color: white;
   text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
 }
 
 pre.code {
-  background: #fafafa;
   border-radius: 8px;
   border: 1px solid #e5e5e5;
-  font: 12px monospace #444;
+  font: 12px monospace #999999;
   overflow: auto;
-  font-family: Menlo, monospace;
+  font-family: Monaco, Menlo, monospace;
   padding: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  background: white;
 }
 
 .logo {
@@ -264,7 +277,7 @@ input:active {
 }
 
 .list dt {
-  color: #444;
+  color: #999999;
 }
 
 .list dd {
@@ -298,9 +311,13 @@ input:active {
 }
 
 .box.grey-dark {
-  background: #444;
+  background: #999999;
 }
 
 .box.grey {
   background: #e5e5e5;
+}
+
+.box.black {
+  background: #2B2B2B;
 }

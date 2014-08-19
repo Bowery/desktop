@@ -3,19 +3,22 @@
   --red: #ad2b2e;
   --pink: #e09a96;
   --green: #71b16f;
-  --grey-dark: #444;
+  --grey-dark: #999999;
   --grey-light: #fafafa;
   --grey: #e5e5e5;
+  --black: #2B2B2B;
 
   --width: 620px;
   --nav-height: 42px;
 
   --logo-size: 40px;
 
-  --helvetica-light: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; ;
-  --helvetica-bold: "HelveticaNeue-Bold", "Helvetica Neue Bold", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; ;
-  --helvetica-medium: "HelveticaNeue-Medium", "Helvetica Neue Medium", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; ;
-
+  --helvetica-thin: "HelveticaNeue-Thin", "Helvetica Neue Thin", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-light: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-bold: "HelveticaNeue-Bold", "Helvetica Neue Bold", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-medium: "HelveticaNeue-Medium", "Helvetica Neue Medium", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-regular: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --lucida-grande: "Lucida Grande", sans-serif;
 }
 
 * {
@@ -40,28 +43,33 @@ a {
 
 h1, h2 {
   font-size: 42px;
-  color: var(--grey-dark);
-  letter-spacing: -2px;
-  font-weight: bold
+  color: var(--black);
+  letter-spacing: -1px;
   margin: 0;
+  font-family: var(--helvetica-light);
 }
 
+h1 {
+  font-size: 50px;
+}
 h2 {
   font-size: 36px;
-  font-weight: 200;
 }
 
 h3 {
-  font-size: 31px;
-  color: var(--grey-dark);
+  font-size: 30px;
 }
 
 h4 {
-  font-size: 14px;
-  text-transform: uppercase;
-  font-weight: 700;
+  font-size: 18px;
+  font-family: var(--helvetica-regular);
   letter-spacing: 0;
   color: var(--grey);
+}
+h5 {
+  font-family: var(--lucida-grande);
+  color: var(--grey-dark);
+  font-size: 16px;
 }
 
 .container {
@@ -151,7 +159,10 @@ li.navigation-item {
 .btn-info {
   color: var(--grey-dark);
   background-color: white;
-  border-color: var(--grey-dark);
+  border-color: var(--grey);
+  border-radius: 3px;
+  -moz-box-shadow:    0px 1px 1px 0px rgba(137,137,137,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+  box-shadow:         0px 1px 1px 0px rgba(137,137,137,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
 }
 .btn-warning {
   background-color: var(--red);
@@ -162,17 +173,21 @@ li.navigation-item {
   border: none;
   border-radius: 0;
   background-color: white;
-  text-decoration: underline
+  text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
 }
 
 pre.code {
-  background: var(--grey-light);
   border-radius: 8px;
   border: 1px solid var(--grey);
   font: 12px monospace var(--grey-dark);
   overflow: auto;
-  font-family: Menlo, monospace;
+  font-family: Monaco, Menlo, monospace;
   padding: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  background: white;
 }
 
 .logo {
@@ -280,4 +295,7 @@ input:focus, input:active {
 }
 .box.grey {
   background: var(--grey);
+}
+.box.black {
+  background: var(--black);
 }
