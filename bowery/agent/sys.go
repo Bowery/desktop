@@ -74,6 +74,7 @@ func pidList() ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer procfs.Close()
 
 	names, err := procfs.Readdirnames(0)
 	if err != nil {

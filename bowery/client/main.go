@@ -257,7 +257,9 @@ func main() {
 				status := "connect"
 				addr := fmt.Sprintf("http://%s:%s/healthz", app.RemoteAddr, app.SyncPort)
 				res, err := http.Get(addr)
-
+				if err == nil {
+					res.Body.Close()
+				}
 				if err != nil || res.StatusCode != http.StatusOK {
 					connected = false
 					status = "disconnect"
@@ -269,7 +271,7 @@ func main() {
 				if connected && !app.IsSyncAvailable {
 					log.Println(fmt.Sprintf("reconnecting: %s", addr))
 					uploadApp(app)
-					uploadAppPlugins(app, true)
+					uploadAppPlugins(app, true, false)
 				}
 
 				// Update app state and broadcast.
@@ -288,7 +290,7 @@ func main() {
 			broadcastJSON(&Event{Application: app, Status: "upload-start"})
 			uploadApp(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-finish"})
-			uploadAppPlugins(app, true)
+			uploadAppPlugins(app, true, false)
 		}
 	}
 
@@ -443,10 +445,13 @@ func uploadApp(app *Application) error {
 	return watcher.Upload()
 }
 
-func uploadAppPlugins(app *Application, init bool) error {
+func uploadAppPlugins(app *Application, init, force bool) error {
+	log.Println(app.EnabledPlugins)
 	var err error
 	for _, p := range app.EnabledPlugins {
-		if err = uploadPlugin(app, p, init); err != nil {
+		log.Println("\nuploadappplugins\n")
+		if err = uploadPlugin(app, p, init, force); err != nil {
+			log.Println("\nuploadappplugins\n")
 			return err
 		}
 	}
@@ -454,13 +459,17 @@ func uploadAppPlugins(app *Application, init bool) error {
 	return nil
 }
 
-func uploadPlugin(app *Application, name string, init bool) error {
-	var err error
-	var pluginPath string
-	var pluginStr string
-	var pluginHooks schemas.Hooks
+func uploadPlugin(app *Application, name string, init, force bool) error {
+	var (
+		err         error
+		pluginPath  string
+		pluginStr   string
+		pluginHooks schemas.Hooks
+		pluginRepo  string
+	)
 
-	// Install Plugin
+	log.Println("\n0\n")
+	// Install Plugin on the local machine
 	for _, formula := range GetFormulae() {
 		if fmt.Sprintf("%s@%s", formula.Name, formula.Version) == name {
 			pluginStr = fmt.Sprintf("%s@%s", formula.Name, formula.Version)
@@ -469,6 +478,7 @@ func uploadPlugin(app *Application, name string, init bool) error {
 				return err
 			}
 			pluginHooks = formula.Hooks
+			pluginRepo = formula.Repository
 			break
 		}
 	}
@@ -499,53 +509,57 @@ func uploadPlugin(app *Application, name string, init bool) error {
 		didRemovePlugin = !didRemovePlugin
 	}
 
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	writer.WriteField("appID", app.ID)
-	writer.WriteField("name", pluginStr)
-	writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
-	writer.Close()
-
 	host := fmt.Sprintf("http://%s:%s", app.RemoteAddr, app.SyncPort)
-	req, err := http.NewRequest("PUT", host+"/plugins", &body)
-	if err != nil {
-		return err
-	}
-	if req != nil {
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-	}
+	u, err := url.Parse(pluginRepo)
+	// Is git repo and not developer mode.
+	if err == nil && u.Host != "" && !data.DevMode && !force {
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		writer.WriteField("appID", app.ID)
+		writer.WriteField("name", pluginStr)
+		writer.WriteField("isEnabled", strconv.FormatBool(!didRemovePlugin))
+		writer.Close()
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	// Parse response. If the error is "invalid plugin name" then
-	// upload the entire plugin.
-	updateRes := new(agentResponse)
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(updateRes)
-	if err != nil {
-		return err
-	}
-
-	// If StatusOK, the plugin software is in place, and the plugin
-	// has been updated appropiately. Update the local db and
-	// send a successful a response.
-	if res.StatusCode == http.StatusOK {
-		for i, a := range data.Applications {
-			if a.ID == app.ID {
-				data.Applications[i] = app
-			}
+		req, err := http.NewRequest("PUT", host+"/plugins", &body)
+		if err != nil {
+			return err
 		}
-		db.Save(data)
-		return nil
-	}
+		if req != nil {
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+		}
 
-	// If there is an unexpected error, fail.
-	if updateRes.Error != "invalid plugin name" {
-		return errors.New(updateRes.Error)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		// Parse response. If the error is "invalid plugin name" then
+		// upload the entire plugin.
+		updateRes := new(agentResponse)
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(updateRes)
+		if err != nil {
+			return err
+		}
+
+		// If StatusOK, the plugin software is in place, and the plugin
+		// has been updated appropiately. Update the local db and
+		// send a successful a response.
+		if res.StatusCode == http.StatusOK {
+			for i, a := range data.Applications {
+				if a.ID == app.ID {
+					data.Applications[i] = app
+				}
+			}
+			db.Save(data)
+			return nil
+		}
+
+		// If there is an unexpected error, fail.
+		if updateRes.Error != "invalid plugin name" {
+			return errors.New(updateRes.Error)
+		}
 	}
 
 	// If the plugin has been toggled to off and the plugin data
@@ -564,7 +578,7 @@ func uploadPlugin(app *Application, name string, init bool) error {
 	// Create Tarball
 	upload, err := tar.Tar(pluginPath, []string{})
 	if err != nil {
-		return err
+		return err // tell user file doesnt exist!
 	}
 
 	uploadFilePath := filepath.Join("/tmp", pluginStr)
@@ -581,7 +595,7 @@ func uploadPlugin(app *Application, name string, init bool) error {
 	pluginHooksStr := string(pluginHooksByte)
 
 	// Send Tarball to Agent
-	req, err = newUploadRequest(host+"/plugins", map[string]string{
+	req, err := newUploadRequest(host+"/plugins", map[string]string{
 		"file": uploadFilePath,
 	}, map[string]string{
 		"appID": app.ID,
@@ -592,7 +606,7 @@ func uploadPlugin(app *Application, name string, init bool) error {
 		return err
 	}
 
-	res, err = http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -1001,7 +1015,7 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	version := vars["version"]
 	app := getAppById(vars["id"])
 
-	if err := uploadPlugin(app, fmt.Sprintf("%s@%s", name, version), false); err != nil {
+	if err := uploadPlugin(app, fmt.Sprintf("%s@%s", name, version), false, true); err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
@@ -1221,6 +1235,10 @@ func updateDevModeHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if err := UpdateFormulae(data.DevMode); err != nil {
 		log.Println(err)
+	}
+
+	for _, app := range data.Applications {
+		uploadAppPlugins(app, true, true)
 	}
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
