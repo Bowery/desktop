@@ -21,6 +21,7 @@ import (
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/localdb"
+	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
@@ -38,6 +39,7 @@ var (
 	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
 	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 	keenC        *keen.Client
+	rollbarC     *rollbar.Client
 	TemplateDir  string
 )
 
@@ -135,6 +137,8 @@ func init() {
 		ProjectID: config.KeenProjectID,
 	}
 
+	rollbarC = rollbar.NewClient(config.RollbarToken, "production")
+
 	data = new(localData)
 	if err = db.Load(data); err == io.EOF || os.IsNotExist(err) {
 		// Get developer.
@@ -150,6 +154,7 @@ func init() {
 
 	TemplateDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
 	if err := os.Chdir(TemplateDir); err != nil {
+		rollbarC.Report(err, nil)
 		panic("Wrong Directory")
 	}
 
@@ -160,7 +165,7 @@ func init() {
 		for {
 			if !data.DevMode {
 				if err := UpdateFormulae(data.DevMode); err != nil {
-					log.Println(err)
+					rollbarC.Report(err, nil)
 				}
 			}
 			<-time.After(30 * time.Minute)
@@ -336,11 +341,13 @@ func getToken() error {
 	}
 	encoder := json.NewEncoder(&body)
 	if err := encoder.Encode(bodyReq); err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 
 	res, err := http.Post(AuthEndpoint+AuthCreateTokenPath, "application/json", &body)
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 	defer res.Body.Close()
@@ -350,6 +357,7 @@ func getToken() error {
 	decoder := json.NewDecoder(res.Body)
 	err = decoder.Decode(createRes)
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 
@@ -369,6 +377,7 @@ func getDev() *schemas.Developer {
 
 	res, err := http.Get(AuthEndpoint + strings.Replace(AuthMePath, "{token}", data.Developer.Token, -1))
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return data.Developer
 	}
 	defer res.Body.Close()
@@ -402,6 +411,7 @@ func updateDev(oldpass, newpass string) error {
 	url := strings.Replace(AuthUpdateDeveloperPath, "{token}", data.Developer.Token, -1)
 	req, err := http.NewRequest("PUT", AuthEndpoint+url, strings.NewReader(form.Encode()))
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 
@@ -409,6 +419,7 @@ func updateDev(oldpass, newpass string) error {
 	req.SetBasicAuth(data.Developer.Token, "")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 	defer resp.Body.Close()
@@ -418,6 +429,7 @@ func updateDev(oldpass, newpass string) error {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(updateRes)
 	if err != nil {
+		rollbarC.Report(err, nil)
 		return err
 	}
 
@@ -437,6 +449,9 @@ func updateDev(oldpass, newpass string) error {
 func uploadApp(app *Application) error {
 	watcher, err := syncer.GetWatcher(app)
 	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
 		return err
 	}
 
@@ -447,6 +462,9 @@ func uploadAppPlugins(app *Application, init, force bool) error {
 	var err error
 	for _, p := range app.EnabledPlugins {
 		if err = uploadPlugin(app, p, init, force); err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"dev": getDev(),
+			})
 			return err
 		}
 	}
@@ -469,6 +487,9 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 			pluginStr = fmt.Sprintf("%s@%s", formula.Name, formula.Version)
 			pluginPath, err = InstallPlugin(formula.Name)
 			if err != nil {
+				rollbarC.Report(err, map[string]interface{}{
+					"dev": getDev(),
+				})
 				return err
 			}
 			pluginHooks = formula.Hooks
@@ -516,6 +537,9 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 
 		req, err := http.NewRequest("PUT", host+"/plugins", &body)
 		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"dev": getDev(),
+			})
 			return err
 		}
 		if req != nil {
@@ -524,6 +548,9 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"dev": getDev(),
+			})
 			return err
 		}
 		defer res.Body.Close()
@@ -534,7 +561,9 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		decoder := json.NewDecoder(res.Body)
 		err = decoder.Decode(updateRes)
 		if err != nil {
-			return err
+			rollbarC.Report(err, map[string]interface{}{
+				"dev": getDev(),
+			})
 		}
 
 		// If StatusOK, the plugin software is in place, and the plugin
@@ -572,18 +601,27 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 	// Create Tarball
 	upload, err := tar.Tar(pluginPath, []string{})
 	if err != nil {
-		return err // tell user file doesnt exist!
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
+		return err
 	}
 
 	uploadFilePath := filepath.Join("/tmp", pluginStr)
 	file, err := os.Create(uploadFilePath)
 	if _, err := io.Copy(file, upload); err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
 		return err
 	}
 
 	// Convert hooks to string.
 	pluginHooksByte, err := json.Marshal(pluginHooks)
 	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
 		return err
 	}
 	pluginHooksStr := string(pluginHooksByte)
@@ -597,11 +635,17 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		"hooks": pluginHooksStr,
 	})
 	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
 		return err
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
 		return err
 	}
 	defer res.Body.Close()
