@@ -51,9 +51,11 @@ func main() {
 
 	// Start tcp.
 	go StartTCP()
-
 	// Start event listening.
+	pluginManager := plugin.SetPluginManager()
 	go plugin.StartPluginListener()
+	errStreamManager := NewErrStreamManager()
+	go errStreamManager.PluginErrStream(pluginManager.Error)
 
 	// Set up debug http port, temporary.
 	// todo(steve): remove once we know what the issue is.

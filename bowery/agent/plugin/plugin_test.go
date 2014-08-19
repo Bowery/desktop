@@ -5,19 +5,23 @@
 // Note(steve): Not completed yet.
 package plugin
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/Bowery/gopackages/schemas"
+)
 
 var (
 	testPlugin = &Plugin{
 		Name: "test-plugin",
 		Hooks: map[string]string{
-			AFTER_APP_RESTART: "echo Restart",
+			"AFTER_APP_RESTART": "echo Restart",
 		},
-		Author: PluginAuthor{
+		Author: schemas.Author{
 			Name:    "Steve Kaliski",
 			Email:   "steve@bowery.io",
 			Twitter: "@stevekaliski",
-			Github:  "github.com/sjkaliski",
+			GitHub:  "github.com/sjkaliski",
 		},
 	}
 	testPluginManager *PluginManager

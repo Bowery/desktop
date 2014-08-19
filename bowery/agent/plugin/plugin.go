@@ -50,8 +50,9 @@ func NewPluginManager() *PluginManager {
 	}
 }
 
-func SetPluginManager() {
+func SetPluginManager() *PluginManager {
 	pluginManager = NewPluginManager()
+	return pluginManager
 }
 
 func AddPlugin(plugin *Plugin) error {
@@ -141,8 +142,6 @@ func StartPluginListener() {
 					}
 				}
 			}
-		case err := <-pluginManager.Error:
-			handlePluginError(err.Plugin.Name, err.Error)
 		}
 	}
 }
@@ -208,7 +207,7 @@ func executeHook(plugin *Plugin, path, dir, command string, background bool) {
 		cmd.Env = env
 		data, err := cmd.CombinedOutput()
 		if err != nil {
-			handlePluginError(name, err)
+			handlePluginError(plugin, command, err)
 			return
 		}
 
@@ -226,23 +225,26 @@ func executeHook(plugin *Plugin, path, dir, command string, background bool) {
 		cmd.Env = env
 
 		plugin.BackgroundCommand = cmd
+
 		go func() {
 			if err := cmd.Start(); err != nil {
-				handlePluginError(name, err)
+				handlePluginError(plugin, command, err)
 				return
 			}
 			if err := cmd.Wait(); err != nil {
-				handlePluginError(name, err)
+				handlePluginError(plugin, command, err)
 			}
 		}()
 	}
 }
 
-// handlePluginError handles plugin errors that may occur when loading
-// and preparing a plugin, or when executing a plugin's hook.
-func handlePluginError(name string, err error) {
-	// todo(steve): shoot this down the wire.
-	log.Println("plugin error:", fmt.Sprintf("%s: `%s`", name, err.Error()))
+// handlePluginError emits the values of the plugin error to pluginManager.Error
+func handlePluginError(plugin *Plugin, command string, err error) {
+	pluginManager.Error <- &PluginError{
+		Plugin:  plugin,
+		Command: command,
+		Error:   err,
+	}
 }
 
 // EmitPluginEvent creates a new PluginEvent and sends it

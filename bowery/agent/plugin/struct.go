@@ -3,6 +3,8 @@ package plugin
 
 import (
 	"os/exec"
+
+	"github.com/Bowery/gopackages/schemas"
 )
 
 // Plugin defines the properties and event handlers
@@ -12,7 +14,7 @@ type Plugin struct {
 	Name string
 
 	// Author of plugin.
-	Author PluginAuthor
+	Author schemas.Author
 
 	// Hooks and associated handlers.
 	Hooks map[string]string
@@ -24,22 +26,6 @@ type Plugin struct {
 	// process for a given plugin. The application's
 	// Stdout and Stderr are piped to this process.
 	BackgroundCommand *exec.Cmd
-}
-
-// PluginAuther defines the attributes and properties
-// of a plugin author.
-type PluginAuthor struct {
-	// e.g. Steve Kaliski
-	Name string
-
-	// e.g. steve@bowery.io
-	Email string
-
-	// e.g. stevekaliski
-	Twitter string
-
-	// e.g. sjkaliski
-	Github string
 }
 
 // PluginManager manages all of the plugins as well as
@@ -79,6 +65,8 @@ type PluginEvent struct {
 type PluginError struct {
 	// The plugin the error came from.
 	Plugin *Plugin
+
+	Command string
 
 	// The error that occured.
 	Error error

@@ -14,9 +14,9 @@ var (
 // Start a TCP listener on port 3002. Append
 // newly connected clients to slice.
 func StartTCP() {
-	port := "3002"
+	port := "32058"
 	if InDevelopment {
-		port = "3004"
+		port = "32057"
 	}
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
