@@ -1,0 +1,8 @@
+public/css/out.css
+.vagrant/
+api/gin-bin
+api/api
+satellite/gin-bin
+satellite/satellite
+satellite/test
+cli/cli

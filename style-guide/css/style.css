@@ -1,0 +1,304 @@
+:root {
+  --blue: #265ba9;
+  --red: #ad2b2e;
+  --pink: #e09a96;
+  --green: #71b16f;
+  --grey-dark: #999999;
+  --grey-light: #fafafa;
+  --grey: #e5e5e5;
+  --black: #2B2B2B;
+
+  --width: 620px;
+  --nav-height: 42px;
+
+  --logo-size: 40px;
+
+  --helvetica-thin: "HelveticaNeue-Thin", "Helvetica Neue Thin", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-light: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-bold: "HelveticaNeue-Bold", "Helvetica Neue Bold", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-medium: "HelveticaNeue-Medium", "Helvetica Neue Medium", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --helvetica-regular: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --lucida-grande: "Lucida Grande", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  font-weight: lighter;
+}
+
+body {
+  background-color: var(--grey-light);
+}
+
+body, a, h1, h2, h3, h4 {
+  font-size: 16px;
+  margin: 0;
+}
+
+a {
+  color: var(--blue);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+h1, h2 {
+  font-size: 42px;
+  color: var(--black);
+  letter-spacing: -1px;
+  margin: 0;
+  font-family: var(--helvetica-light);
+}
+
+h1 {
+  font-size: 50px;
+}
+h2 {
+  font-size: 36px;
+}
+
+h3 {
+  font-size: 28px;
+  font-family: var(--helvetica-bold);
+}
+
+h4 {
+  font-family: var(--lucida-grande);
+  color: var(--grey-dark);
+  font-size: 16px;
+}
+
+h5 {
+  font-size: 15px;
+  font-family: var(--helvetica-regular);
+  letter-spacing: 0;
+  color: var(--grey-dark);
+
+}
+
+.container {
+  width: var(--width);
+  margin: 0 auto;
+  background-color: var(--grey-light);
+  height: 100%;
+  padding: 20px 60px;
+}
+
+.navigation {
+  padding: 0;
+  width: 100%;
+  height: var(--nav-height);
+  background-color: var(--green);
+}
+ul.navigation-inner {
+  max-width: var(--width);
+  margin: 0 auto;
+  list-style-type: none;
+  padding: 0 0 0 22px;
+  background-color: color(var(--green) tint(20%));
+  height: var(--nav-height);
+}
+li.navigation-item {
+  float: right;
+  margin: 0 22px 0 10px;
+  padding-top: 12px;
+
+}
+.navigation-item a {
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: lighter;
+  color: white;
+  text-decoration: none;
+}
+
+.navigation-inner > .navigation-item:first-child {
+  padding-top: 0;
+  margin: 0;
+  height: var(--logo-size);
+  width: var(--logo-size);
+  float: left;
+}
+.btn:active, .btn:focus {
+  outline: none;
+}
+.btn {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: 200;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  /*padding: 6px 12px;*/
+  height: 40px;
+  width: 185px;
+  font-size: 14px;
+  line-height: 1.4285714;
+  border-radius: 3px;
+  user-select: none;
+  color: white;
+  margin: 5px;
+  -moz-box-shadow:    0px 1px 1px 0px rgba(0,0,0,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+  box-shadow:         0px 1px 1px 0px rgba(0,0,0,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+  font-family: var(--helvetica-medium);
+  font-size: 14px;
+/* Choose directory: */
+}
+.btn-default {
+  background-color: black;
+  border-color: black;
+}
+.btn-primary {
+  background-color: var(--blue);
+  border-color: var(--blue);
+}
+.btn-success {
+  background-color: var(--green);
+  border: 1px solid #60975E;
+  border-radius: 3px;
+}
+.btn-info {
+  color: var(--grey-dark);
+  background-color: white;
+  border-color: var(--grey);
+  border-radius: 3px;
+  -moz-box-shadow:    0px 1px 1px 0px rgba(137,137,137,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+  box-shadow:         0px 1px 1px 0px rgba(137,137,137,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+}
+.btn-warning {
+  background-color: var(--red);
+  border-color: var(--red);
+}
+.btn-link {
+  color: var(--grey-dark);
+  border: none;
+  border-radius: 0;
+  background-color: white;
+  text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
+}
+
+pre.code {
+  border-radius: 8px;
+  border: 1px solid var(--grey);
+  font: 12px monospace var(--grey-dark);
+  overflow: auto;
+  font-family: Monaco, Menlo, monospace;
+  padding: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  background: white;
+}
+
+.logo {
+  background-image: url('/img/logo.png');
+  background-size: contain;
+}
+.logo.small {
+  display: block;
+  height: var(--logo-size);
+}
+
+.form {
+  max-width: 285px;
+}
+.form .form-group {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.form-group label, .form-group input {
+  display: inline;
+}
+input:focus, input:active {
+  outline: none;
+}
+.form-group input:focus, .form-group input:active {
+  border-color: var(--green);
+}
+.form-group .text-input {
+  display: inline;
+  border: 1px solid var(--grey);
+  border-radius: 3px;
+/*  -moz-box-shadow:    0px 1px 1px 0px rgba(0,0,0,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+  box-shadow:         0px 1px 1px 0px rgba(0,0,0,0.22), inset 0px 0px 0px 1px rgba(255,255,255,0.08);
+*/
+  -webkit-appearance: textfield;
+  -webkit-user-select: text;
+  cursor: auto;
+  padding: 10px 15px;
+  width: 100%;
+  transition: border 300ms ease;
+}
+.form input[type="submit"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 3px;
+}
+
+.group {
+  margin: 0;
+  padding: 40px 0;
+  border-bottom: 2px solid var(--grey-light);
+}
+
+.stat-group {
+  overflow: hidden;
+}
+.stat-item {
+  margin: 0 35px;
+  padding: 0;
+  float: left;
+  text-align: center;
+  text-decoration: none;
+}
+
+.list {
+  margin-bottom: 22px;
+}
+.list .item {
+  margin-bottom: 6px;
+}
+.list dt, .list dd {
+  margin: 0;
+  display: block;
+}
+.list dt {
+  color: var(--grey-dark);
+}
+.list dd {
+  color: var(--grey);
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.box {
+  width: 50px;
+  height: 50px;
+  display: inline-block;
+  margin: 0 0 0 8px;  
+  border: 1px solid var(--grey);
+}
+.box.blue {
+  background: var(--blue);
+}
+.box.red {
+  background: var(--red);
+}
+.box.green {
+  background: var(--green);
+}
+.box.grey-light {
+  background: var(--grey-light);
+}
+.box.grey-dark {
+  background: var(--grey-dark);
+}
+.box.grey {
+  background: var(--grey);
+}
+.box.black {
+  background: var(--black);
+}
