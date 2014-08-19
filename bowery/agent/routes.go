@@ -270,11 +270,9 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Add it to the plugin manager.
-	plugin.AddPlugin(p)
-
-	// Add it to the list of enabled plugins
-	// on the application.
-	app.EnabledPlugins = append(app.EnabledPlugins, name)
+	if err := plugin.AddPlugin(p); err == nil {
+		app.EnabledPlugins = append(app.EnabledPlugins, name)
+	}
 
 	// Fire off init and background plugin events.
 	go plugin.EmitPluginEvent(plugin.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)

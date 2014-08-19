@@ -155,19 +155,17 @@ func init() {
 
 	os.MkdirAll(PluginDir, os.ModePerm|os.ModeDir)
 
+	UpdateFormulae(data.DevMode)
 	go func() {
-		if err := UpdateFormulae(data.DevMode); err != nil {
-			log.Println(err)
+		for {
+			if !data.DevMode {
+				if err := UpdateFormulae(data.DevMode); err != nil {
+					log.Println(err)
+				}
+			}
+			<-time.After(30 * time.Minute)
 		}
-		<-time.After(30 * time.Minute)
 	}()
-	// TODO (rm) show the user that there was an error
-	if err := UpdateFormulae(data.DevMode); err != nil {
-		log.Println(err)
-	}
-
-	cwd, err := os.Getwd()
-	log.Println(cwd, err)
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
@@ -446,12 +444,9 @@ func uploadApp(app *Application) error {
 }
 
 func uploadAppPlugins(app *Application, init, force bool) error {
-	log.Println(app.EnabledPlugins)
 	var err error
 	for _, p := range app.EnabledPlugins {
-		log.Println("\nuploadappplugins\n")
 		if err = uploadPlugin(app, p, init, force); err != nil {
-			log.Println("\nuploadappplugins\n")
 			return err
 		}
 	}
@@ -468,7 +463,6 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		pluginRepo  string
 	)
 
-	log.Println("\n0\n")
 	// Install Plugin on the local machine
 	for _, formula := range GetFormulae() {
 		if fmt.Sprintf("%s@%s", formula.Name, formula.Version) == name {
@@ -1134,6 +1128,9 @@ func newPluginHandler(rw http.ResponseWriter, req *http.Request) {
 func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 	name := req.FormValue("name")
+	repository := req.FormValue("repository")
+	description := req.FormValue("description")
+	requirements := req.FormValue("requirements")
 
 	if name == "" {
 		requestProblems["name"] = "Valid name required."
@@ -1143,8 +1140,37 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		requestProblems["name"] = fmt.Sprintf("`%s` already taken.", name)
 	}
 
-	// todo(rm): create plugin, write file, etc.
+	// Repository required. If provided, determine if it is
+	// on the local file system or hosted. If it is on the
+	// local file system, make sure it's a existing directory.
+	if repository == "" {
+		requestProblems["repository"] = "Valid repository required."
+	} else {
+		u, err := url.Parse(repository)
+		if err == nil && u.Host == "" {
+			if len(repository) >= 2 && repository[:2] == "~/" {
+				repository = strings.Replace(repository, "~", os.Getenv(sys.HomeVar), 1)
+			}
+			if stat, err := os.Stat(repository); os.IsNotExist(err) || !stat.IsDir() {
+				requestProblems["repository"] = fmt.Sprintf("%s is not a valid directory", repository)
+			}
+		}
+	}
 
+	if description == "" {
+		requestProblems["description"] = "Valid description required."
+	}
+
+	// If there are no problems, create plugin template.
+	if len(requestProblems) == 0 {
+		dev := getDev()
+		err := CreateFormulae(name, description, requirements, repository, dev)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, nil)
+		}
+	}
+
+	// todo(rm): create plugin, write file, etc.
 	r.JSON(rw, http.StatusOK, requestProblems)
 }
 

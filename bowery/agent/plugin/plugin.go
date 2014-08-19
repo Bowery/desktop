@@ -54,21 +54,22 @@ func SetPluginManager() {
 	pluginManager = NewPluginManager()
 }
 
-func AddPlugin(plugin *Plugin) {
-	pluginManager.AddPlugin(plugin)
+func AddPlugin(plugin *Plugin) error {
+	return pluginManager.AddPlugin(plugin)
 }
 
 // AddPlugin adds a new Plugin.
-func (pm *PluginManager) AddPlugin(plugin *Plugin) {
+func (pm *PluginManager) AddPlugin(plugin *Plugin) error {
 	// makes sure that when dev-mode is turned on the dev plugins overwrite the old ones
 	for i, p := range pm.Plugins {
 		if p.Name == plugin.Name {
 			pm.Plugins[i] = plugin
-			return
+			return errors.New("plugin exists")
 		}
 	}
 
 	pm.Plugins = append(pm.Plugins, plugin)
+	return nil
 }
 
 // RemovePlugin removes a Plugin.
