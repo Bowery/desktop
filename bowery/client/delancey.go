@@ -121,6 +121,15 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 			return err
 		}
 
+		pathType := "file"
+		if stat.IsDir() {
+			pathType = "dir"
+		}
+		err = writer.WriteField("pathtype", pathType)
+		if err != nil {
+			return err
+		}
+
 		part, err := writer.CreateFormFile("file", "upload")
 		if err != nil {
 			return err

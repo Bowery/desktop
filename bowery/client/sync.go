@@ -119,8 +119,8 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			status = "create"
 		}
 
-		// Ignore directory changes, and no event status.
-		if info.IsDir() || status == "" {
+		// Ignore if no change has occured.
+		if status == "" {
 			stats[path] = info
 			found = append(found, path)
 			return nil

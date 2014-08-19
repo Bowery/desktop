@@ -105,6 +105,7 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	id := req.FormValue("id")
+	pathType := req.FormValue("pathtype")
 	path := req.FormValue("path")
 	typ := req.FormValue("type")
 	modeStr := req.FormValue("mode")
@@ -151,40 +152,59 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		// Create/Update path in the service.
-		attach, _, err := req.FormFile("file")
-		if err != nil {
-			if err == http.ErrMissingFile {
-				err = errors.New("Missing form fields.")
+		var dest *os.File
+
+		if pathType == "dir" {
+			err = os.MkdirAll(path, os.ModePerm|os.ModeDir)
+			if err != nil {
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusInternalServerError)
+				return
 			}
 
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusBadRequest)
-			return
-		}
-		defer attach.Close()
+			dest, err = os.Open(path)
+			if err != nil {
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusInternalServerError)
+				return
+			}
+			defer dest.Close()
+		} else {
+			attach, _, err := req.FormFile("file")
+			if err != nil {
+				if err == http.ErrMissingFile {
+					err = errors.New("Missing form fields.")
+				}
 
-		// Ensure parents exist.
-		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
-		if err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
-			return
-		}
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusBadRequest)
+				return
+			}
+			defer attach.Close()
 
-		dest, err := os.Create(path)
-		if err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
-			return
-		}
-		defer dest.Close()
+			// Ensure parents exist.
+			err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
+			if err != nil {
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusInternalServerError)
+				return
+			}
 
-		// Copy updated contents to destination.
-		_, err = io.Copy(dest, attach)
-		if err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
-			return
+			dest, err = os.Create(path)
+			if err != nil {
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusInternalServerError)
+				return
+			}
+			defer dest.Close()
+
+			// Copy updated contents to destination.
+			_, err = io.Copy(dest, attach)
+			if err != nil {
+				res.Body["error"] = err.Error()
+				res.Send(http.StatusInternalServerError)
+				return
+			}
 		}
 
 		// Set the file permissions if given.
