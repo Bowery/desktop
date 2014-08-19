@@ -70,17 +70,18 @@ func NewApplication(id, init, build, test, start, path string) (*Application, er
 	pathList := strings.Split(path, ":")
 	if len(pathList) == 2 {
 		root = pathList[1]
-		if string(root[0]) == "~" {
+		if root[0] == '~' {
 			root = filepath.Join(os.Getenv(sys.HomeVar), string(root[1:]))
 		}
-		if string(root[0]) != "/" {
-			root = filepath.Join(os.Getenv(sys.HomeVar), root)
-		}
-		if err := os.MkdirAll(root, os.ModePerm|os.ModeDir); err != nil {
-			return nil, err
+		if (filepath.Separator == '/' && root[0] != '/') ||
+			(filepath.Separator != '/' && filepath.VolumeName(root) == "") {
+			root = filepath.Join(HomeDir, root)
 		}
 	} else {
 		root = pathList[0]
+	}
+	if err := os.MkdirAll(root, os.ModePerm|os.ModeDir); err != nil {
+		return nil, err
 	}
 
 	// Create stdout and stderr writers

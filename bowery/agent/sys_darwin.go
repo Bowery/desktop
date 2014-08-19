@@ -5,17 +5,27 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
-	// "os"
-	"errors"
 	"os/exec"
 	"strconv"
 	"strings"
 )
 
-type proc struct {
-	pid  int
-	ppid int
+func ps(args ...string) (*bytes.Buffer, error) {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("ps", args...)
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		eerr, ok := err.(*exec.ExitError)
+		if ok && !eerr.Success() {
+			return &stdout, nil
+		}
+
+		return nil, err
+	}
+
+	return &stdout, nil
 }
 
 func GetPidTree(cpid int) (*Proc, error) {
@@ -37,6 +47,11 @@ func GetPidTree(cpid int) (*Proc, error) {
 
 		ppid, err := getPpid(pid)
 		if err != nil {
+			_, ok := err.(*pidError)
+			if ok {
+				continue
+			}
+
 			return nil, err
 		}
 
@@ -53,50 +68,47 @@ func GetPidTree(cpid int) (*Proc, error) {
 	return proc, nil
 }
 
-func ps(args ...string) (bytes.Buffer, error) {
-	cmd := exec.Command("ps", args...)
-	var stdOut, stdErr bytes.Buffer
-	cmd.Stderr = &stdErr
-	cmd.Stdout = &stdOut
-
-	if err := cmd.Run(); err != nil {
-		return stdErr, errors.New(strings.TrimSpace(stdErr.String()))
-	}
-
-	return stdOut, nil
-}
-
 func getPpid(pid int) (int, error) {
 	pidStr := strconv.Itoa(pid)
-	ppidErr := errors.New("No ppid found for pid " + pidStr)
-	ppidBytes, err := ps("-p "+pidStr, "-o ppid=")
+	buf, err := ps("-p", pidStr, "-o", "ppid=")
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
-	ppidStr := ppidBytes.String()
-	if ppidStr == "" {
-		return -1, ppidErr
+	out := strings.TrimSpace(buf.String())
+	if out == "" {
+		return 0, &pidError{pid: pid}
 	}
 
-	var ppid int
-	fmt.Sscanf(strings.TrimSpace(ppidStr), "%d", &ppid)
-
-	return ppid, nil
+	return strconv.Atoi(out)
 }
 
 func pidList() ([]int, error) {
-	pidsBuffer, err := ps("-x", "-o pid=")
+	buf, err := ps("-x", "-o", "pid=")
 	if err != nil {
 		return nil, err
 	}
+
 	pids := []int{}
-	scanner := bufio.NewScanner(bytes.NewReader(pidsBuffer.Bytes()))
+	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
-		var pid int
-		fmt.Sscanf(strings.TrimSpace(scanner.Text()), "%d", &pid)
+		line := strings.TrimSpace(scanner.Text())
+
+		pid, err := strconv.Atoi(line)
+		if err != nil {
+			return nil, err
+		}
+
 		pids = append(pids, pid)
 	}
 
-	return pids, nil
+	return pids, scanner.Err()
+}
+
+type pidError struct {
+	pid int
+}
+
+func (pe *pidError) Error() string {
+	return "No ppid found for pid " + strconv.Itoa(pe.pid)
 }
