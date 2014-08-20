@@ -866,6 +866,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = createRes.Developer
 		db.Save(data)
 
+		keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
 		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 		return
 	}
@@ -875,7 +876,6 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
 	http.Redirect(rw, req, "/signup", http.StatusSeeOther)
 	return
 }

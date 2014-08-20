@@ -130,14 +130,16 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 			return err
 		}
 
-		part, err := writer.CreateFormFile("file", "upload")
-		if err != nil {
-			return err
-		}
+		if pathType == "file" {
+			part, err := writer.CreateFormFile("file", "upload")
+			if err != nil {
+				return err
+			}
 
-		_, err = io.Copy(part, file)
-		if err != nil {
-			return err
+			_, err = io.Copy(part, file)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

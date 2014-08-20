@@ -61,7 +61,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Get initial stats.
 	err = filepath.Walk(local, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil || local == path {
 			return err
 		}
 
@@ -85,7 +85,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Manages updates/creates.
 	walker := func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil || local == path {
 			return err
 		}
 
@@ -126,9 +126,13 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			return nil
 		}
 
+		stats[path] = info
+		found = append(found, path)
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
+				delete(stats, path)
+				found = found[:len(found)-1]
 				log.Debug("Ignoring temp file", status, "event", rel)
 				return nil
 			}
@@ -137,8 +141,6 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		}
 
 		evChan <- &Event{Application: watcher.Application, Status: status, Path: rel}
-		stats[path] = info
-		found = append(found, path)
 		return nil
 	}
 
