@@ -32,15 +32,17 @@ import (
 )
 
 var (
-	AuthEndpoint = "http://broome.io"
-	syncer       = NewSyncer()
-	db           *localdb.DB
-	data         *localData
-	dbDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
-	logDir       = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
-	keenC        *keen.Client
-	rollbarC     *rollbar.Client
-	TemplateDir  string
+	AuthEndpoint     = "http://broome.io"
+	syncer           = NewSyncer()
+	errStreamManager = NewErrStreamManager()
+	db               *localdb.DB
+	data             *localData
+	dbDir            = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "state")
+	logDir           = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
+	InDevelopment    = false
+	keenC            *keen.Client
+	rollbarC         *rollbar.Client
+	TemplateDir      string
 )
 
 var r = render.New(render.Options{
@@ -123,6 +125,7 @@ func init() {
 	if os.Getenv("AGENT") == "development" {
 		// You'll have a seperate user/applications when using the dev agent
 		dbDir = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "devstate")
+		InDevelopment = true
 	}
 
 	var err error
@@ -171,6 +174,14 @@ func init() {
 			<-time.After(30 * time.Minute)
 		}
 	}()
+
+	// TODO (rm) show the user that there was an error
+	if err := UpdateFormulae(data.DevMode); err != nil {
+		log.Println(err)
+	}
+
+	cwd, err := os.Getwd()
+	log.Println(cwd, err)
 
 	// Make sure log dir is created
 	os.MkdirAll(logDir, os.ModePerm|os.ModeDir)
@@ -294,6 +305,7 @@ func main() {
 			uploadApp(app)
 			broadcastJSON(&Event{Application: app, Status: "upload-finish"})
 			uploadAppPlugins(app, true, false)
+			errStreamManager.Connect(app)
 		}
 	}
 
@@ -996,6 +1008,7 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	syncer.Watch(app)
 	uploadApp(app)
+	errStreamManager.Connect(app)
 	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
@@ -1104,6 +1117,7 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 	for i, app := range apps {
 		if app.ID == appId {
 			syncer.Remove(app)
+			errStreamManager.Remove(app)
 			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 
 			break
