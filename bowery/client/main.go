@@ -377,11 +377,10 @@ func getToken() error {
 
 	if createRes.Status == "created" {
 		data.Developer.Token = createRes.Token
+		return db.Save(data)
 	}
 
-	db.Save(data)
-
-	return nil
+	return createRes
 }
 
 func getDev() *schemas.Developer {
@@ -806,24 +805,27 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = &schemas.Developer{}
 	}
 
-	email := req.FormValue("email")
-	password := req.FormValue("password")
-
-	data.Developer.Email = email
-	data.Developer.Password = password
+	data.Developer.Email = req.FormValue("email")
+	data.Developer.Password = req.FormValue("password")
 
 	if err := getToken(); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "incorrect password") {
+			http.Redirect(rw, req, "/login?error=invalidpass", http.StatusSeeOther)
+			return
+		}
+		if strings.Contains(err.Error(), "developer with email") {
+			http.Redirect(rw, req, "/login?error=invalidemail", http.StatusSeeOther)
+			return
+		}
+
 		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": err.Error(),
 		})
+		return
 	}
 
-	data.Developer = getDev()
-
-	db.Save(data)
-
-	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
+	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	http.Redirect(rw, req, "/", http.StatusSeeOther)
 }
 

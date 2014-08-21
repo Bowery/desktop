@@ -17,3 +17,30 @@
 </form>
 <h3>Don't have an account? <a href="/signup">Sign up here.</a></h3>
 <h3>Forgot your password? <a href="/reset">Reset it.</a></h3>
+
+<script type="text/javascript">
+
+$(document).ready(function () {
+  var url = window.location.href
+  var idx = url.indexOf('?')
+  var query = {}
+  if (idx > -1) {
+    var items = url.slice(idx+1).split('&')
+    for (var i in items) {
+      var vals = items[i].split('=')
+      query[vals[0]] = vals[1]
+    }
+  }
+
+  if (query.error == 'invalidemail') {
+    $('.field-input[name=email]').addClass('invalid')
+    $('.field-input[name=email] + .field-label').text('Email not found')
+  }
+
+  if (query.error == 'invalidpass') {
+    $('.field-input[name=password]').addClass('invalid')
+    $('.field-input[name=password] + .field-label').text('Password incorrect')
+  }
+})
+
+</script>
