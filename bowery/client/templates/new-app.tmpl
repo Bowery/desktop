@@ -1,37 +1,41 @@
+<header>
+  <h2>New Application</h2>
+  <h5>Some witty line.</h5>
+</header>
 <form class="form verify-application">
   <div class="field">
-    <input type="text" class="field-input remote-addr-field-input" name="ip-addr" id="ip-addr" autofocus>
     <label for="ip-addr" class="field-label">Agent IP Address</label>
+    <input type="text" class="field-input remote-addr-field-input" name="ip-addr" id="ip-addr" autofocus>
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="local-dir" id="local-dir">
     <label for="local-dir" class="field-label">Local Directory</label>
+    <input type="text" class="field-input" name="local-dir" id="local-dir">
   </div>
   <div class="field remote-dir-field">
-    <input type="text" class="field-input" name="remote-dir" id="remote-dir">
     <label for="remote-dir" class="field-label">Remote Directory</label>
+    <input type="text" class="field-input" name="remote-dir" id="remote-dir">
   </div>
   <div class="field-submit">
-    <input class="submit verify" type="submit" value="Verify Information">
+    <input class="submit verify btn btn-primary" type="submit" value="Verify Information">
   </div>
 </form>
 
 <form class="form create-application">
   <input class="" type="hidden" value="" name="id">
   <div class="field">
-    <input type="text" class="field-input" name="name" id="name" autofocus>
     <label for="name" class="field-label">Application Name</label>
+    <input type="text" class="field-input" name="name" id="name" autofocus>
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="start" id="start">
     <label for="start" class="field-label">Start Command</label>
+    <input type="text" class="field-input" name="start" id="start">
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="build" id="build">
     <label for="build" class="field-label">Build Command</label>
+    <input type="text" class="field-input" name="build" id="build">
   </div>
   <div class="field-submit">
-    <input class="submit create" type="submit" value="Create Application">
+    <input class="submit create btn btn-primary" type="submit" value="Create Application">
   </div>
 </form>
 
