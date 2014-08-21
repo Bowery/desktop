@@ -56,18 +56,18 @@ var externalViewRenderer = render.New(render.Options{
 })
 
 type Application struct {
-	ID              string
-	Name            string
-	Start           string
-	Build           string
-	RemotePath      string
-	RemoteAddr      string
-	SyncPort        string
-	LogPort         string
-	LocalPath       string
-	LastUpdatedAt   time.Time
-	IsSyncAvailable bool
-	EnabledPlugins  []string // plugin.Name + "@" + plugin.Version
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Start           string    `json:"start"`
+	Build           string    `json:"build"`
+	RemotePath      string    `json:"remotePath"`
+	RemoteAddr      string    `json:"remoteAddr"`
+	SyncPort        string    `json:"syncPort"`
+	LogPort         string    `json:"logPort"`
+	LocalPath       string    `json:"localPath"`
+	LastUpdatedAt   time.Time `json:"lastUpdatedAt"`
+	IsSyncAvailable bool      `json:"isSyncAvailable"`
+	EnabledPlugins  []string  `json:"enabledPlugins"` // plugin.Name + "@" + plugin.Version
 }
 
 type AppPluginWrapper struct {

@@ -85,13 +85,18 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Manages updates/creates.
 	walker := func(path string, info os.FileInfo, err error) error {
-		if err != nil || local == path {
-			return err
+		if err != nil {
+			errChan <- watcher.wrapErr(err)
+			return nil
+		}
+		if local == path {
+			return nil
 		}
 
 		rel, err := filepath.Rel(local, path)
 		if err != nil {
-			return err
+			errChan <- watcher.wrapErr(err)
+			return nil
 		}
 
 		// Check if ignoring.
@@ -118,26 +123,26 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		} else if !ok {
 			status = "create"
 		}
+		stats[path] = info
+		found = append(found, path)
 
 		// Ignore if no change has occured.
 		if status == "" {
-			stats[path] = info
-			found = append(found, path)
 			return nil
 		}
 
-		stats[path] = info
-		found = append(found, path)
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
+				// Remove the stats info so we don't get a false delete later.
 				delete(stats, path)
 				found = found[:len(found)-1]
 				log.Debug("Ignoring temp file", status, "event", rel)
 				return nil
 			}
 
-			return err
+			errChan <- watcher.wrapErr(err)
+			return nil
 		}
 
 		evChan <- &Event{Application: watcher.Application, Status: status, Path: rel}
@@ -145,12 +150,13 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	}
 
 	// Manages deletes.
-	checkDeletes := func() error {
+	checkDeletes := func() {
 		for path := range stats {
 			skip := false
 			rel, err := filepath.Rel(local, path)
 			if err != nil {
-				return err
+				errChan <- watcher.wrapErr(err)
+				continue
 			}
 
 			for _, f := range found {
@@ -167,13 +173,12 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			delete(stats, path)
 			err = watcher.Update(rel, "delete")
 			if err != nil {
-				return err
+				errChan <- watcher.wrapErr(err)
+				continue
 			}
 
 			evChan <- &Event{Application: watcher.Application, Status: "delete", Path: rel}
 		}
-
-		return nil
 	}
 
 	for {
@@ -195,11 +200,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			errChan <- watcher.wrapErr(err)
 		}
 
-		err = checkDeletes()
-		if err != nil {
-			errChan <- watcher.wrapErr(err)
-		}
-
+		checkDeletes()
 		found = make([]string, 0)
 		<-time.After(500 * time.Millisecond)
 	}

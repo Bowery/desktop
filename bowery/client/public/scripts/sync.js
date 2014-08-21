@@ -45,7 +45,7 @@ $(document).ready(function () {
 
   conn.onmessage = function (ev) {
     var data = JSON.parse(ev.data)
-    var appID = data.application.ID
+    var appID = data.application.id
     var $appEl = $('.item[data-app="' + appID + '"]')
 
     console.log(data)
@@ -72,7 +72,7 @@ $(document).ready(function () {
     }
 
     if (data.status == 'upload-start')
-      $syncStatusEl.text('Uploading ' + data.application.name + ".")
+      $syncStatusEl.text('Uploading ' + (data.application.name || data.application.localPath) + ".")
     if (data.status == 'upload-finish')
       $syncStatusEl.text('Up to date.')
 
@@ -108,7 +108,7 @@ $(document).ready(function () {
       })
       .done(function() {
         console.log(arguments)
-      })      
+      })
     }
   })
 })
