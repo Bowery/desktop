@@ -6,35 +6,19 @@
 <title>Bowery</title>
 </head>
 <body>
-  <div class="container login">
-    <div class="triangle"></div>
-    <div class="nav">
-      <span class="heading title">{{.Title}}</span>
-      <div class="nav-icons">
-        <a href="/" >
-          <img class="icon" src="/images/750-home@2x.png">
-        </a>
-        <a href="mailto:support@bowery.io">
-          <img class="icon" src="/images/739-question@2x.png">
-        </a>
-        <a href="/applications/new">
-          <img class="icon" src="/images/746-plus-circle@2x.png">
-        </a>
-      </div>
-    </div>
+  <div class="container">
+    <nav class="nav">
+      <ul class="nav-list">
+        <li class="nav-list-item">
+          <a href="/applications">Apps</a>
+        </li>
+        <li class="nav-list-item">
+          <a href="/settings">Settings</a>
+        </li>
+      </ul>
+    </nav>
     <div class="content">
-      <div class="extra-white"></div>
       {{yield}}
-      <div class="extra-white"></div>
-    </div>
-    <div class="footer">
-      <a href="#" class="status-icon check"></a>
-      <div class="status">
-        <p class="status-description">Up to date.</p>
-      </div>
-      <a href="/settings" class="settings-link">
-        <img class="icon gear" src="/images/740-gear@2x.png">
-      </a>
     </div>
   </div>
 </body>

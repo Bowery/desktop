@@ -17,8 +17,8 @@ app.on('ready', function() {
   mainWindow = new BrowserWindow({
     title: 'Bowery',
     frame: true,
-    width: 350,
-    height: 372,
+    width: 650,
+    height: 530,
     'node-integration': 'disable',
     resizable: false,
     center: true,
