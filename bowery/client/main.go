@@ -289,8 +289,10 @@ func main() {
 				}
 
 				// Update app state and broadcast.
-				app.IsSyncAvailable = connected
-				broadcastJSON(&Event{Application: app, Status: status})
+				if connected != app.IsSyncAvailable {
+					app.IsSyncAvailable = connected
+					broadcastJSON(&Event{Application: app, Status: status})
+				}
 			}
 
 			// Save state.
