@@ -83,7 +83,9 @@ func (es *errStream) Start() {
 		n, err := es.conn.Read(data)
 		if err != nil && err != io.EOF {
 			for {
-				es.conn.Close()
+				if es.conn != nil {
+					es.conn.Close()
+				}
 				es.conn, err = net.Dial("tcp", es.application.RemoteAddr+":"+es.application.LogPort)
 				if err != nil {
 					if opError, ok := err.(*net.OpError); ok {

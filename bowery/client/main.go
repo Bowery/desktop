@@ -304,9 +304,7 @@ func main() {
 		for _, app := range data.Applications {
 			go func() {
 				syncer.Watch(app)
-				broadcastJSON(&Event{Application: app, Status: "upload-start"})
 				uploadApp(app)
-				broadcastJSON(&Event{Application: app, Status: "upload-finish"})
 				uploadAppPlugins(app, true, false)
 				errStreamManager.Connect(app)
 			}()
@@ -463,6 +461,7 @@ func updateDev(oldpass, newpass string) error {
 }
 
 func uploadApp(app *Application) error {
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 	watcher, err := syncer.GetWatcher(app)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
@@ -471,7 +470,16 @@ func uploadApp(app *Application) error {
 		return err
 	}
 
-	return watcher.Upload()
+	err = watcher.Upload()
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
+		return err
+	}
+
+	broadcastJSON(&Event{Application: app, Status: "upload-finish"})
+	return nil
 }
 
 func uploadAppPlugins(app *Application, init, force bool) error {
@@ -1012,7 +1020,6 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	syncer.Watch(app)
 	uploadApp(app)
 	errStreamManager.Connect(app)
-	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
@@ -1106,7 +1113,7 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	syncer.Remove(app)
 	syncer.Watch(app)
-	broadcastJSON(&Event{Application: app, Status: "upload-start"})
+	uploadApp(app)
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,

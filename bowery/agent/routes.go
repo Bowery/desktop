@@ -73,7 +73,11 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		res.Send(http.StatusInternalServerError)
 		return
 	}
-	// Set application.
+
+	// Set new application, killing any existing cmds created from an app with the same id.
+	if oldApp, ok := Applications[id]; ok {
+		Kill(oldApp, true)
+	}
 	Applications[id] = app
 
 	plugin.EmitPluginEvent(plugin.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
