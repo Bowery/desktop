@@ -50,7 +50,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 	}
 	if err == nil && app.RemotePath != "" {
 		// Prepend LocalPath: here so it can recognize the remote path.
-		err = writer.WriteField("path", app.LocalPath+":"+app.RemotePath)
+		err = writer.WriteField("path", app.LocalPath+"::"+app.RemotePath)
 	}
 	if err == nil {
 		err = writer.Close()

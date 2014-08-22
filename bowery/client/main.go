@@ -962,10 +962,10 @@ func formatAppFields(remoteAddr, localDir string) (*Application, error) {
 	agentIsDev := os.Getenv("AGENT") == "development"
 	app := new(Application)
 
-	if localDir[0] == '~' {
+	if len(localDir) > 0 && localDir[0] == '~' {
 		localDir = filepath.Join(os.Getenv(sys.HomeVar), string(localDir[1:]))
 	}
-	if (filepath.Separator == '/' && localDir[0] != '/') ||
+	if (len(localDir) > 0 && filepath.Separator == '/' && localDir[0] != '/') ||
 		(filepath.Separator != '/' && filepath.VolumeName(localDir) == "") {
 		localDir = filepath.Join(os.Getenv(sys.HomeVar), localDir)
 	}
