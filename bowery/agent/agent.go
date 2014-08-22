@@ -19,6 +19,7 @@ var (
 	Env           = flag.String("env", "production", "If you want to run the agent in development mode uses different ports")
 	InDevelopment = false
 	Applications  = map[string]*Application{}
+	streamManager = NewStreamManager() // only declared here so output.go can write to its tcp connection
 )
 
 func main() {
@@ -53,8 +54,8 @@ func main() {
 	// Start event listening.
 	pluginManager := plugin.SetPluginManager()
 	go plugin.StartPluginListener()
-	errStreamManager := NewErrStreamManager()
-	go errStreamManager.PluginErrStream(pluginManager.Error)
+	streamManager.pluginErr = pluginManager.Error
+	go streamManager.Stream()
 
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())
