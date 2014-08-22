@@ -54,11 +54,7 @@ func (es *errStream) Start() {
 	for {
 		log.Println("Attempting to connect.")
 		log.Println(fmt.Sprintf("remote addr: %v, logport: %v", es.application.RemoteAddr, es.application.LogPort))
-		port := "32058"
-		if InDevelopment {
-			port = "32057"
-		}
-		es.conn, err = net.Dial("tcp", es.application.RemoteAddr+":"+port)
+		es.conn, err = net.Dial("tcp", net.JoinHostPort(es.application.RemoteAddr, es.application.LogPort))
 		if err != nil {
 			if opError, ok := err.(*net.OpError); ok {
 				if opError.Op == "read" || opError.Op == "dial" {
@@ -86,7 +82,7 @@ func (es *errStream) Start() {
 				if es.conn != nil {
 					es.conn.Close()
 				}
-				es.conn, err = net.Dial("tcp", es.application.RemoteAddr+":"+es.application.LogPort)
+				es.conn, err = net.Dial("tcp", net.JoinHostPort(es.application.RemoteAddr, es.application.LogPort))
 				if err != nil {
 					if opError, ok := err.(*net.OpError); ok {
 						if opError.Op == "read" || opError.Op == "dial" {

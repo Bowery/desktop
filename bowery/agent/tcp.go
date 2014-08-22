@@ -4,6 +4,8 @@ package main
 import (
 	"log"
 	"net"
+
+	"github.com/Bowery/gopackages/config"
 )
 
 var (
@@ -14,9 +16,9 @@ var (
 // Start a TCP listener on port 3002. Append
 // newly connected clients to slice.
 func StartTCP() {
-	port := "32058"
+	port := config.BoweryAgentProdLogPort
 	if InDevelopment {
-		port = "32057"
+		port = config.BoweryAgentDevLogPort
 	}
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
