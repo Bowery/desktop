@@ -300,12 +300,14 @@ func main() {
 
 	if data.Applications != nil {
 		for _, app := range data.Applications {
-			syncer.Watch(app)
-			broadcastJSON(&Event{Application: app, Status: "upload-start"})
-			uploadApp(app)
-			broadcastJSON(&Event{Application: app, Status: "upload-finish"})
-			uploadAppPlugins(app, true, false)
-			errStreamManager.Connect(app)
+			go func() {
+				syncer.Watch(app)
+				broadcastJSON(&Event{Application: app, Status: "upload-start"})
+				uploadApp(app)
+				broadcastJSON(&Event{Application: app, Status: "upload-finish"})
+				uploadAppPlugins(app, true, false)
+				errStreamManager.Connect(app)
+			}()
 		}
 	}
 
@@ -914,9 +916,9 @@ func appsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	r.HTML(rw, http.StatusOK, "applications", map[string]interface{}{
-		"Title": "Applications",
-		"Applications":  getApps(),
-		"Developer": getDev(),
+		"Title":        "Applications",
+		"Applications": getApps(),
+		"Developer":    getDev(),
 	})
 }
 
