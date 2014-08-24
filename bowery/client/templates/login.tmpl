@@ -33,13 +33,13 @@ $(document).ready(function () {
   }
 
   if (query.error == 'invalidemail') {
-    $('.field-input[name=email]').addClass('invalid')
-    $('.field-input[name=email] + .field-label').text('Email not found')
+    $('.field-input[name=email]').parent().addClass('invalid')
+    $('.field-input[name=email]').siblings('.field-label').text('Email not found')
   }
 
   if (query.error == 'invalidpass') {
-    $('.field-input[name=password]').addClass('invalid')
-    $('.field-input[name=password] + .field-label').text('Password incorrect')
+    $('.field-input[name=password]').parent().addClass('invalid')
+    $('.field-input[name=password]').siblings('.field-label').text('Password incorrect')
   }
 })
 

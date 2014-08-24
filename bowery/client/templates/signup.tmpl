@@ -36,8 +36,8 @@ $(document).ready(function () {
   }
 
   if (query.error == 'emailtaken') {
-    $('.field-input[name=email]').addClass('invalid')
-    $('.field-input[name=email] + .field-label').text('Email is taken')
+    $('.field-input[name=email]').parent().addClass('invalid')
+    $('.field-input[name=email]').siblings('.field-label').text('Email is taken')
   }
 })
 

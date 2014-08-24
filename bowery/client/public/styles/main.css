@@ -215,6 +215,14 @@ ul.list .item:hover {
   border-bottom: 1px solid #ebeef0;
 }
 
+.field.invalid {
+  border-bottom: 1px solid #FC5322;
+}
+
+.field.invalid > .field-label {
+  color: #FC5322;
+}
+
 .field input,
 .field label {
   display: inline-block;
