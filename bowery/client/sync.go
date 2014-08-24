@@ -262,8 +262,26 @@ func (watcher *Watcher) Upload() error {
 
 // Update updates a path to the applications remote address.
 func (watcher *Watcher) Update(name, status string) error {
-	return DelanceyUpdate(watcher.Application, filepath.Join(watcher.Application.LocalPath, name),
-		name, status)
+	path := filepath.Join(watcher.Application.LocalPath, name)
+
+	err := DelanceyUpdate(watcher.Application, path, name, status)
+	if err != nil && strings.Contains(err.Error(), "invalid app id") {
+		// If the id is invalid that indicates the server died, just reupload
+		// and try again.
+		err = watcher.Upload()
+		if err != nil {
+			we, ok := err.(*WatchError)
+			if ok {
+				err = we.Err
+			}
+
+			return err
+		}
+
+		return DelanceyUpdate(watcher.Application, path, name, status)
+	}
+
+	return err
 }
 
 // Close closes the watcher and removes existing upload paths.
