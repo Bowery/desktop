@@ -1164,8 +1164,16 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 		if app.ID == appId {
 			syncer.Remove(app)
 			errStreamManager.Remove(app)
-			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
+			err := DelanceyRemove(app)
+			if err != nil {
+				r.JSON(rw, http.StatusInternalServerError, map[string]interface{}{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
 
+			apps[i], apps[len(apps)-1], apps = apps[len(apps)-1], nil, apps[:len(apps)-1] // Fancy Remove
 			break
 		}
 	}

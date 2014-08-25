@@ -30,6 +30,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"GET"}, IndexHandler},
 	&Route{"/", []string{"POST"}, UploadServiceHandler},
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
+	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
 	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
@@ -232,6 +233,22 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 
 	<-Restart(app, false, true)
 	res.Body["status"] = "updated"
+	res.Send(http.StatusOK)
+}
+
+// DELETE /, Remove service.
+func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	id := req.FormValue("id")
+	app := Applications[id]
+	if app != nil {
+		plugin.EmitPluginEvent(plugin.BEFORE_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+		Kill(app, true)
+		delete(Applications, id)
+		plugin.EmitPluginEvent(plugin.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+	}
+
+	res.Body["status"] = "removed"
 	res.Send(http.StatusOK)
 }
 
