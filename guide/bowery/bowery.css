@@ -1,0 +1,73 @@
+:root{
+  --turquoise: rgb(94, 219, 196);
+  --red: rgb(247, 43, 69);
+  --red-light: rgb(251, 77, 83);
+  --blue: rgb(52, 145, 226);
+  --grey-light: rgb(245, 245, 245);
+  --grey: rgb(220, 221, 223);
+  --gold-light: rgb(244, 172, 88);
+  --gold: rgb(232, 160, 86);
+  --gold-dark: rgb(227, 156, 84);
+  --black: rgb(26, 23, 24);
+  --white: white;
+  --type: rgb(11, 0, 4);
+  --type-light: rgb(109, 109, 111);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,body {
+  height: 100%;
+  font-size: 12px;
+}
+
+body {
+  background-color: var(--grey-light);
+}
+
+h1, h2, h3, h4 {
+  font-family:"Monosten A", Courier, monospace;
+  font-size-adjust:0.5;
+  font-weight:normal;
+  font-style:normal;
+  line-height: 1;
+  color: var(--type);
+}
+body, a, p, span {
+  font-family:"Monosten E", Courier, monospace;
+  font-size-adjust:0.5;
+  font-weight:200;
+  font-style:normal;
+  color: var(--type-light);
+}
+
+p {
+  margin-bottom: 18px;
+}
+h1 {
+  font-size: 14px;
+  line-height: 18px;
+  margin-bottom: 18px;
+  color: var(--type-light);
+  text-transform: uppercase;
+  font-family:"Monosten E", Courier, monospace;
+  letter-spacing: 2px;
+}
+
+h2 {
+  font-size: 24px;
+  line-height: 36px;
+  margin-bottom: 18px;
+}
+h3 {
+  font-size: 18px;
+  line-height: 18px;
+  margin-bottom: 18px;
+}
+h4 {
+  font-size: 12px;
+  line-height: 18px;
+}

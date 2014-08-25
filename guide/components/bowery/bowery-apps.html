@@ -1,0 +1,33 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-card-list` is a list of `bowery-card` elements.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../../web-services/apps-service.html">
+<link rel="import" href="bowery-card.html">
+
+<polymer-element name="bowery-apps" noscript>
+  <template>
+    <link rel="stylesheet" href="../../bowery/out.css">
+    <style>
+      .container {
+        overflow: auto;
+        padding: 55px 0;
+      }
+    </style>
+    <apps-service apps="{{applications}}"></apps-service>
+    <div class="container">
+    <template repeat="{{app in applications}}">
+      <bowery-card data-id="{{app.id}}">
+        <h4>{{app.name}}</h4>
+        <span>{{app.addr}}</span>
+        <p>blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha blah blah blah blah blha
+        </p>
+      </bowery-card>
+    </template>
+  </div>
+  </template>
+</polymer-element>

@@ -1,0 +1,62 @@
+<link rel="import" href="../components/polymer/polymer.html">
+<link rel="import" href="../components/core-ajax/core-ajax.html">
+<!--
+  `<post-service>` provides an API for getting application data.
+
+  `apps` returns the list of apps.
+
+  @group Bowery Service Elements
+  @element app-service
+-->
+
+<!--
+  An array of post objects, with the following format:
+
+  <table border="0">
+    <tr>
+      <td><code>id</code></td>
+      <td>String</td>
+      <td>Unique ID for this app.</td>
+    </tr>
+     <tr>
+      <td><code>name</code></td>
+      <td>String</td>
+      <td>App Name</td>
+    </tr>
+    <tr>
+      <td><code>addr</code></td>
+      <td>String</td>
+      <td>Public IP Address of App</td>
+    </tr>
+  </table>
+
+  @attribute apps
+  @type Array
+  @default []
+-->
+<polymer-element name="apps-service" attributes="apps">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+    <core-ajax id="ajax"
+      auto
+      url="../api/apps.json"
+      on-core-response="{{appsLoaded}}"
+      handleAs="json">
+    </core-ajax>
+  </template>
+  <script>
+  Polymer('apps-service', {
+    created: function () {
+      this.apps = []
+    },
+    appsLoaded: function () {
+      this.apps = this.$.ajax.response.slice(0)
+      console.log('inside apps-service.html', this.apps)
+    }
+  })
+  </script>
+</polymer-element>

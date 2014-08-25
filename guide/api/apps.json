@@ -1,0 +1,22 @@
+[
+  {
+    "id": "9n8uas",
+    "name": "Example App",
+    "addr": "ec2-67-202-32-171.compute-1.amazonaws.com"
+  },
+  {
+    "id": "wv4y25v6",
+    "name": "Kepler",
+    "addr": "67.202.32.171"
+  },
+  {
+    "id": "2v36246uv",
+    "name": "Broome",
+    "addr": "54.80.183.153"
+  },
+  {
+    "id": "wu6v53y4",
+    "name": "Personal Site",
+    "addr": "ec2-85-245-92-791.compute-1.amazonaws.com"
+  }
+]
