@@ -20,3 +20,25 @@
   </div>
 </form>
 Already have an account? <a href="/login">Login</a>
+
+<script type="text/javascript">
+
+$(document).ready(function () {
+  var url = window.location.href
+  var idx = url.indexOf('?')
+  var query = {}
+  if (idx > -1) {
+   var items = url.slice(idx+1).split('&')
+   for (var i in items) {
+     var vals = items[i].split('=')
+     query[vals[0]] = vals[1]
+   }
+  }
+
+  if (query.error == 'emailtaken') {
+    $('.field-input[name=email]').parent().addClass('invalid')
+    $('.field-input[name=email]').siblings('.field-label').text('Email is taken')
+  }
+})
+
+</script>

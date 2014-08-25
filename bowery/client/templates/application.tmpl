@@ -10,7 +10,7 @@
   </div>
   <div class="field">
     <label for="ip-addr" class="field-label">Remote IP Address</label>
-    <input type="text" class="field-input" name="ip-addr" id="ip-addr" value="{{.Application.RemoteAddr}}">
+    <input type="text" class="field-input" name="ip-addr" id="ip-addr" value="{{JoinHostPort .Application.RemoteAddr .Application.SyncPort}}">
   </div>
   <div class="field">
     <label for="local-dir" class="field-label">Local Directory</label>

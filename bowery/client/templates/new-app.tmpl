@@ -71,10 +71,20 @@ $(document).ready(function () {
         verifyFormEl.css('display', 'none')
         createFormEl.css('display', 'block')
       } else {
-        for (var field in problems) {
-          verifyFormEl.find('.field-input[name=' + field + ']').addClass('invalid')
-          verifyFormEl.find('.field-input[name=' + field + '] + .field-label').text(problems[field])
-        }
+        verifyFormEl.find('.field-input').each(function () {
+          var $parent = $(this).parent()
+          var $label = $(this).siblings('.field-label')
+          var field = $(this).attr('name')
+
+          if (problems[field]) {
+            $parent.addClass('invalid')
+            $label.data('prev-text', $label.text())
+            $label.text(problems[field])
+          } else if ($parent.hasClass('invalid')) {
+            $parent.removeClass('invalid')
+            $label.text($label.data('prev-text'))
+          }
+        })
       }
     })
   })

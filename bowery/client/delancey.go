@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -49,7 +50,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 	}
 	if err == nil && app.RemotePath != "" {
 		// Prepend LocalPath: here so it can recognize the remote path.
-		err = writer.WriteField("path", app.LocalPath+":"+app.RemotePath)
+		err = writer.WriteField("path", app.LocalPath+"::"+app.RemotePath)
 	}
 	if err == nil {
 		err = writer.Close()
@@ -58,7 +59,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 		return err
 	}
 
-	res, err := http.Post("http://"+app.RemoteAddr+":"+app.SyncPort, writer.FormDataContentType(), &body)
+	res, err := http.Post("http://"+net.JoinHostPort(app.RemoteAddr, app.SyncPort), writer.FormDataContentType(), &body)
 	if err != nil {
 		return err
 	}
@@ -130,14 +131,16 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 			return err
 		}
 
-		part, err := writer.CreateFormFile("file", "upload")
-		if err != nil {
-			return err
-		}
+		if pathType == "file" {
+			part, err := writer.CreateFormFile("file", "upload")
+			if err != nil {
+				return err
+			}
 
-		_, err = io.Copy(part, file)
-		if err != nil {
-			return err
+			_, err = io.Copy(part, file)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -146,7 +149,7 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", "http://"+app.RemoteAddr+":"+app.SyncPort, &body)
+	req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(app.RemoteAddr, app.SyncPort), &body)
 	if err != nil {
 		return err
 	}
@@ -182,7 +185,7 @@ func DelanceyCheck(url string) error {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return http.ErrNotSupported
 	}
 

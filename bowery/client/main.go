@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -49,25 +51,27 @@ var r = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 	Layout:        "layout",
+	Funcs:         []template.FuncMap{{"JoinHostPort": net.JoinHostPort}},
 })
 
 var externalViewRenderer = render.New(render.Options{
 	IsDevelopment: true,
+	Funcs:         []template.FuncMap{{"JoinHostPort": net.JoinHostPort}},
 })
 
 type Application struct {
-	ID              string
-	Name            string
-	Start           string
-	Build           string
-	RemotePath      string
-	RemoteAddr      string
-	SyncPort        string
-	LogPort         string
-	LocalPath       string
-	LastUpdatedAt   time.Time
-	IsSyncAvailable bool
-	EnabledPlugins  []string // plugin.Name + "@" + plugin.Version
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Start           string    `json:"start"`
+	Build           string    `json:"build"`
+	RemotePath      string    `json:"remotePath"`
+	RemoteAddr      string    `json:"remoteAddr"`
+	SyncPort        string    `json:"syncPort"`
+	LogPort         string    `json:"logPort"`
+	LocalPath       string    `json:"localPath"`
+	LastUpdatedAt   time.Time `json:"lastUpdatedAt"`
+	IsSyncAvailable bool      `json:"isSyncAvailable"`
+	EnabledPlugins  []string  `json:"enabledPlugins"` // plugin.Name + "@" + plugin.Version
 }
 
 type AppPluginWrapper struct {
@@ -269,12 +273,8 @@ func main() {
 			for _, app := range data.Applications {
 				connected := true
 				status := "connect"
-				addr := fmt.Sprintf("http://%s:%s/healthz", app.RemoteAddr, app.SyncPort)
-				res, err := http.Get(addr)
-				if err == nil {
-					res.Body.Close()
-				}
-				if err != nil || res.StatusCode != http.StatusOK {
+				err := DelanceyCheck(net.JoinHostPort(app.RemoteAddr, app.SyncPort))
+				if err != nil {
 					connected = false
 					status = "disconnect"
 				}
@@ -283,14 +283,16 @@ func main() {
 				// flagged as disconnected, re-upload all application code
 				// and all enabled plugins.
 				if connected && !app.IsSyncAvailable {
-					log.Println(fmt.Sprintf("reconnecting: %s", addr))
+					log.Println(fmt.Sprintf("reconnecting: %s", net.JoinHostPort(app.RemoteAddr, app.SyncPort)))
 					uploadApp(app)
 					uploadAppPlugins(app, true, false)
 				}
 
 				// Update app state and broadcast.
-				app.IsSyncAvailable = connected
-				broadcastJSON(&Event{Application: app, Status: status})
+				if connected != app.IsSyncAvailable {
+					app.IsSyncAvailable = connected
+					broadcastJSON(&Event{Application: app, Status: status})
+				}
 			}
 
 			// Save state.
@@ -302,9 +304,7 @@ func main() {
 		for _, app := range data.Applications {
 			go func() {
 				syncer.Watch(app)
-				broadcastJSON(&Event{Application: app, Status: "upload-start"})
 				uploadApp(app)
-				broadcastJSON(&Event{Application: app, Status: "upload-finish"})
 				uploadAppPlugins(app, true, false)
 				errStreamManager.Connect(app)
 			}()
@@ -377,11 +377,10 @@ func getToken() error {
 
 	if createRes.Status == "created" {
 		data.Developer.Token = createRes.Token
+		return db.Save(data)
 	}
 
-	db.Save(data)
-
-	return nil
+	return createRes
 }
 
 func getDev() *schemas.Developer {
@@ -461,6 +460,7 @@ func updateDev(oldpass, newpass string) error {
 }
 
 func uploadApp(app *Application) error {
+	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 	watcher, err := syncer.GetWatcher(app)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
@@ -469,7 +469,16 @@ func uploadApp(app *Application) error {
 		return err
 	}
 
-	return watcher.Upload()
+	err = watcher.Upload()
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
+		return err
+	}
+
+	broadcastJSON(&Event{Application: app, Status: "upload-finish"})
+	return nil
 }
 
 func uploadAppPlugins(app *Application, init, force bool) error {
@@ -538,7 +547,7 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		didRemovePlugin = !didRemovePlugin
 	}
 
-	host := fmt.Sprintf("http://%s:%s", app.RemoteAddr, app.SyncPort)
+	host := "http://" + net.JoinHostPort(app.RemoteAddr, app.SyncPort)
 	u, err := url.Parse(pluginRepo)
 	// Is git repo and not developer mode.
 	if err == nil && u.Host != "" && !data.DevMode && !force {
@@ -621,8 +630,17 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		return err
 	}
 
-	uploadFilePath := filepath.Join("/tmp", pluginStr)
+	// Write the tar contents to a temporary file.
+	uploadFilePath := filepath.Join(os.TempDir(), pluginStr)
 	file, err := os.Create(uploadFilePath)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
+		return err
+	}
+	defer file.Close()
+
 	if _, err := io.Copy(file, upload); err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"dev": getDev(),
@@ -796,24 +814,27 @@ func submitLoginHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = &schemas.Developer{}
 	}
 
-	email := req.FormValue("email")
-	password := req.FormValue("password")
-
-	data.Developer.Email = email
-	data.Developer.Password = password
+	data.Developer.Email = req.FormValue("email")
+	data.Developer.Password = req.FormValue("password")
 
 	if err := getToken(); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "incorrect password") {
+			http.Redirect(rw, req, "/login?error=invalidpass", http.StatusSeeOther)
+			return
+		}
+		if strings.Contains(err.Error(), "developer with email") {
+			http.Redirect(rw, req, "/login?error=invalidemail", http.StatusSeeOther)
+			return
+		}
+
 		r.HTML(rw, http.StatusBadRequest, "error", map[string]interface{}{
 			"Error": err.Error(),
 		})
+		return
 	}
 
-	data.Developer = getDev()
-
-	db.Save(data)
-
-	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	// Redirect to applications.
+	keenC.AddEvent("bowery/desktop login", map[string]*schemas.Developer{"user": data.Developer})
 	http.Redirect(rw, req, "/", http.StatusSeeOther)
 }
 
@@ -866,6 +887,7 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		data.Developer = createRes.Developer
 		db.Save(data)
 
+		keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
 		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
 		return
 	}
@@ -875,7 +897,6 @@ func createDeveloperHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	keenC.AddEvent("bowery/desktop signup", map[string]*schemas.Developer{"user": data.Developer})
 	http.Redirect(rw, req, "/signup", http.StatusSeeOther)
 	return
 }
@@ -935,41 +956,74 @@ func newAppHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// formatAppFields converts the given remote address and local directory to
+// appropriate application fields.
+func formatAppFields(remoteAddr, localDir string) (*Application, error) {
+	agentIsDev := os.Getenv("AGENT") == "development"
+	app := new(Application)
+
+	if len(localDir) > 0 && localDir[0] == '~' {
+		localDir = filepath.Join(os.Getenv(sys.HomeVar), string(localDir[1:]))
+	}
+	if (len(localDir) > 0 && filepath.Separator == '/' && localDir[0] != '/') ||
+		(filepath.Separator != '/' && filepath.VolumeName(localDir) == "") {
+		localDir = filepath.Join(os.Getenv(sys.HomeVar), localDir)
+	}
+	app.LocalPath = localDir
+
+	host, port, err := net.SplitHostPort(remoteAddr)
+	if err != nil && strings.Contains(err.Error(), "missing port") {
+		host, _, err = net.SplitHostPort(net.JoinHostPort(remoteAddr, "3000"))
+	}
+	if err != nil {
+		return app, err
+	}
+	if port == "" {
+		port = config.BoweryAgentProdSyncPort
+		if agentIsDev {
+			port = config.BoweryAgentDevSyncPort
+		}
+	}
+	logPort := config.BoweryAgentProdLogPort
+	if agentIsDev {
+		logPort = config.BoweryAgentDevLogPort
+	}
+
+	app.RemoteAddr = host
+	app.SyncPort = port
+	app.LogPort = logPort
+	return app, nil
+}
+
 func verifyAppHandler(rw http.ResponseWriter, req *http.Request) {
 	requestProblems := map[string]string{}
 
-	remoteAddr := req.FormValue("ip-addr")
-
-	defaultSyncPort := fmt.Sprintf(":%s", config.BoweryAgentPort)
-	if os.Getenv("AGENT") == "development" {
-		defaultSyncPort = ":3003"
-	}
-
-	var err error
-	if len(strings.Split(remoteAddr, ":")) > 1 {
-		err = DelanceyCheck(remoteAddr)
-	} else {
-		err = DelanceyCheck(remoteAddr + defaultSyncPort)
-	}
+	addr := req.FormValue("ip-addr")
+	fields, err := formatAppFields(addr, req.FormValue("local-dir"))
 	if err != nil {
-		requestProblems["ip-addr"] = "http://" + remoteAddr + defaultSyncPort + " can't be reached."
+		requestProblems["ip-addr"] = "http://" + addr + " format is invalid."
+	} else {
+		err = DelanceyCheck(net.JoinHostPort(fields.RemoteAddr, fields.SyncPort))
+		if err != nil {
+			requestProblems["ip-addr"] = "http://" + net.JoinHostPort(fields.RemoteAddr, fields.SyncPort) + " can't be reached."
+		}
 	}
 
-	localDir := req.FormValue("local-dir")
-	if len(localDir) >= 2 && localDir[:2] == "~/" {
-		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
-	}
-	if stat, err := os.Stat(localDir); os.IsNotExist(err) || !stat.IsDir() {
-		requestProblems["local-dir"] = localDir + " is not a valid directory."
+	if stat, err := os.Stat(fields.LocalPath); os.IsNotExist(err) || !stat.IsDir() {
+		requestProblems["local-dir"] = fields.LocalPath + " is not a valid directory."
 	}
 
 	r.JSON(rw, http.StatusOK, requestProblems)
 }
 
 func createAppHandler(rw http.ResponseWriter, req *http.Request) {
-	localDir := req.FormValue("local-dir")
-	if len(localDir) >= 2 && localDir[:2] == "~/" {
-		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	fields, err := formatAppFields(req.FormValue("ip-addr"), req.FormValue("local-dir"))
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
 	}
 
 	app := &Application{
@@ -977,28 +1031,14 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 		Name:            req.FormValue("name"),
 		Start:           req.FormValue("start"),
 		Build:           req.FormValue("build"),
+		RemoteAddr:      fields.RemoteAddr,
+		SyncPort:        fields.SyncPort,
+		LogPort:         fields.LogPort,
 		RemotePath:      req.FormValue("remote-dir"),
-		LocalPath:       localDir,
+		LocalPath:       fields.LocalPath,
 		LastUpdatedAt:   time.Now(),
 		IsSyncAvailable: true,
 	}
-
-	// Parse address. Split into
-	ipAddr := req.FormValue("ip-addr")
-	hostAndPort := strings.Split(ipAddr, ":")
-	if len(hostAndPort) == 1 {
-		app.RemoteAddr = ipAddr
-		app.SyncPort = config.BoweryAgentPort
-		if os.Getenv("AGENT") == "development" {
-			app.SyncPort = "3003"
-		}
-	} else {
-		app.RemoteAddr = hostAndPort[0]
-		app.SyncPort = hostAndPort[1]
-	}
-	// Log Port is always SyncPort + 1
-	sp, _ := strconv.Atoi(app.SyncPort)
-	app.LogPort = strconv.Itoa(sp + 1)
 
 	if data.Applications == nil {
 		data.Applications = []*Application{}
@@ -1010,7 +1050,6 @@ func createAppHandler(rw http.ResponseWriter, req *http.Request) {
 	syncer.Watch(app)
 	uploadApp(app)
 	errStreamManager.Connect(app)
-	broadcastJSON(&Event{Application: app, Status: "upload-start"})
 
 	keenC.AddEvent("bowery/desktop app new", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
@@ -1077,23 +1116,29 @@ func addPluginHandler(rw http.ResponseWriter, req *http.Request) {
 func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 	app := getAppById(req.FormValue("id"))
 	if app.ID == "" {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
-			"Error": "No such application.",
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "No such application.",
 		})
 		return
 	}
 
-	localDir := req.FormValue("local-dir")
-	if len(localDir) >= 2 && localDir[:2] == "~/" {
-		localDir = strings.Replace(localDir, "~", os.Getenv(sys.HomeVar), 1)
+	fields, err := formatAppFields(req.FormValue("ip-addr"), req.FormValue("local-dir"))
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
 	}
 
+	app.RemoteAddr = fields.RemoteAddr
+	app.SyncPort = fields.SyncPort
 	app.Name = req.FormValue("name")
 	app.Start = req.FormValue("start")
 	app.Build = req.FormValue("build")
 	app.RemotePath = req.FormValue("remote-dir")
-	app.RemoteAddr = req.FormValue("ip-addr")
-	app.LocalPath = localDir
+	app.LocalPath = fields.LocalPath
 	app.LastUpdatedAt = time.Now()
 	for i, a := range data.Applications {
 		if a.ID == app.ID {
@@ -1104,7 +1149,7 @@ func updateAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	syncer.Remove(app)
 	syncer.Watch(app)
-	broadcastJSON(&Event{Application: app, Status: "upload-start"})
+	uploadApp(app)
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,

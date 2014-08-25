@@ -75,23 +75,23 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		app.CmdStrs = [4]string{init, build, test, start}
 	}
 
-	initCmd := ParseCmd(app.CmdStrs[0], app.Path, stdoutWriter, stderrWriter)
-	buildCmd := ParseCmd(app.CmdStrs[1], app.Path, stdoutWriter, stderrWriter)
-	testCmd := ParseCmd(app.CmdStrs[2], app.Path, stdoutWriter, stderrWriter)
-	startCmd := ParseCmd(app.CmdStrs[3], app.Path, stdoutWriter, stderrWriter)
-
-	app.InitCmd = initCmd
-	app.BuildCmd = buildCmd
-	app.TestCmd = testCmd
-	app.StartCmd = startCmd
+	initCmd := parseCmd(app.CmdStrs[0], app.Path, stdoutWriter, stderrWriter)
+	buildCmd := parseCmd(app.CmdStrs[1], app.Path, stdoutWriter, stderrWriter)
+	testCmd := parseCmd(app.CmdStrs[2], app.Path, stdoutWriter, stderrWriter)
+	startCmd := parseCmd(app.CmdStrs[3], app.Path, stdoutWriter, stderrWriter)
 
 	// Kill existing commands.
-	err := killAppCmds(initReset, app)
+	err := Kill(app, initReset)
 	if err != nil {
 		mutex.Unlock()
 		finish <- false
 		return finish
 	}
+
+	app.InitCmd = initCmd
+	app.BuildCmd = buildCmd
+	app.TestCmd = testCmd
+	app.StartCmd = startCmd
 
 	// Run in goroutine so commands can run in the background.
 	go func() {
@@ -110,7 +110,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 						continue
 					}
 
-					cmd := ParseCmd(filepath.Join(ImageScriptsDir, info.Name()), ImageScriptsDir, stdoutWriter, stderrWriter)
+					cmd := parseCmd(filepath.Join(ImageScriptsDir, info.Name()), ImageScriptsDir, stdoutWriter, stderrWriter)
 					if cmd != nil {
 						err := startProc(cmd, stdoutWriter, stderrWriter)
 						if err == nil {
@@ -131,7 +131,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 			if err != nil {
 				stderrWriter.Write([]byte(err.Error() + "\n"))
 
-				killAppCmds(initReset, app)
+				Kill(app, initReset)
 				finish <- false
 				return
 			}
@@ -193,6 +193,29 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 	return finish
 }
 
+// Kill kills the services processes, the init cmd is only killed if init is true.
+// todo(steve): figure out plugins.
+func Kill(app *Application, init bool) error {
+	if init {
+		err := killByCmd(app.InitCmd)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := killByCmd(app.BuildCmd)
+	if err != nil {
+		return err
+	}
+
+	err = killByCmd(app.TestCmd)
+	if err != nil {
+		return err
+	}
+
+	return killByCmd(app.StartCmd)
+}
+
 // waitProc waits for a process to end and writes errors to tcp.
 func waitProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) {
 	err := cmd.Wait()
@@ -211,59 +234,23 @@ func startProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) error {
 	return err
 }
 
-// killAppCmds kills the running processes and resets them, the init cmd
-// is only killed if init is true.
-func killAppCmds(init bool, app *Application) error {
-	// On restart the build, test, start (and if init is true, init) commands,
-	// as well as any processes they have started must be killed.
-	//
-	// todo(steve): figure out plugins.
-	var err error
-
-	// Init
-	if init {
-		err = killCmdAndSubProcesses(app.InitCmd)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Build
-	err = killCmdAndSubProcesses(app.BuildCmd)
-	if err != nil {
-		return err
-	}
-
-	// Test
-	err = killCmdAndSubProcesses(app.TestCmd)
-	if err != nil {
-		return err
-	}
-
-	// Start
-	err = killCmdAndSubProcesses(app.StartCmd)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func killCmdAndSubProcesses(cmd *exec.Cmd) error {
+// killByCmd kills the process tree for a given cmd.
+func killByCmd(cmd *exec.Cmd) error {
 	if cmd != nil && cmd.Process != nil {
 		proc, err := GetPidTree(cmd.Process.Pid)
 		if err != nil {
 			return err
 		}
+
 		return proc.Kill()
 	}
 
 	return nil
 }
 
-// ParseCmd converts a string to a command, connecting stdio to a
+// parseCmd converts a string to a command, connecting stdio to a
 // tcp connection.
-func ParseCmd(command, path string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cmd {
+func parseCmd(command, dir string, stdoutWriter, stderrWriter *OutputWriter) *exec.Cmd {
 	if command == "" {
 		return nil
 	}
@@ -309,7 +296,7 @@ func ParseCmd(command, path string, stdoutWriter, stderrWriter *OutputWriter) *e
 
 	cmd := exec.Command(cmds[0], cmds[1:]...)
 	cmd.Env = env
-	cmd.Dir = path
+	cmd.Dir = dir
 	if stdoutWriter != nil && stderrWriter != nil {
 		cmd.Stdout = stdoutWriter
 		cmd.Stderr = stderrWriter

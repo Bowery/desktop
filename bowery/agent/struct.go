@@ -67,13 +67,13 @@ type Application struct {
 // and determines target path. Returns a pointer to an Application.
 func NewApplication(id, init, build, test, start, path string) (*Application, error) {
 	root := ""
-	pathList := strings.Split(path, ":")
+	pathList := strings.Split(path, "::")
 	if len(pathList) == 2 {
 		root = pathList[1]
-		if root[0] == '~' {
+		if len(root) > 0 && root[0] == '~' {
 			root = filepath.Join(os.Getenv(sys.HomeVar), string(root[1:]))
 		}
-		if (filepath.Separator == '/' && root[0] != '/') ||
+		if (len(root) > 0 && filepath.Separator == '/' && root[0] != '/') ||
 			(filepath.Separator != '/' && filepath.VolumeName(root) == "") {
 			root = filepath.Join(HomeDir, root)
 		}

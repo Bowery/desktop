@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"runtime"
 
@@ -38,9 +37,9 @@ func main() {
 		route.HandlerFunc(r.Handler)
 	}
 
-	port := config.BoweryAgentPort
+	port := config.BoweryAgentProdSyncPort
 	if InDevelopment {
-		port = "3003"
+		port = config.BoweryAgentDevSyncPort
 	}
 
 	// Start the server.
@@ -56,12 +55,6 @@ func main() {
 	go plugin.StartPluginListener()
 	errStreamManager := NewErrStreamManager()
 	go errStreamManager.PluginErrStream(pluginManager.Error)
-
-	// Set up debug http port, temporary.
-	// todo(steve): remove once we know what the issue is.
-	go func() {
-		log.Println(http.ListenAndServe(":3004", nil))
-	}()
 
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())

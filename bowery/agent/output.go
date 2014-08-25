@@ -3,7 +3,7 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"sync"
 )
 
@@ -16,7 +16,7 @@ type OutputWriter struct {
 // NewOutputWriter creates a new OutputWriter at the specified path.
 func NewOutputWriter(outputPath string) (*OutputWriter, error) {
 	// Ensure the parent directory has been generated.
-	err := os.MkdirAll(path.Dir(outputPath), os.ModePerm|os.ModeDir)
+	err := os.MkdirAll(filepath.Dir(outputPath), os.ModePerm|os.ModeDir)
 	if err != nil {
 		return nil, err
 	}

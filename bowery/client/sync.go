@@ -61,7 +61,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Get initial stats.
 	err = filepath.Walk(local, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil || local == path {
 			return err
 		}
 
@@ -86,12 +86,17 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	// Manages updates/creates.
 	walker := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			errChan <- watcher.wrapErr(err)
+			return nil
+		}
+		if local == path {
+			return nil
 		}
 
 		rel, err := filepath.Rel(local, path)
 		if err != nil {
-			return err
+			errChan <- watcher.wrapErr(err)
+			return nil
 		}
 
 		// Check if ignoring.
@@ -118,37 +123,40 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		} else if !ok {
 			status = "create"
 		}
+		stats[path] = info
+		found = append(found, path)
 
 		// Ignore if no change has occured.
 		if status == "" {
-			stats[path] = info
-			found = append(found, path)
 			return nil
 		}
 
 		err = watcher.Update(rel, status)
 		if err != nil {
 			if os.IsNotExist(err) {
+				// Remove the stats info so we don't get a false delete later.
+				delete(stats, path)
+				found = found[:len(found)-1]
 				log.Debug("Ignoring temp file", status, "event", rel)
 				return nil
 			}
 
-			return err
+			errChan <- watcher.wrapErr(err)
+			return nil
 		}
 
 		evChan <- &Event{Application: watcher.Application, Status: status, Path: rel}
-		stats[path] = info
-		found = append(found, path)
 		return nil
 	}
 
 	// Manages deletes.
-	checkDeletes := func() error {
+	checkDeletes := func() {
 		for path := range stats {
 			skip := false
 			rel, err := filepath.Rel(local, path)
 			if err != nil {
-				return err
+				errChan <- watcher.wrapErr(err)
+				continue
 			}
 
 			for _, f := range found {
@@ -165,13 +173,12 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			delete(stats, path)
 			err = watcher.Update(rel, "delete")
 			if err != nil {
-				return err
+				errChan <- watcher.wrapErr(err)
+				continue
 			}
 
 			evChan <- &Event{Application: watcher.Application, Status: "delete", Path: rel}
 		}
-
-		return nil
 	}
 
 	for {
@@ -193,11 +200,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			errChan <- watcher.wrapErr(err)
 		}
 
-		err = checkDeletes()
-		if err != nil {
-			errChan <- watcher.wrapErr(err)
-		}
-
+		checkDeletes()
 		found = make([]string, 0)
 		<-time.After(500 * time.Millisecond)
 	}
@@ -259,8 +262,26 @@ func (watcher *Watcher) Upload() error {
 
 // Update updates a path to the applications remote address.
 func (watcher *Watcher) Update(name, status string) error {
-	return DelanceyUpdate(watcher.Application, filepath.Join(watcher.Application.LocalPath, name),
-		name, status)
+	path := filepath.Join(watcher.Application.LocalPath, name)
+
+	err := DelanceyUpdate(watcher.Application, path, name, status)
+	if err != nil && strings.Contains(err.Error(), "invalid app id") {
+		// If the id is invalid that indicates the server died, just reupload
+		// and try again.
+		err = watcher.Upload()
+		if err != nil {
+			we, ok := err.(*WatchError)
+			if ok {
+				err = we.Err
+			}
+
+			return err
+		}
+
+		return DelanceyUpdate(watcher.Application, path, name, status)
+	}
+
+	return err
 }
 
 // Close closes the watcher and removes existing upload paths.

@@ -20,7 +20,7 @@
       <div class="item-title">
         <a href="/applications/{{.App.ID}}">
           <h3>{{if .App.Name}}{{.App.Name}}{{else}}{{.App.LocalPath}}{{end}}</h3>
-          <p class="subtitle">{{.App.RemoteAddr}}</p>
+          <p class="subtitle">{{JoinHostPort .App.RemoteAddr .App.SyncPort}}</p>
         </a>
       </div>
       <div class="toggle {{if .IsActive}}active{{end}}" data-app="{{.App.ID}}" data-plugin-name="{{$name}}" data-plugin-version="{{$version}}">

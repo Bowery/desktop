@@ -73,7 +73,11 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		res.Send(http.StatusInternalServerError)
 		return
 	}
-	// Set application.
+
+	// Set new application, killing any existing cmds created from an app with the same id.
+	if oldApp, ok := Applications[id]; ok {
+		Kill(oldApp, true)
+	}
 	Applications[id] = app
 
 	plugin.EmitPluginEvent(plugin.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
@@ -161,14 +165,6 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 				res.Send(http.StatusInternalServerError)
 				return
 			}
-
-			dest, err = os.Open(path)
-			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
-				return
-			}
-			defer dest.Close()
 		} else {
 			attach, _, err := req.FormFile("file")
 			if err != nil {
@@ -216,7 +212,7 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			err = dest.Chmod(os.FileMode(mode))
+			err = os.Chmod(path, os.FileMode(mode))
 			if err != nil {
 				res.Body["error"] = err.Error()
 				res.Send(http.StatusInternalServerError)

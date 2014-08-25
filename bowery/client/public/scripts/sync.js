@@ -45,10 +45,17 @@ $(document).ready(function () {
 
   conn.onmessage = function (ev) {
     var data = JSON.parse(ev.data)
-    var appID = data.application.ID
+    var appID = data.application.id
     var $appEl = $('.item[data-app="' + appID + '"]')
 
     console.log(data)
+
+    // Handle errors.
+    if (data.error) {
+      $appEl.find('.status').addClass('alert')
+      $syncStatusEl.text("Error: " + data.error + ".")
+      setTimeout(upToDate, 750)
+    }
 
     // Check for connect/disconnect status.
     if (data.status == 'connect')
@@ -57,22 +64,25 @@ $(document).ready(function () {
       $appEl.find('.status').addClass('alert')
 
     if (data.status == 'update') {
+      $appEl.find('.status').removeClass('alert')
       $syncStatusEl.text('Updated ' + data.path + ".")
       setTimeout(upToDate, 750)
     }
 
     if (data.status == 'create') {
+      $appEl.find('.status').removeClass('alert')
       $syncStatusEl.text('Created ' + data.path + ".")
       setTimeout(upToDate, 750)
     }
 
     if (data.status == 'delete') {
+      $appEl.find('.status').removeClass('alert')
       $syncStatusEl.text('Deleted ' + data.path + ".")
       setTimeout(upToDate, 750)
     }
 
     if (data.status == 'upload-start')
-      $syncStatusEl.text('Uploading ' + data.application.name + ".")
+      $syncStatusEl.text('Uploading ' + (data.application.name || data.application.localPath) + ".")
     if (data.status == 'upload-finish')
       $syncStatusEl.text('Up to date.')
 
@@ -108,7 +118,7 @@ $(document).ready(function () {
       })
       .done(function() {
         console.log(arguments)
-      })      
+      })
     }
   })
 })
