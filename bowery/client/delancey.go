@@ -177,7 +177,7 @@ func DelanceyUpdate(app *Application, full, name, status string) error {
 	return updateRes
 }
 
-// Check checks to see if delancey is running.
+// DelanceyCheck checks to see if delancey is running.
 func DelanceyCheck(url string) error {
 	res, err := http.Get("http://" + url + "/healthz")
 	if err != nil {
@@ -190,4 +190,34 @@ func DelanceyCheck(url string) error {
 	}
 
 	return nil
+}
+
+// DelanceyRemove removes an application from it's delancey endpoint.
+func DelanceyRemove(app *Application) error {
+	url := net.JoinHostPort(app.RemoteAddr, app.SyncPort) + "/?id=" + app.ID
+	req, err := http.NewRequest("DELETE", "http://"+url, nil)
+	if err != nil {
+		return err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// Decode json response.
+	removeRes := new(Res)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(removeRes)
+	if err != nil {
+		return err
+	}
+
+	// Removed so no error.
+	if removeRes.Status == "removed" {
+		return nil
+	}
+
+	return removeRes
 }
