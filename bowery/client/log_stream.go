@@ -17,7 +17,6 @@ type syncWriter struct {
 
 // Write writes the given buffer and syncs to the fs.
 func (sw *syncWriter) Write(b []byte) (int, error) {
-	b = append(b, '\n')
 	sw.mutex.Lock()
 	defer sw.mutex.Unlock()
 
@@ -37,6 +36,7 @@ func (sw *syncWriter) Close() error {
 }
 
 func LogProcessor(s *Stream, data []byte) ([]byte, error) {
+	data = append(data, '\n')
 	file, err := os.OpenFile(filepath.Join(logDir, s.application.ID+".log"),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
