@@ -8,10 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/sys"
 )
 
 var (
@@ -255,47 +255,7 @@ func parseCmd(command, dir string, stdoutWriter, stderrWriter *OutputWriter) *ex
 		return nil
 	}
 
-	var (
-		vars []string
-		cmds []string
-	)
-	args := strings.Split(command, " ")
-	env := os.Environ()
-
-	// Separate env vars and the cmd.
-	for i, arg := range args {
-		if strings.Contains(arg, "=") {
-			vars = args[:i+1]
-		} else {
-			cmds = args[i:]
-			break
-		}
-	}
-
-	// Update existing env vars.
-	for i, v := range env {
-		envlist := strings.SplitN(v, "=", 2)
-
-		for n, arg := range vars {
-			arglist := strings.SplitN(arg, "=", 2)
-
-			if arglist[0] == envlist[0] {
-				env[i] = arg
-				vars[n] = ""
-				break
-			}
-		}
-	}
-
-	// Add new env vars.
-	for _, arg := range vars {
-		if arg != "" {
-			env = append(env, arg)
-		}
-	}
-
-	cmd := exec.Command(cmds[0], cmds[1:]...)
-	cmd.Env = env
+	cmd := sys.NewCommand(command, nil)
 	cmd.Dir = dir
 	if stdoutWriter != nil && stderrWriter != nil {
 		cmd.Stdout = stdoutWriter
