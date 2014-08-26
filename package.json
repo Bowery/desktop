@@ -11,6 +11,6 @@
   "dependencies": {
     "serve": "^1.4.0",
     "myth": "^1.1.1",
-    "wraith": "git+https://github.com/thebyrd/node-wraith.git#thebyrd-output-dir"
+    "wraith": "git+https://github.com/thebyrd/node-wraith.git#master"
   }
 }
