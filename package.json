@@ -4,8 +4,8 @@
   "description": "Bowery Style Guide",
   "scripts": {
     "postinstall": "./node_modules/.bin/myth ui/bowery/bowery.css ui/bowery/out.css",
-    "start": "./node_modules/.bin/serve --port ${PORT:-3000} ui",
-    "test": "./node_modules/.bin/wraith --config ui/wraith.json"
+    "prestart": "./node_modules/.bin/wraith --config ui/wraith.json",
+    "start": "./node_modules/.bin/serve --port ${PORT:-3000} ui"
   },
   "author": "David Byrd <byrd@bowery.io>",
   "dependencies": {
