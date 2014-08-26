@@ -19,6 +19,19 @@ format:
 test: deps
 	@go test ./...
 
+ui:
+	npm install
+	npm start > debug.log 2>&1 &
+
+ui-test: ui
+	npm test
+
+ui-clean:
+	-pkill -f node_modules/.bin/serve
+	-rm -rf node_modules
+	-rm -rf ui/diff
+	-rm -rf ui/diffgallery.html
+
 agent:
 	@echo "--> Releasing agent..."
 	@bash --norc ./scripts/release_agent.sh
@@ -40,8 +53,8 @@ clean:
 	-pkill -f bin/client
 	-pkill -f bin/agent
 
-extra-clean: clean
+extra-clean: clean ui-clean
 	-rm -rf build/node_modules
 	-rm -rf build/atom-shell
 
-.PHONY: all deps test format clean release agent client
+.PHONY: all deps test format clean release agent client ui ui-test ui-clean

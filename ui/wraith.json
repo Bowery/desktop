@@ -3,5 +3,16 @@
   "domains": {
     "localhost": "http://localhost:3000",
     "live": "http://ui.bowery.io"
-  }
+  },
+  "engines": [
+    "phantomjs"
+  ],
+
+  "sizes": [
+    "350"
+  ],
+  "outputDir": "ui/diff",
+  "paths": [
+    "/bowery/apps.html"
+  ]
 }

@@ -4,14 +4,13 @@
   "description": "Bowery Style Guide",
   "scripts": {
     "postinstall": "./node_modules/.bin/myth ui/bowery/bowery.css ui/bowery/out.css",
-    "start": "./node_modules/.bin/serve --port ${PORT:-3000} ui"
+    "start": "./node_modules/.bin/serve --port ${PORT:-3000} ui",
+    "test": "./node_modules/.bin/wraith --config ui/wraith.json"
   },
   "author": "David Byrd <byrd@bowery.io>",
   "dependencies": {
     "serve": "^1.4.0",
-    "myth": "^1.1.1"
-  },
-  "devDependencies": {
-    "wraith": "^1.0.6"
+    "myth": "^1.1.1",
+    "wraith": "git+https://github.com/thebyrd/node-wraith.git#thebyrd-output-dir"
   }
 }
