@@ -11,7 +11,6 @@ test:
 deployment:
   production:
     branch: master
-    heroku:
-      appname: bowery-ui
     commands:
       - cd /home/ubuntu/.go_workspace/src/github.com/Bowery/desktop/ && make release
+      - git push git@heroku.com:bowery-ui.git $CIRCLE_SHA1:refs/heads/master
