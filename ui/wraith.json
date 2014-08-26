@@ -1,0 +1,7 @@
+{
+  "project": "Front End",
+  "domains": {
+    "localhost": "http://localhost:3000",
+    "live": "http://ui.bowery.io"
+  }
+}

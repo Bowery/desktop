@@ -16,3 +16,4 @@ build/cache
 dist/
 scripts/winutil.exe
 bowery/agent/choco
+node_modules
