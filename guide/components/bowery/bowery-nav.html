@@ -1,0 +1,96 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-header` implements a native looking header with close, minimize, maximize, etf
+
+<bowery-header position="header">Bowery</bowery-header>
+<bowery-header position="footer">Bowery</bowery-header>
+
+@group Bowery Core Elements
+@element bowery-header
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<polymer-element name="bowery-nav" attributes="type" noscript>
+<template>
+  <link rel="stylesheet" href="../../bowery/out.css">
+  <style>
+  .header, .footer {
+    background: white;
+    text-align: center;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 2;
+  }
+  .header {
+    top: 0;
+    border-bottom: 1px solid rgb(220, 221, 223);
+  }
+  .footer {
+    border-bottom: none;
+    border-top: 1px solid rgb(220, 221, 223);
+
+    bottom: 0;
+  }
+  .header h1,
+  .footer h1 {
+    margin: 0 auto;
+  }
+  .header a,
+  .footer a {
+    text-decoration: none;
+  }
+  .header .window-buttons {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+  }
+  .header .window-button {
+    text-decoration: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 12px;
+    float: left;
+    margin-right: 8px;
+    cursor: pointer;
+  }
+  .header .window-button:last-child {
+    margin-right: 0;
+  }
+  .window-button.close {
+    background: rgb(248, 71, 70);
+  }
+  .window-button.minimize {
+    background: rgb(252, 177, 37);
+  }
+  .window-button.maximize {
+    background: rgb(42, 195, 51);
+  }
+  .title-button {
+    padding: 18px;
+    display: block;
+    transition: color 200ms;
+    cursor: pointer;
+  }
+  .title-button:hover h1 {
+    color: rgb(26, 23, 24);
+  }
+  </style>
+  <div class="{{type}}">
+    <template if="{{type == 'header'}}">
+      <div class="window-buttons">
+        <a class="window-button close">&nbsp;</a>
+        <a class="window-button minimize">&nbsp;</a>
+        <a class="window-button maximize">&nbsp;</a>
+      </div>
+    </template>
+    <a href="/" class="title-button">
+      <h1><content></content></h1>
+    </a>
+  </div>
+</template>
+</polymer-element>

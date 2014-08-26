@@ -1,0 +1,67 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-card` creates an expandable block of content. By default the card will be collapsed. Use `opened` to show/hide the content. When the content is expanded, it will become editable.
+
+  <button on-click="{{toggle}}">toggle card</button>
+  <bowery-card id="collapse"></bowery-card>
+
+  ...
+
+  toggle: function() {
+    this.$.collapse.toggle();
+  }
+@group Bowery Core Elements
+@element bowery-card
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-collapse/core-collapse.html">
+
+<polymer-element name="bowery-card" attributes="target horizontal opened duration fixedSize">
+<template>
+  <link rel="stylesheet" href="../../bowery/out.css">
+  <style>
+    .card {
+      background: white;
+      padding: 10px;
+      margin: 9px 18px;
+      width: 345px;
+      float: left;
+      position: relative;
+    }
+    .card .expander {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 200ms;
+    }
+    .card:hover .expander {
+      opacity: 1;
+    }
+    :host {
+      float: left;
+    }
+  </style>
+  <div class="card">
+    <a href="/" class="expander" on-click="{{toggle}}">▼</a>
+    <content select="h4"></content>
+    <content select="span"></content>
+    <core-collapse id="collapse">
+      <content></content>
+    </core-collapse>
+  </div>
+</template>
+<script>
+Polymer({
+  toggle: function (e) {
+    e.preventDefault()
+    this.$.collapse.toggle()
+  }
+})
+</script>
+</polymer-element>
