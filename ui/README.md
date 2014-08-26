@@ -5,6 +5,8 @@ In Progress
 - Inputs/New App View
 - Login
 - Logout
-- use yosemite buttons for ui interaction
+- Use yosemite buttons for ui interaction
+- Minify/Package App for Production
+- Hook up to Atom Shell
 
-- screenshot diff PR bot
+- Screenshot diff PR bot

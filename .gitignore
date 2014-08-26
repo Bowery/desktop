@@ -17,3 +17,4 @@ dist/
 scripts/winutil.exe
 bowery/agent/choco
 node_modules
+ui/bowery/out.css
