@@ -27,7 +27,7 @@ try {
     Start-ChocolateyProcessAsAdmin 'stop Bowery-Agent' net | Out-Null
     Start-ChocolateyProcessAsAdmin 'remove Bowery-Agent confirm' nssm | Out-Null
   }
-  Start-ChocolateyProcessAsAdmin 'install Bowery-Agent $root\bowery-agent.exe' nssm | Out-Null
+  Start-ChocolateyProcessAsAdmin "install Bowery-Agent $root\bowery-agent.exe" nssm | Out-Null
   Start-ChocolateyProcessAsAdmin 'start Bowery-Agent' net | Out-Null
 
   Write-ChocolateySuccess "$packageName"
