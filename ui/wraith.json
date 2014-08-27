@@ -13,6 +13,8 @@
   ],
   "outputDir": "ui/diff",
   "paths": [
-    "/bowery/apps.html"
+    "/bowery/apps.html",
+    "/bowery/new.html",
+    "/bowery/login.html"
   ]
 }

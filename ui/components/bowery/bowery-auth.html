@@ -1,0 +1,114 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-auth` asks users for their email and based on the existance of a user with that email will facilitate a login or signup.
+  <bowery-auth></bowery-auth>
+
+@group Bowery Core Elements
+@element bowery-auth
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
+
+
+<polymer-element name="bowery-auth" attributes="type email name password">
+<template>
+  <link rel="stylesheet" href="../../bowery/out.css">
+  <style>
+  form {
+    margin: 55px auto;
+    overflow: auto;
+  }
+  .signup, .login {
+    display: none;
+  }
+  .signup-form .signup,
+  .login-form .login {
+    display: block;
+  }
+
+  </style>
+  <form class="login-form" id="form">
+    <div class="field-group">
+      <label for="email" placeholder="hello@world.com">Email</label>
+      <input type="text" name="email" on-change="{{updateEmail}}" value="{{this.email}}">
+    </div>
+    <div class="field-group">
+      <label for="password">Password</label>
+      <input type="password" name="password" value="{{this.password}}">
+    </div>
+    <div class="login">
+      <!--  Login Specific stuff here-->
+    </div>
+    <div class="signup">
+      <div class="field-group">
+        <label for="name">Name</label>
+        <input type="text" name="name" value="{{this.name}}">
+      </div>
+    </div>
+  </form>
+
+  <bowery-nav type="footer" on-click="{{postForm}}">{{type}}</bowery-nav>
+  <core-ajax id="emailAjax"
+    auto
+    url="../../api/users.json"
+    on-core-response="{{validateEmail}}"
+    handleAs="json">
+  </core-ajax>
+
+  <core-ajax id="signupAjax"
+    auto
+    url="../../api/signup.json"
+    on-core-response="{{handleSignupResponse}}"
+    handleAs="json">
+  </core-ajax>
+
+  <core-ajax id="loginAjax"
+    auto
+    url="../../api/login.json"
+    on-core-response="{{handleLoginResponse}}"
+    handleAs="json">
+  </core-ajax>
+</template>
+<script>
+Polymer({
+  ready: function () {
+    this.email = ""
+    this.type = "login"
+  },
+  postForm: function () {
+    console.log('postForm', this.type, this.email, this.name, this.password)
+    // TODO (thebyrd) post login/signup info to broome.
+    window.location = "/bowery/apps.html"
+  },
+  updateEmail: function (e) {
+    this.email = e.target.value
+
+    console.log('updateEmail')
+    this.$.emailAjax.params = {email: this.email}
+  },
+  validateEmail: function () {
+    // give them some type to type something
+    if (this.email.length < 5) {
+      return (this.type = "login")
+    }
+
+    var users = this.$.emailAjax.response.slice(0)
+    var isValid = !!~users.map(function (u){return u.email}).indexOf(this.email)
+
+    console.log(this.email, isValid)
+    var type = isValid ? "login" : "signup"
+    this.$.form.className = type + "-form"
+
+    if (type != this.type) {
+      this.type = type
+      // this.fire('bowery-auth-type-change')
+    }
+    console.log('valideEmail called', this.type, this.email)
+  }
+})
+</script>
+</polymer-element>

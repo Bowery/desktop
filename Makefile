@@ -27,10 +27,9 @@ ui-test: ui
 	npm test
 
 ui-clean:
-	-pkill -f node_modules/.bin/serve
+	-pkill -f node_modules/.bin
 	-rm -rf node_modules
 	-rm -rf ui/diff
-	-rm -rf ui/diffgallery.html
 
 agent:
 	@echo "--> Releasing agent..."

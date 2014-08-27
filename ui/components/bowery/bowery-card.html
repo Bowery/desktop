@@ -20,7 +20,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-collapse/core-collapse.html">
 
-<polymer-element name="bowery-card" attributes="target horizontal opened duration fixedSize">
+<polymer-element name="bowery-card" attributes="opened expandable">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
@@ -45,22 +45,40 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     }
     :host {
       float: left;
+      overflow: hidden;
     }
   </style>
   <div class="card">
-    <a href="/" class="expander" on-click="{{toggle}}">▼</a>
     <content select="h4"></content>
     <content select="span"></content>
-    <core-collapse id="collapse">
-      <content></content>
-    </core-collapse>
+    <template if="{{expandable}}">
+      <a href="/" class="expander" on-click="{{toggle}}">EDIT</a>
+      <core-collapse id="collapse" opened="{{opened}}">
+        <content></content>
+      </core-collapse>
+    </template>
+    <content></content>
   </div>
 </template>
 <script>
 Polymer({
+  ready: function () {
+    var self = this
+    document.addEventListener('core-resize', function (e) {
+      if (self.editMode) {
+        self.fire('bowery-card-expand', {offsetTop: self.offsetTop})
+      }
+    })
+  },
   toggle: function (e) {
     e.preventDefault()
+    this.editMode = e.target.innerHTML == 'EDIT'
+    e.target.innerHTML = this.editMode ? 'SAVE' : 'EDIT'
     this.$.collapse.toggle()
+
+    // console.log('$$$', inEditMode, this.offsetHeight, this.offsetTop)
+    // console.log('the card is', this.offsetTop, 'pixels from the top.', 'So we\'ll set scrollY to the current scrollY[]', window.scrollY, '] plus the elements height from the top (minus the height of the header [54])-> ', this.offsetTop + window.scrollY - 54)
+
   }
 })
 </script>
