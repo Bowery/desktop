@@ -1,0 +1,51 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-screen` is a simple push state router that will only show
+
+<bowery-screen path="/">Show this when path is /</bowery-screen>
+
+@group Bowery Core Elements
+@element bowery-screen
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<polymer-element name="bowery-screen" attributes="path">
+<template>
+  <style>
+    #content {
+      display: none;
+    }
+  </style>
+  <div id="content" path="{{path}}">
+    <content></content>
+  </div>
+</template>
+<script>
+Polymer({
+  created: function () {
+    this.globalPath = "/login" //TODO (thebyrd) find a way to make default page work with web server & atom-shell
+  },
+  ready: function () {
+    console.log(this.path, '$$$$')
+    self = this
+    if (this.globalPath == this.path)
+      this.$.content.style.display = 'block'
+
+    window.addEventListener('bowery-navigate', this.navigate.bind(this))
+  },
+  navigate: function (e) {
+    // If you wanted to use this on the web, this line would enable push state
+    // window.history.pushState(e.detail, e.detail.title, e.detail.path)
+    this.globalPath = e.detail.path
+    if (this.path != this.globalPath) {
+      this.$.content.style.display = 'none'
+    } else {
+      this.$.content.style.display = 'block'
+    }
+  }
+})
+</script>
+</polymer-element>

@@ -27,7 +27,7 @@ app.on('ready', function() {
     frame: false
   })
 
-  mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'ui/bowery/login.html'))
+  mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'ui/bowery/index.html'))
   mainWindow.show()
 
   mainWindow.on('closed', function() {

@@ -85,7 +85,7 @@ Polymer({
   postForm: function () {
     console.log('postForm', this.type, this.email, this.name, this.password)
     // TODO (thebyrd) post login/signup info to broome.
-    window.location = "/bowery/apps.html"
+    this.fire('bowery-navigate', {path: "/apps"})
   },
   updateEmail: function (e) {
     this.email = e.target.value
@@ -108,7 +108,6 @@ Polymer({
 
     if (type != this.type) {
       this.type = type
-      // this.fire('bowery-auth-type-change')
     }
     console.log('valideEmail called', this.type, this.email)
   }
