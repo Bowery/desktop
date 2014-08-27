@@ -283,7 +283,17 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Create a new plugin.
 	hooks := req.FormValue("hooks")
+	requirements := req.FormValue("requirements")
+	p, err := plugin.NewPlugin(name, hooks, requirements)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	// Untar the plugin upload.
 	pluginPath := filepath.Join(plugin.PluginDir, name)
 	if attach != nil {
 		defer attach.Close()
@@ -292,14 +302,6 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 			res.Send(http.StatusInternalServerError)
 			return
 		}
-	}
-
-	// Create a new plugin.
-	p, err := plugin.NewPlugin(name, hooks)
-	if err != nil {
-		res.Body["error"] = "unable to create plugin"
-		res.Send(http.StatusInternalServerError)
-		return
 	}
 
 	// Add it to the plugin manager.

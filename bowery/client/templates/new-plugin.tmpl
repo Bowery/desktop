@@ -12,8 +12,12 @@
     <label for="description" class="field-label">Description</label>
   </div>
   <div class="field">
-    <input type="text" class="field-input" name="requirements">
-    <label for="requirements" class="field-label">Requirements</label>
+    <input type="text" class="field-input" name="requirements-os" placeholder="Leave empty for all. Example: darwin,windows">
+    <label for="requirements-os" class="field-label">Supported Operating Systems</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="requirements-deps" placeholder="Example: python2.7,libmysql">
+    <label for="requirements-deps" class="field-label">Dependencies</label>
   </div>
   <div class="field-submit">
     <input class="submit create" type="submit" value="Create Plugin">

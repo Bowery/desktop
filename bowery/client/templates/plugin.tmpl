@@ -4,10 +4,19 @@
 </div>
 
 {{if .Plugin.Requirements}}
+{{if .Plugin.Requirements.OS}}
 <div class="group plugin">
-  <h3>Requirements</h3>
-  <p class="subtitle">{{.Plugin.Requirements}}</p>
+  <h3>Supported Operating Systems</h3>
+  <p class="subtitle">{{Join .Plugin.Requirements.OS}}</p>
 </div>
+{{end}}
+
+{{if .Plugin.Requirements.Deps}}
+<div class="group plugin">
+  <h3>Dependencies</h3>
+  <p class="subtitle">{{Join .Plugin.Requirements.Deps}}</p>
+</div>
+{{end}}
 {{end}}
 
 <div class="group plugin">

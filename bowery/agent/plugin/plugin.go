@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Bowery/gopackages/sys"
 )
@@ -29,12 +30,34 @@ func init() {
 }
 
 // NewPlugin creates a new plugin.
-func NewPlugin(name, hooks string) (*Plugin, error) {
-	// Unmarshal plugin config.
-	data := []byte(hooks)
-	plugin := &Plugin{}
-	plugin.Name = name
-	json.Unmarshal(data, &plugin.Hooks)
+func NewPlugin(name, hooks, requirements string) (*Plugin, error) {
+	plugin := &Plugin{Name: name, Hooks: make(map[string]string)}
+
+	err := json.Unmarshal([]byte(hooks), &plugin.Hooks)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(requirements), &plugin.Requirements)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the os requirements satisfy the current system.
+	if plugin.Requirements.OS != nil && len(plugin.Requirements.OS) > 0 {
+		found := false
+
+		for _, os := range plugin.Requirements.OS {
+			if os == runtime.GOOS || (runtime.GOOS == "darwin" && os == "osx") {
+				found = true
+			}
+		}
+
+		if !found {
+			return nil, errors.New("The plugin " + name + " doesn't support the OS " + runtime.GOOS)
+		}
+	}
+
 	return plugin, nil
 }
 
