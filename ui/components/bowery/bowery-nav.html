@@ -14,7 +14,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <link rel="import" href="../polymer/polymer.html">
 
-<polymer-element name="bowery-nav" attributes="type" noscript>
+<polymer-element name="bowery-nav" attributes="type path">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
@@ -62,10 +62,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     margin-right: 0;
   }
   .window-button.close {
-    background: rgb(248, 71, 70);
+    background: rgb(251, 77, 83);
   }
   .window-button.minimize {
-    background: rgb(252, 177, 37);
+    background: rgb(244, 172, 88);
   }
   .window-button.maximize {
     background: rgb(42, 195, 51);
@@ -88,9 +88,18 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <a class="window-button maximize">&nbsp;</a>
       </div>
     </template>
-    <a href="/" class="title-button">
+    <a href="{{path || ''}}" class="title-button" on-click="{{handleClick}}">
       <h1><content></content></h1>
     </a>
   </div>
 </template>
+<script>
+  Polymer({
+    handleClick: function (e) {
+      if (!this.path) {
+        this.fire('bowery-nav-click', this)
+      }
+    }
+  })
+</script>
 </polymer-element>

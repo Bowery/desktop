@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Bowery Style Guide",
   "scripts": {
-    "postinstall": "./node_modules/.bin/myth ui/bowery/bowery.css ui/bowery/out.css",
+    "postinstall": "./node_modules/.bin/myth -wv ui/bowery/bowery.css ui/bowery/out.css > debug.log 2>&1 &",
     "start": "./node_modules/.bin/serve --port ${PORT:-3000} ui",
     "test": "./node_modules/.bin/wraith --config ui/wraith.json"
   },
