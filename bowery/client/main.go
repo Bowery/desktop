@@ -195,24 +195,8 @@ func main() {
 	defer syncer.Close()
 
 	var Routes = []*Route{
-		&Route{"GET", "/", indexHandler},
-		&Route{"GET", "/signup", signupHandler},
-		&Route{"POST", "/signup", createDeveloperHandler},
-		&Route{"GET", "/login", loginHandler},
-		&Route{"POST", "/login", submitLoginHandler},
-		&Route{"GET", "/logout", logoutHandler},
-		&Route{"GET", "/reset", resetHandler},
-		&Route{"POST", "/reset", submitResetHandler},
 		&Route{"GET", "/pause", pauseSyncHandler},
 		&Route{"GET", "/resume", resumeSyncHandler},
-		&Route{"GET", "/applications", appsHandler},
-		&Route{"GET", "/applications/new", newAppHandler},
-		&Route{"POST", "/applications/verify", verifyAppHandler},
-		&Route{"POST", "/applications", createAppHandler},
-		&Route{"POST", "/applications/{id}/plugins/{name}/{version}", addPluginHandler},
-		&Route{"PUT", "/applications/{id}", updateAppHandler},
-		&Route{"DELETE", "/applications/{id}", removeAppHandler},
-		&Route{"GET", "/applications/{id}", appHandler},
 		&Route{"GET", "/plugins", listPluginsHandler},
 		&Route{"POST", "/plugins", createPluginHandler},
 		&Route{"GET", "/plugins/new", newPluginHandler},
@@ -692,55 +676,6 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 	return nil
 }
 
-func indexHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusSeeOther)
-		return
-	}
-
-	http.Redirect(rw, req, "/applications", http.StatusSeeOther)
-}
-
-func signupHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
-		return
-	}
-
-	r.HTML(rw, http.StatusOK, "signup", map[string]string{
-		"Title": "Welcome to Bowery",
-	})
-}
-
-func loginHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev != nil && dev.Token != "" {
-		http.Redirect(rw, req, "/applications", http.StatusSeeOther)
-		return
-	}
-
-	r.HTML(rw, http.StatusOK, "login", map[string]string{
-		"Title": "Login to Bowery",
-	})
-}
-
-func logoutHandler(rw http.ResponseWriter, req *http.Request) {
-	data.Developer = &schemas.Developer{}
-	db.Save(data)
-	http.Redirect(rw, req, "/login", http.StatusSeeOther)
-}
-
-func resetHandler(rw http.ResponseWriter, req *http.Request) {
-	r.HTML(rw, http.StatusOK, "reset", map[string]string{
-		"Title": "Reset Your Password",
-	})
-}
-
 func submitResetHandler(rw http.ResponseWriter, req *http.Request) {
 	email := req.FormValue("email")
 	if email == "" {
@@ -926,34 +861,6 @@ func resumeSyncHandler(rw http.ResponseWriter, req *http.Request) {
 
 	keenC.AddEvent("bowery/desktop sync resume", map[string]*schemas.Developer{"user": data.Developer})
 	r.JSON(rw, http.StatusOK, map[string]interface{}{"success": true})
-}
-
-func appsHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusSeeOther)
-		return
-	}
-
-	r.HTML(rw, http.StatusOK, "applications", map[string]interface{}{
-		"Title":        "Applications",
-		"Applications": getApps(),
-		"Developer":    getDev(),
-	})
-}
-
-func newAppHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusSeeOther)
-		return
-	}
-
-	r.HTML(rw, http.StatusOK, "new-app", map[string]interface{}{
-		"Title": "New Application",
-	})
 }
 
 // formatAppFields converts the given remote address and local directory to
@@ -1181,29 +1088,6 @@ func removeAppHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"success": true,
-	})
-}
-
-func appHandler(rw http.ResponseWriter, req *http.Request) {
-	// If there is no logged in user, show login page.
-	dev := data.Developer
-	if dev == nil || dev.Token == "" {
-		http.Redirect(rw, req, "/login", http.StatusSeeOther)
-		return
-	}
-	application := getAppById(mux.Vars(req)["id"])
-
-	if application.ID == "" {
-		r.HTML(rw, http.StatusBadRequest, "error", map[string]string{
-			"Error": "No such application.",
-		})
-		return
-	}
-
-	r.HTML(rw, http.StatusOK, "application", map[string]interface{}{
-		"Title":       application.Name,
-		"Application": application,
-		"Status":      "Syncing...",
 	})
 }
 
