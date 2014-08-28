@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 )
 
@@ -33,14 +34,18 @@ func init() {
 func NewPlugin(name, hooks, requirements string) (*Plugin, error) {
 	plugin := &Plugin{Name: name, Hooks: make(map[string]string)}
 
-	err := json.Unmarshal([]byte(hooks), &plugin.Hooks)
-	if err != nil {
-		return nil, err
+	if hooks != "" {
+		err := json.Unmarshal([]byte(hooks), &plugin.Hooks)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err = json.Unmarshal([]byte(requirements), &plugin.Requirements)
-	if err != nil {
-		return nil, err
+	if requirements != "" {
+		err := json.Unmarshal([]byte(requirements), &plugin.Requirements)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Verify the os requirements satisfy the current system.
@@ -154,13 +159,12 @@ func StartPluginListener() {
 			for _, plugin := range pluginManager.Plugins {
 				for _, ep := range ev.EnabledPlugins {
 					if ep == plugin.Name {
-						if command := plugin.Hooks[ev.Type]; command != "" {
-							if ev.Type == BACKGROUND {
-								executeHook(plugin, ev.FilePath, ev.AppDir, command, true)
-							} else {
-								executeHook(plugin, ev.FilePath, ev.AppDir, command, false)
-							}
+						background := false
+						if ev.Type == schemas.BACKGROUND {
+							background = true
 						}
+
+						executeHook(plugin, ev, background)
 					}
 				}
 			}
@@ -170,8 +174,18 @@ func StartPluginListener() {
 
 // executeHook runs the specified command and returns the
 // resulting output.
-func executeHook(plugin *Plugin, path, dir, command string, background bool) {
+func executeHook(plugin *Plugin, ev *PluginEvent, background bool) {
+	command := plugin.Hooks[fmt.Sprintf("%s-%s", ev.Type, runtime.GOOS)]
+	if command == "" {
+		command = plugin.Hooks[ev.Type]
+	}
+	if command == "" {
+		return
+	}
+
 	name := plugin.Name
+	path := ev.FilePath
+	dir := ev.AppDir
 	log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", name, command))
 
 	// Set the env for the hook, includes info about the file being modified,

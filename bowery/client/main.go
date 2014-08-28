@@ -504,7 +504,7 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		err                error
 		pluginPath         string
 		pluginStr          string
-		pluginHooks        schemas.Hooks
+		pluginHooks        map[string]string
 		pluginRequirements schemas.Requirements
 		pluginRepo         string
 	)

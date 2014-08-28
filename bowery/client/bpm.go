@@ -95,8 +95,8 @@ func CreateFormulae(name, desc, repo string, osList, depsList []string, dev *sch
 			Name:  dev.Name,
 			Email: dev.Email,
 		},
-		Hooks: schemas.Hooks{
-			OnPluginInit: "echo 'Put Your Hook Here'",
+		Hooks: map[string]string{
+			schemas.ON_PLUGIN_INIT: "echo 'Put Your Hook Here'",
 		},
 		Version:    "1.0.0",
 		Repository: repo,
