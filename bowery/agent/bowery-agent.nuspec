@@ -12,7 +12,7 @@ Bowery code sync and process management server.
 
 This installation runs the Bowery agent as a Windows Service named "Bowery-Agent".
 
-The server listens on port 3001, so when using the Bowery client and creating an application make sure you provide the port.
+The server listens on port 32056, so when using the Bowery client and creating an application make sure you provide the port.
     </description>
     <projectUrl>http://bowery.io</projectUrl>
     <tags>sync server bowery process development productivity bowery-agent bowery-client</tags>
