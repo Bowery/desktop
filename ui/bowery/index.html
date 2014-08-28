@@ -17,7 +17,11 @@
   <bowery-nav type="header">Bowery</bowery-nav>
 
   <bowery-screen path="/login">
-    <bowery-auth></bowery-auth>
+    <bowery-form title="Login" endpoint="http://broome.io/developers/token" fields="email password"></bowery-form>
+  </bowery-screen>
+
+  <bowery-screen path="/signup">
+    <bowery
   </bowery-screen>
 
   <bowery-screen path="/apps">
@@ -27,7 +31,7 @@
 
   <bowery-screen path="/apps/new">
     <bowery-nav type="header">Bowery</bowery-nav>
-    <bowery-form title="Provision" endpoint="/api/users.json" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
+    <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
   </bowery-screen>
 </body>
 </html>
