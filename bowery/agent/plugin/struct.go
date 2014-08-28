@@ -20,7 +20,7 @@ type Plugin struct {
 	Hooks map[string]string
 
 	// Required software and dependencies.
-	Requirements string
+	Requirements schemas.Requirements
 
 	// BackgroundProcess is the long standing background
 	// process for a given plugin. The application's

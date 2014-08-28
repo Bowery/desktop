@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 )
@@ -81,7 +82,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	Applications[id] = app
 
-	plugin.EmitPluginEvent(plugin.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
+	plugin.EmitPluginEvent(schemas.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
 
 	if attach != nil {
 		defer attach.Close()
@@ -94,7 +95,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	plugin.EmitPluginEvent(plugin.AFTER_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
+	plugin.EmitPluginEvent(schemas.AFTER_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
 	<-Restart(app, true, true)
 	res.Body["status"] = "created"
 	res.Send(http.StatusOK)
@@ -139,11 +140,11 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	switch typ {
 	case "delete":
-		plugin.EmitPluginEvent(plugin.BEFORE_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BEFORE_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
 	case "update":
-		plugin.EmitPluginEvent(plugin.BEFORE_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BEFORE_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
 	case "create":
-		plugin.EmitPluginEvent(plugin.BEFORE_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BEFORE_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
 	}
 	path = filepath.Join(app.Path, filepath.Join(strings.Split(path, "/")...))
 
@@ -224,11 +225,11 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 
 	switch typ {
 	case "delete":
-		plugin.EmitPluginEvent(plugin.AFTER_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AFTER_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
 	case "update":
-		plugin.EmitPluginEvent(plugin.AFTER_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AFTER_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
 	case "create":
-		plugin.EmitPluginEvent(plugin.AFTER_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AFTER_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
 	}
 
 	<-Restart(app, false, true)
@@ -242,10 +243,10 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	id := req.FormValue("id")
 	app := Applications[id]
 	if app != nil {
-		plugin.EmitPluginEvent(plugin.BEFORE_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BEFORE_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
 		Kill(app, true)
 		delete(Applications, id)
-		plugin.EmitPluginEvent(plugin.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
 	}
 
 	res.Body["status"] = "removed"
@@ -283,7 +284,17 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Create a new plugin.
 	hooks := req.FormValue("hooks")
+	requirements := req.FormValue("requirements")
+	p, err := plugin.NewPlugin(name, hooks, requirements)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	// Untar the plugin upload.
 	pluginPath := filepath.Join(plugin.PluginDir, name)
 	if attach != nil {
 		defer attach.Close()
@@ -294,22 +305,14 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// Create a new plugin.
-	p, err := plugin.NewPlugin(name, hooks)
-	if err != nil {
-		res.Body["error"] = "unable to create plugin"
-		res.Send(http.StatusInternalServerError)
-		return
-	}
-
 	// Add it to the plugin manager.
 	if err := plugin.AddPlugin(p); err == nil {
 		app.EnabledPlugins = append(app.EnabledPlugins, name)
 	}
 
 	// Fire off init and background plugin events.
-	go plugin.EmitPluginEvent(plugin.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
-	go plugin.EmitPluginEvent(plugin.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
+	go plugin.EmitPluginEvent(schemas.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
+	go plugin.EmitPluginEvent(schemas.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
 
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
@@ -356,8 +359,8 @@ func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 		app.EnabledPlugins = append(app.EnabledPlugins, p.Name)
 
 		// Fire off init and background events.
-		go plugin.EmitPluginEvent(plugin.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
-		go plugin.EmitPluginEvent(plugin.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
+		go plugin.EmitPluginEvent(schemas.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
+		go plugin.EmitPluginEvent(schemas.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
 	} else {
 		for i, ep := range app.EnabledPlugins {
 			if ep == p.Name {

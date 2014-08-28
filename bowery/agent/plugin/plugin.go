@@ -7,16 +7,17 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
+	"runtime"
 
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 )
 
 var (
 	pluginManager *PluginManager
 	PluginDir     = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "plugins")
+	LogDir        = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log")
 )
 
 // Create plugin dir.
@@ -30,12 +31,38 @@ func init() {
 }
 
 // NewPlugin creates a new plugin.
-func NewPlugin(name, hooks string) (*Plugin, error) {
-	// Unmarshal plugin config.
-	data := []byte(hooks)
-	plugin := &Plugin{}
-	plugin.Name = name
-	json.Unmarshal(data, &plugin.Hooks)
+func NewPlugin(name, hooks, requirements string) (*Plugin, error) {
+	plugin := &Plugin{Name: name, Hooks: make(map[string]string)}
+
+	if hooks != "" {
+		err := json.Unmarshal([]byte(hooks), &plugin.Hooks)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if requirements != "" {
+		err := json.Unmarshal([]byte(requirements), &plugin.Requirements)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Verify the os requirements satisfy the current system.
+	if plugin.Requirements.OS != nil && len(plugin.Requirements.OS) > 0 {
+		found := false
+
+		for _, os := range plugin.Requirements.OS {
+			if os == runtime.GOOS || (runtime.GOOS == "darwin" && os == "osx") {
+				found = true
+			}
+		}
+
+		if !found {
+			return nil, errors.New("The plugin " + name + " doesn't support the OS " + runtime.GOOS)
+		}
+	}
+
 	return plugin, nil
 }
 
@@ -132,13 +159,12 @@ func StartPluginListener() {
 			for _, plugin := range pluginManager.Plugins {
 				for _, ep := range ev.EnabledPlugins {
 					if ep == plugin.Name {
-						if command := plugin.Hooks[ev.Type]; command != "" {
-							if ev.Type == BACKGROUND {
-								executeHook(plugin, ev.FilePath, ev.AppDir, command, true)
-							} else {
-								executeHook(plugin, ev.FilePath, ev.AppDir, command, false)
-							}
+						background := false
+						if ev.Type == schemas.BACKGROUND {
+							background = true
 						}
+
+						executeHook(plugin, ev, background)
 					}
 				}
 			}
@@ -148,63 +174,38 @@ func StartPluginListener() {
 
 // executeHook runs the specified command and returns the
 // resulting output.
-func executeHook(plugin *Plugin, path, dir, command string, background bool) {
+func executeHook(plugin *Plugin, ev *PluginEvent, background bool) {
+	command := plugin.Hooks[fmt.Sprintf("%s-%s", ev.Type, runtime.GOOS)]
+	if command == "" {
+		command = plugin.Hooks[ev.Type]
+	}
+	if command == "" {
+		return
+	}
+
 	name := plugin.Name
+	path := ev.FilePath
+	dir := ev.AppDir
 	log.Println("plugin execute:", fmt.Sprintf("%s: `%s`", name, command))
 
-	var (
-		vars []string
-		cmds []string
-	)
-	args := strings.Split(command, " ")
-	env := os.Environ()
-
-	// Separate env vars and the cmd.
-	for i, arg := range args {
-		if strings.Contains(arg, "=") {
-			vars = args[:i+1]
-		} else {
-			cmds = args[i:]
-			break
-		}
+	// Set the env for the hook, includes info about the file being modified,
+	// and if background the paths for stdio.
+	env := map[string]string{
+		"APP_DIR":       dir,
+		"FILE_AFFECTED": path,
+	}
+	if background {
+		env["STDOUT"] = filepath.Join(LogDir, "stdout.log")
+		env["STDERR"] = filepath.Join(LogDir, "stderr.log")
 	}
 
-	// Update existing env vars.
-	for i, v := range env {
-		envlist := strings.SplitN(v, "=", 2)
-
-		for n, arg := range vars {
-			arglist := strings.SplitN(arg, "=", 2)
-
-			if arglist[0] == envlist[0] {
-				env[i] = arg
-				vars[n] = ""
-				break
-			}
-		}
-	}
-
-	// Add new env vars.
-	for _, arg := range vars {
-		if arg != "" {
-			env = append(env, arg)
-		}
-	}
-
-	// Set ENV for hook. The hook will take on the current
-	// environment, but will be updated information about
-	// the application and files.
-	cmd := exec.Command(cmds[0], cmds[1:]...)
-	env = append(env, fmt.Sprintf("APP_DIR=%s", dir))
-	env = append(env, fmt.Sprintf("FILE_AFFECTED=%s", path))
+	cmd := sys.NewCommand(command, env)
 	cmd.Dir = filepath.Join(PluginDir, name)
 
 	// If it is not a background process, execute immediately
 	// and wait for it to complete. If it is a background process
 	// pipe the agent's Stdin into the command and run.
-
 	if !background {
-		cmd.Env = env
 		data, err := cmd.CombinedOutput()
 		if err != nil {
 			handlePluginError(plugin, command, err)
@@ -216,14 +217,6 @@ func executeHook(plugin *Plugin, path, dir, command string, background bool) {
 	} else {
 		// Start the process. If there is an issue starting, alert
 		// the client.
-		//
-		// Add the stdout/stderr files as ENV variables.
-		stdoutPath := filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log", "stdout.log")
-		stderrPath := filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "log", "stderr.log")
-		env = append(env, fmt.Sprintf("STDOUT=%s", stdoutPath))
-		env = append(env, fmt.Sprintf("STDERR=%s", stderrPath))
-		cmd.Env = env
-
 		plugin.BackgroundCommand = cmd
 
 		go func() {

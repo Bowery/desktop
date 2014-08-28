@@ -47,16 +47,20 @@ var (
 	TemplateDir   string
 )
 
+var templateFuncs = []template.FuncMap{{
+	"JoinHostPort": net.JoinHostPort,
+	"Join":         joinList,
+}}
 var r = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 	Layout:        "layout",
-	Funcs:         []template.FuncMap{{"JoinHostPort": net.JoinHostPort}},
+	Funcs:         templateFuncs,
 })
 
 var externalViewRenderer = render.New(render.Options{
 	IsDevelopment: true,
-	Funcs:         []template.FuncMap{{"JoinHostPort": net.JoinHostPort}},
+	Funcs:         templateFuncs,
 })
 
 type Application struct {
@@ -497,11 +501,12 @@ func uploadAppPlugins(app *Application, init, force bool) error {
 
 func uploadPlugin(app *Application, name string, init, force bool) error {
 	var (
-		err         error
-		pluginPath  string
-		pluginStr   string
-		pluginHooks schemas.Hooks
-		pluginRepo  string
+		err                error
+		pluginPath         string
+		pluginStr          string
+		pluginHooks        map[string]string
+		pluginRequirements schemas.Requirements
+		pluginRepo         string
 	)
 
 	// Install Plugin on the local machine
@@ -516,6 +521,7 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 				return err
 			}
 			pluginHooks = formula.Hooks
+			pluginRequirements = formula.Requirements
 			pluginRepo = formula.Repository
 			break
 		}
@@ -658,13 +664,24 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 	}
 	pluginHooksStr := string(pluginHooksByte)
 
+	// Convert requirements to string.
+	pluginRequirementsByte, err := json.Marshal(pluginRequirements)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"dev": getDev(),
+		})
+		return err
+	}
+	pluginRequirementsStr := string(pluginRequirementsByte)
+
 	// Send Tarball to Agent
 	req, err := newUploadRequest(host+"/plugins", map[string]string{
 		"file": uploadFilePath,
 	}, map[string]string{
-		"appID": app.ID,
-		"name":  pluginStr,
-		"hooks": pluginHooksStr,
+		"appID":        app.ID,
+		"name":         pluginStr,
+		"hooks":        pluginHooksStr,
+		"requirements": pluginRequirementsStr,
 	})
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
@@ -673,14 +690,26 @@ func uploadPlugin(app *Application, name string, init, force bool) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"dev": getDev(),
 		})
 		return err
 	}
-	defer res.Body.Close()
+	defer resp.Body.Close()
+
+	// Parse response.
+	uploadRes := new(res)
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(uploadRes)
+	if err != nil {
+		return err
+	}
+
+	if uploadRes.Status == "failed" {
+		return uploadRes
+	}
 
 	// Update local db and respond successfully.
 	for i, a := range data.Applications {
@@ -1241,7 +1270,8 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	name := req.FormValue("name")
 	repository := req.FormValue("repository")
 	description := req.FormValue("description")
-	requirements := req.FormValue("requirements")
+	osRequirements := req.FormValue("requirements-os")
+	depsRequirements := req.FormValue("requirements-deps")
 
 	if name == "" {
 		requestProblems["name"] = "Valid name required."
@@ -1259,9 +1289,9 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		u, err := url.Parse(repository)
 		if err == nil && u.Host == "" {
-			if len(repository) >= 2 && repository[:2] == "~/" {
-				repository = strings.Replace(repository, "~", os.Getenv(sys.HomeVar), 1)
-			}
+			app, _ := formatAppFields("", repository)
+			repository = app.LocalPath
+
 			if stat, err := os.Stat(repository); os.IsNotExist(err) || !stat.IsDir() {
 				requestProblems["repository"] = fmt.Sprintf("%s is not a valid directory", repository)
 			}
@@ -1272,10 +1302,25 @@ func createPluginHandler(rw http.ResponseWriter, req *http.Request) {
 		requestProblems["description"] = "Valid description required."
 	}
 
+	osList := make([]string, 0)
+	depsList := make([]string, 0)
+	if osRequirements != "" {
+		osList = strings.Split(osRequirements, ",")
+		for i, item := range osList {
+			osList[i] = strings.TrimSpace(item)
+		}
+	}
+	if depsRequirements != "" {
+		depsList = strings.Split(depsRequirements, ",")
+		for i, item := range depsList {
+			depsList[i] = strings.TrimSpace(item)
+		}
+	}
+
 	// If there are no problems, create plugin template.
 	if len(requestProblems) == 0 {
 		dev := getDev()
-		err := CreateFormulae(name, description, requirements, repository, dev)
+		err := CreateFormulae(name, description, repository, osList, depsList, dev)
 		if err != nil {
 			r.JSON(rw, http.StatusInternalServerError, nil)
 		}
@@ -1402,4 +1447,20 @@ func wsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	go conn.writer()
 	conn.reader()
+}
+
+func joinList(items []string) string {
+	if items == nil || len(items) == 0 {
+		return ""
+	}
+	l := len(items)
+	if l == 1 {
+		return items[0]
+	}
+	if l == 2 {
+		return items[0] + " and " + items[1]
+	}
+
+	str := strings.Join(items[:l-1], ", ")
+	return str + ", and " + items[l-1]
 }

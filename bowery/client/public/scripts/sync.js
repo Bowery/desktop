@@ -102,14 +102,18 @@ $(document).ready(function () {
     if (target.closest('.group.plugin').length > 0) {
       $.ajax({
         method: "POST",
+        dataType: 'json',
         url: "/applications/" + target.data("app") + "/plugins/" + target.data("plugin-name") + "/" + target.data("plugin-version"),
         data: {
           plugin: target.data("version"),
           app: target.data("app")
         }
       })
-      .done(function () {
-        console.log(arguments)
+      .done(function (data) {
+        console.log(data)
+      })
+      .fail(function (xhr) {
+        console.log(JSON.parse(xhr.responseText))
       })
     } else if (target.closest('.group.settings').length > 0) {
       $.ajax({

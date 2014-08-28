@@ -83,17 +83,20 @@ func processFormulae(isDev bool) error {
 }
 
 // CreateFormulae creates a new dev formula.
-func CreateFormulae(name, desc, req, repo string, dev *schemas.Developer) error {
+func CreateFormulae(name, desc, repo string, osList, depsList []string, dev *schemas.Developer) error {
 	formulae := schemas.Formula{
-		Name:         name,
-		Description:  desc,
-		Requirements: req,
+		Name:        name,
+		Description: desc,
+		Requirements: schemas.Requirements{
+			OS:   osList,
+			Deps: depsList,
+		},
 		Author: schemas.Author{
 			Name:  dev.Name,
 			Email: dev.Email,
 		},
-		Hooks: schemas.Hooks{
-			OnPluginInit: "echo 'Put Your Hook Here'",
+		Hooks: map[string]string{
+			schemas.ON_PLUGIN_INIT: "echo 'Put Your Hook Here'",
 		},
 		Version:    "1.0.0",
 		Repository: repo,
@@ -176,10 +179,13 @@ func GetFormulaByName(name string) (schemas.Formula, bool) {
 func SearchFormulae(terms ...string) ([]schemas.Formula, error) {
 	results := []schemas.Formula{}
 	for _, formula := range formulae {
+		formTerms := []string{formula.Name, formula.Description}
+		if formula.Requirements.Deps != nil {
+			formTerms = append(formTerms, formula.Requirements.Deps...)
+		}
+
 		for _, term := range terms {
-			if strings.Contains(strings.Join([]string{
-				formula.Name, formula.Description, formula.Requirements,
-			}, " "), term) {
+			if strings.Contains(strings.Join(formTerms, " "), term) {
 				results = append(results, formula)
 				break
 			}
