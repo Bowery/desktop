@@ -12,11 +12,68 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-nav.html">
 <link rel="import" href="bowery-apps.html">
 <link rel="import" href="bowery-form.html">
+<link rel="import" href="bowery-modal.html">
 
 <polymer-element name="bowery-core">
 <template>
+<link rel="stylesheet" href="../../bowery/out.css">
+<style>
+  span, pre {
+    color: white;
+  }
+  :host {
+    overflow-x: hidden;
+  }
 
+  .test-modal {
+    position: relative;
+    background: white;
+    height: 45px;
+    width: 345px;
+    margin-top: 80px;
+    margin-left: 9px;
+  }
+</style>
 <bowery-nav type="header">Bowery</bowery-nav>
+
+<bowery-screen path="/">
+  <div class="test-modal">
+    <bowery-modal style="right: 9px; top: 11px" color="rgb(251, 77, 83)">
+      <h2>bind: address already in use</h2>
+      <pre style="overflow: auto">
+  2014/08/29 14:16:51 /Users/david/Documents/gocode/src/github.com/Bowery/desktop/bin <nil>
+  [negroni] listening on :32055
+  [negroni] listen tcp :32055: bind: address already in use
+      </pre>
+      <span>What command should I run to fix this?</span>
+      <textarea style="outline: none; width: 100%; height: 90px; background: rgb(245, 245, 245); border: none; resize: none;"></textarea>
+    </bowery-modal>
+  </div>
+  <div class="test-modal">
+    <bowery-modal style="right: 9px; top: 11px" color="rgb(251, 77, 83)">
+      <h2>bind: address already in use</h2>
+      <pre style="overflow: auto">
+  2014/08/29 14:16:51 /Users/david/Documents/gocode/src/github.com/Bowery/desktop/bin <nil>
+  [negroni] listening on :32055
+  [negroni] listen tcp :32055: bind: address already in use
+      </pre>
+      <span>What command should I run to fix this?</span>
+      <textarea style="outline: none; width: 100%; height: 90px; background: rgb(245, 245, 245); border: none; resize: none;"></textarea>
+    </bowery-modal>
+  </div>
+  <div class="test-modal">
+    <bowery-modal style="right: 9px; top: 11px" color="rgb(251, 77, 83)">
+      <h2>bind: address already in use</h2>
+      <pre style="overflow: auto">
+  2014/08/29 14:16:51 /Users/david/Documents/gocode/src/github.com/Bowery/desktop/bin <nil>
+  [negroni] listening on :32055
+  [negroni] listen tcp :32055: bind: address already in use
+      </pre>
+      <span>What command should I run to fix this?</span>
+      <textarea style="outline: none; width: 100%; height: 90px; background: rgb(245, 245, 245); border: none; resize: none;"></textarea>
+    </bowery-modal>
+  </div>
+</bowery-screen>
 
 <bowery-screen path="/login">
   <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="email password" sendAs="json"></bowery-form>
@@ -38,7 +95,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 </template>
 <script>
-Polymer({
+Polymer('bowery-core', {
   handleLoginAttempt: function (e) {
     var title = e.target.title
       , response = e.target.response

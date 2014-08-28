@@ -24,15 +24,24 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
-    .card {
+    #card {
       background: white;
       padding: 10px;
       margin: 9px 18px;
       width: 345px;
       float: left;
       position: relative;
+      transition: all 300ms ease-in;
     }
-    .card .expander {
+    #card.expanded {
+      position: absolute;
+      top: 54px;
+      left: 0;
+      right: 0;
+      background: white;
+      z-index: 1;
+    }
+    #card .expander {
       position: absolute;
       top: 18px;
       right: 18px;
@@ -40,23 +49,18 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       opacity: 0;
       transition: opacity 200ms;
     }
-    .card:hover .expander {
+    #card:hover .expander {
       opacity: 1;
     }
     :host {
       float: left;
-      overflow: hidden;
+      /*overflow: hidden;*/
+      /*position: relative;*/
     }
   </style>
-  <div class="card">
+  <div id="card">
     <content select="h4"></content>
     <content select="span"></content>
-    <template if="{{expandable}}">
-      <a href="/" class="expander" on-click="{{toggle}}">EDIT</a>
-      <core-collapse id="collapse" opened="{{opened}}">
-        <content></content>
-      </core-collapse>
-    </template>
     <content></content>
   </div>
 </template>
@@ -72,13 +76,14 @@ Polymer({
   },
   toggle: function (e) {
     e.preventDefault()
+
+    // The modal can't be part of the card. It needs to be its own component that's position absolute
+
     this.editMode = e.target.innerHTML == 'EDIT'
     e.target.innerHTML = this.editMode ? 'SAVE' : 'EDIT'
+    this.$.card.classList[this.editMode ? 'add' : 'remove']('expanded')
+
     this.$.collapse.toggle()
-
-    // console.log('$$$', inEditMode, this.offsetHeight, this.offsetTop)
-    // console.log('the card is', this.offsetTop, 'pixels from the top.', 'So we\'ll set scrollY to the current scrollY[]', window.scrollY, '] plus the elements height from the top (minus the height of the header [54])-> ', this.offsetTop + window.scrollY - 54)
-
   }
 })
 </script>

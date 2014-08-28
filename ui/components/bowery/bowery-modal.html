@@ -1,0 +1,113 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-modal` is a hot looking modal that expands from a colorful circle button.
+A major limitation is that it cannot be used inside elments with `overflow: hidden;`
+  <bowery-auth></bowery-auth>
+
+@group Bowery Core Elements
+@element bowery-modal
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<polymer-element name="bowery-modal" attributes="color expanded">
+<template>
+<link rel="stylesheet" href="../../bowery/out.css">
+<style>
+  :host {
+    position: absolute;
+    z-index: 2;
+  }
+  #circle {
+    border-radius: 100%;
+
+    transition: all 300ms ease-in;
+    transform: scale(0.1);
+
+    width: 200px;
+    height: 200px;
+
+    top: 0;
+    right: 0;
+    position: absolute;
+    margin-right: -90px;
+    margin-top: -90px;
+  }
+
+  #circle.large {
+    transform: scale(5);
+    vertical-align: middle;
+  }
+
+  #content {
+    display: none;
+    opacity: 0;
+    transition: width 500ms ease-in 1s;
+    position: absolute;
+    left: -345px;
+    color: rgb(245, 245, 245); /*TODO (thebyrd) make this white, but not until red is behind it*/
+    width: 0;
+  }
+  #content.show {
+    display: block;
+    opacity: 1;
+    width: 345px;
+  }
+  .inner-content {
+    position: relative;
+    padding: 18px;
+  }
+  .close {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: rgb(245, 245, 245);
+    cursor: pointer;
+  }
+
+</style>
+
+<div id="circle" class="{{this.circleClass}}" on-click="{{expandCircle}}"></div>
+<div id="content">
+  <div class="inner-content">
+    <button class="close" on-click="{{shrinkCircle}}">X</button>
+    <content></content>
+  </div>
+</div>
+
+</template>
+<script>
+Polymer('bowery-modal', {
+  ready: function () {
+    this.expanded = false
+    this.circleState = "small"
+    this.$.circle.style.background = this.color
+  },
+  capitalize: function (str) {
+    return str.charAt(0).toUpperCase() + str.substring(1)
+  },
+  calcRelPos: function (attr, pos) {
+    return (pos - this.getBoundingClientRect()[attr]) + "px"
+  },
+  expandCircle: function () {
+    this.expanded = true
+    this.$.circle.setAttribute("class", "large")
+    this.$.content.setAttribute("class", "show")
+
+    this.$.content.style.top = this.calcRelPos('top', 65)
+    this.$.content.style.left = "-345px"
+  },
+  shrinkCircle: function () {
+    this.expanded = false
+    this.$.circle.setAttribute("class", "")
+    this.$.content.setAttribute("class", "")
+  }
+})
+</script>
+</polymer-element>
