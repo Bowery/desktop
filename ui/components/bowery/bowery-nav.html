@@ -3,18 +3,18 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 
 <!--
-`bowery-header` implements a native looking header with close, minimize, maximize, etf
+`bowery-nav` implements a native looking header with close, minimize, maximize, etf
 
-<bowery-header position="header">Bowery</bowery-header>
-<bowery-header position="footer">Bowery</bowery-header>
+<bowery-nav position="header">Bowery</bowery-nav>
+<bowery-nav position="footer">Bowery</bowery-nav>
 
 @group Bowery Core Elements
-@element bowery-header
+@element bowery-nav
 -->
 
 <link rel="import" href="../polymer/polymer.html">
 
-<polymer-element name="bowery-nav" attributes="type path">
+<polymer-element name="bowery-nav" attributes="type path" on-click="{{handleClick}}">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
@@ -43,6 +43,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   .header a,
   .footer a {
     text-decoration: none;
+  }
+  .header a {
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
   }
   .header .window-buttons {
     position: absolute;
@@ -88,7 +92,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <a class="window-button maximize">&nbsp;</a>
       </div>
     </template>
-    <a href="{{path || ''}}" class="title-button" on-click="{{handleClick}}">
+    <a href="" class="title-button">
       <h1><content></content></h1>
     </a>
   </div>
@@ -96,9 +100,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <script>
   Polymer({
     handleClick: function (e) {
-      if (!this.path) {
-        this.fire('bowery-nav-click', this)
-      }
+      e.preventDefault()
+      this.fire('bowery-navigate', {path: this.path})
     }
   })
 </script>

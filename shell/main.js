@@ -1,6 +1,7 @@
 // Copyright 2014 Bowery, Inc.
 
 var app = require('app')  // Module to control application life.
+var path = require('path')
 var BrowserWindow = require('browser-window')  // Module to create native browser window.
 
 // Report crashes to our server.
@@ -17,16 +18,17 @@ app.on('ready', function() {
   mainWindow = new BrowserWindow({
     title: 'Bowery',
     frame: true,
-    width: 650,
-    height: 530,
+    width: 400,
+    height: 460,
     'node-integration': 'disable',
     resizable: false,
     center: true,
-    show: false
+    show: false,
+    frame: false
   })
 
+  mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'ui/bowery/index.html'))
   mainWindow.show()
-  mainWindow.loadUrl('http://0.0.0.0:32055/')
 
   mainWindow.on('closed', function() {
     mainWindow = null
