@@ -1,0 +1,53 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-core` is the bowery desktop app
+
+@group Bowery Core Elements
+@element bowery-core
+-->
+<link rel="import" href="bowery-screen.html">
+<link rel="import" href="bowery-nav.html">
+<link rel="import" href="bowery-apps.html">
+<link rel="import" href="bowery-form.html">
+
+<polymer-element name="bowery-core">
+<template>
+
+<bowery-nav type="header">Bowery</bowery-nav>
+
+<bowery-screen path="/login">
+  <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="email password" sendAs="json"></bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/signup">
+  <bowery-form title="signup" endpoint="http://broome.io/developers" fields="email password name"></bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/apps">
+  <bowery-apps></bowery-apps>
+  <bowery-nav type="footer" path="/apps/new">Create App</bowery-nav>
+</bowery-screen>
+
+<bowery-screen path="/apps/new">
+  <bowery-nav type="header">Bowery</bowery-nav>
+  <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
+</bowery-screen>
+
+</template>
+<script>
+Polymer({
+  handleLoginAttempt: function (e) {
+    var title = e.target.title
+      , response = e.target.response
+
+    if (response.status != "created") {
+      return e.target.giveFeedback(response.error)
+    }
+    this.fire('bowery-navigate', {path: '/apps'})
+  }
+})
+</script>
+</polymer-element>

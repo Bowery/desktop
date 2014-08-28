@@ -29,7 +29,6 @@ Polymer({
     this.globalPath = "/login" //TODO (thebyrd) find a way to make default page work with web server & atom-shell
   },
   ready: function () {
-    console.log(this.path, '$$$$')
     self = this
     if (this.globalPath == this.path)
       this.$.content.style.display = 'block'
