@@ -19,7 +19,6 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
 <style>
   :host {
     position: absolute;
-    z-index: 2;
   }
   #circle {
     border-radius: 100%;
@@ -35,6 +34,8 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
     position: absolute;
     margin-right: -90px;
     margin-top: -90px;
+
+    z-index: 2;
   }
 
   #circle.large {
@@ -100,8 +101,9 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
 
     <template if="{{type == 'info'}}">
       <h1>Info</h1>
-      <h2>Important Service</h2>
-      <content></content>
+      <h2>Important Message</h2>
+      <p>Semiotics hashtag cred, Schlitz before they sold out deep v tousled fingerstache freegan. Tumblr whatever farm-to-table pork belly. Gluten-free food truck seitan banjo readymade.</p>
+      <!-- <content></content> -->
     </template>
   </div>
 </div>
@@ -116,8 +118,11 @@ Polymer('bowery-modal', {
     if (this.type == 'error')
       this.$.circle.style.background = "rgb(251, 77, 83)"
 
-    if (this.type == 'info')
-      this.$.circle.style.background = "rgb(52, 145, 226)"
+    if (this.type == 'info') {
+      this.$.circle.style.background = "rgb(94, 219, 196)"
+      // this.$.circle.style.background = "rgb(52, 145, 226)"
+    }
+
   },
   capitalize: function (str) {
     return str.charAt(0).toUpperCase() + str.substring(1)
