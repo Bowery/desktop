@@ -8,13 +8,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../../web-services/apps-service.html">
 <link rel="import" href="bowery-card.html">
+<link rel="import" href="bowery-modal.html">
 
 <polymer-element name="bowery-apps" noscript>
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
       .container {
-        overflow: auto;
+        /*overflow-y: auto;*/
+        overflow-x: hidden; /* TODO (thebyrd) this is a bad hack that shouldn't be necessisary if the widths of all child elements added up properly. */
         padding: 55px 0;
       }
       .ruled-section {
@@ -32,11 +34,25 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     </style>
     <apps-service apps="{{applications}}"></apps-service>
     <div id="container" class="container">
+      <bowery-card expandable="false" data-id="blah">
+        <h4>Important Service</h4>
+        <span>10.0.0.13</span>
+        <bowery-modal style="right: 9px; top: 18px;" color="rgb(251, 77, 83)">
+          <h2>bind: address already in use</h2>
+          <pre style="overflow: auto">
+2014/08/29 14:16:51 /Users/david/Documents/gocode/src/github.com/Bowery/desktop/bin
+[negroni] listening on :32055
+[negroni] listen tcp :32055: bind: address already in use
+          </pre>
+          <span>What command should I run to fix this?</span>
+          <textarea style="outline: none; width: 100%; height: 90px; background: rgb(245, 245, 245); border: none; resize: none;"></textarea>
+        </bowery-modal>
+      </bowery-card>
     <template repeat="{{app in applications}}">
-      <bowery-card expandable="true" data-id="{{app.id}}">
+      <bowery-card data-id="{{app.id}}">
         <h4>{{app.name}}</h4>
         <span>{{app.addr}}</span>
-        <div class="ruled-section">
+        <!-- <div class="ruled-section">
           <div class="field-group">
             <label>Start</label>
             <input type="text" name="start" value="{{app.start}}">
@@ -65,7 +81,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
             <label>Size</label>
             <input type="text" name="start" value="{{app['instance-size']}}">
           </div>
-        </div>
+        </div> -->
       </bowery-card>
     </template>
   </div>

@@ -1,2 +1,2 @@
-# Bowery Card
-A UI Card that can expand to show more information that is editable.
+# Bowery Core
+Polymer Components for the Bowery Desktop UI.

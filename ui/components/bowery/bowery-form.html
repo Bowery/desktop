@@ -4,7 +4,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <!--
 `bowery-form` is a bunch of text fields with a submit button.
-  <bowery-auth></bowery-auth>
+  <bowery-form></bowery-form>
 
 @group Bowery Core Elements
 @element bowery-form
@@ -14,21 +14,41 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../core-ajax/core-ajax.html">
 
 
-<polymer-element name="bowery-form" attributes="fields title endpoint">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
   form {
-    margin: 55px auto;
+    padding: 55px 0;
     overflow: auto;
   }
+  #feedback {
+    /*background: white;*/
+    color: rgb(251, 77, 83);
+    width: 345px;
+    float: left;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 300ms ease-in;
+    margin: 9px 18px 0 18px;
+    padding: 10px;
+    opacity: 0;
+
+  }
+
+  .visible#feedback {
+    opacity: 1;
+  }
+
 
   </style>
   <form id="form">
+    <span id="feedback">feedback</span>
+    <!-- TODO (thebyrd) replace with error modal used for everything else. -->
     <template repeat="{{field in fields}}">
       <div class="field-group">
         <label for="{{field}}">{{field | makeReadable}}</label>
-        <input id="{{field}}" type="text" name="{{field}}">
+        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}">
       </div>
     </template>
   </form>
@@ -36,9 +56,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-nav type="footer" on-click="{{postForm}}">{{title}}</bowery-nav>
   <core-ajax id="ajax"
     auto
-    url="../../{{endpoint}}"
+    url="{{endpoint}}"
     method="POST"
-    on-core-response="{{emitResult}}"
+    on-core-complete="{{emitResult}}"
     handleAs="json">
   </core-ajax>
 </template>
@@ -46,7 +66,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 Polymer({
   ready: function () {
     this.fields = this.fields.split(" ")
-    console.log(this.fields)
     this.type = "login"
   },
   makeReadable: function (str) {
@@ -56,18 +75,43 @@ Polymer({
     }).join(' ')
 
   },
-  postForm: function () {
-    var params = {}
+  giveFeedback: function (msg) {
+    if (msg == 'EOF') // TODO (sjkaliski) Broome shouldn't send EOF
+      return
 
-    for (var i = 0, field; field = fields[i]; i++)
-      params[field] = this.$[field].value
-
-    console.log(params)
-
-    this.$.ajax.params = params
+    var el = this.$.feedback
+    el.innerHTML = msg
+    el.className = "visible"
+    setTimeout(function () {
+      el.className = ""
+    }, 4000)
   },
-  emitResult: function () {
-    this.fire('bowery-form-response', {form: this, response: this.$.ajax.response})
+  postForm: function (e) {
+    e.preventDefault()
+    var params = {}
+    for (var i = 0, field; field = this.fields[i]; i++)
+      params[field] = this.$.form[field].value
+
+    if (this.sendAs == "json") {
+      this.$.ajax.contentType = "application/json"
+      this.$.ajax.body = JSON.stringify(params)
+    }
+
+    this.$.ajax.params = JSON.stringify(params)
+  },
+  emitResult: function (e, detail) {
+
+    try {
+      this.response = JSON.parse(detail.xhr.responseText)
+    } catch (e) {
+      console.log(detail.xhr.responseText)
+      this.response = {
+        status: 'failed',
+        error: 'internal server error'
+      }
+    }
+
+    this.fire('bowery-form-response')
   }
 })
 </script>
