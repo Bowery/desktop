@@ -27,8 +27,7 @@ app.on('ready', function() {
     frame: false
   })
 
-  // mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'ui/bowery/index.html'))
-  mainWindow.loadUrl('http://localhost:3000/bowery/')
+  mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
   mainWindow.show()
 
   mainWindow.on('closed', function() {
