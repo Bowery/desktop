@@ -54,7 +54,6 @@ var templateFuncs = []template.FuncMap{{
 var r = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
-	Layout:        "layout",
 	Funcs:         templateFuncs,
 })
 
@@ -198,6 +197,8 @@ func init() {
 func main() {
 	defer syncer.Close()
 
+	abs, _ := filepath.Abs("../ui/")
+
 	var Routes = []*Route{
 		&Route{"GET", "/", indexHandler},
 		&Route{"GET", "/signup", signupHandler},
@@ -228,6 +229,7 @@ func main() {
 	}
 
 	router := mux.NewRouter()
+	router.NotFoundHandler = http.FileServer(http.Dir(abs))
 	for _, r := range Routes {
 		route := router.NewRoute()
 		route.Path(r.Path).Methods(r.Method)

@@ -34,7 +34,3 @@ mkdir -p ../../bin
 go build \
     -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
     -o ../../bin/client
-
-echo "--> Moving assets and templates..."
-cp -r public ../../bin/
-cp -r templates ../../bin/

@@ -27,32 +27,32 @@ app.on('ready', function() {
     frame: false
   })
 
-  // mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'ui/bowery/index.html'))
-  mainWindow.loadUrl('http://localhost:3000/bowery/')
-  mainWindow.show()
+  mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
 
   mainWindow.on('closed', function() {
     mainWindow = null
   })
-})
 
-// Start Client and Agent
-var extension = /^win/.test(process.platform) ? ".exe" : ""
+  // Start Client and Agent
+  var extension = /^win/.test(process.platform) ? ".exe" : ""
 
-!["client", "agent"].forEach(function (binary) {
-  var path = require('path').join(__dirname, "../bin/", binary + extension)
-  var proc = require('child_process').spawn(path, [])
+  !["client", "agent"].forEach(function (binary) {
+    var path = require('path').join(__dirname, "../bin/", binary + extension)
+    var proc = require('child_process').spawn(path, [])
 
-  console.log("Launching", path)
+    console.log("Launching", path)
 
-  proc.on('close', function (code) {
-    console.log('client process exited with code:', code)
-    process.exit(code)
+    proc.on('close', function (code) {
+      console.log('client process exited with code:', code)
+      process.exit(code)
+    })
+    proc.stdout.on('data', function (data) {
+      process.stdout.write(data)
+    })
+    proc.stderr.on('data', function (data) {
+      process.stderr.write(data)
+    })
   })
-  proc.stdout.on('data', function (data) {
-    process.stdout.write(data)
-  })
-  proc.stderr.on('data', function (data) {
-    process.stderr.write(data)
-  })
+
+  mainWindow.show()
 })
