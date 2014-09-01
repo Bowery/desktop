@@ -13,9 +13,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-apps.html">
 <link rel="import" href="bowery-form.html">
 <link rel="import" href="bowery-modal.html">
+<link rel="import" href="bowery-analytics.html">
 
 <polymer-element name="bowery-core">
 <template>
+<bowery-analytics id="analytics"></bowery-analytics>
 <link rel="stylesheet" href="../../bowery/out.css">
 <style>
   span, pre {
@@ -96,6 +98,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </template>
 <script>
 Polymer('bowery-core', {
+  ready: function () {
+    this.$.analytics.track("Opened App")
+  },
   handleLoginAttempt: function (e) {
     var title = e.target.title
       , response = e.target.response
