@@ -20,12 +20,13 @@ app.on('ready', function() {
     frame: true,
     width: 400,
     height: 460,
-    'node-integration': 'disable',
     resizable: false,
     center: true,
     show: false,
     frame: false
   })
+
+  // 'node-integration': 'disable',
 
   mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
 

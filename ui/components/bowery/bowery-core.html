@@ -38,7 +38,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     margin-left: 9px;
   }
 </style>
-<bowery-nav type="header" on-click="{{goHome}}">Bowery</bowery-nav>
+<bowery-nav type="header">Bowery</bowery-nav>
 
 <bowery-screen path="/login">
   <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="email password" sendAs="json">
@@ -101,13 +101,6 @@ Polymer('bowery-core', {
 
     e.target.feedback = response.error
 
-  },
-  goHome: function (e) {
-    e.preventDefault()
-    if (!this.developer.token)
-      return this.navigate('/login')
-
-    this.navigate('/apps')
   },
   goNewApp: function (e) {
     e.preventDefault()
