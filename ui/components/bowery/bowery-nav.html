@@ -14,7 +14,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <link rel="import" href="../polymer/polymer.html">
 
-<polymer-element name="bowery-nav" attributes="type path" noscript>
+<polymer-element name="bowery-nav" attributes="type path">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
@@ -44,14 +44,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   .footer a {
     text-decoration: none;
   }
-  .header a {
+  .header .title-button {
     -webkit-user-select: none;
     -webkit-app-region: drag;
+    z-index: 4;
   }
   .header .window-buttons {
     position: absolute;
     left: 18px;
     top: 18px;
+    z-index: 5;
   }
   .header .window-button {
     text-decoration: none;
@@ -65,6 +67,14 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   .header .window-button:last-child {
     margin-right: 0;
   }
+
+  .window-button {
+    -webkit-app-region: no-drag;
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    outline: none;
+  }
   .window-button.close {
     background: rgb(251, 77, 83);
   }
@@ -77,24 +87,31 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   .title-button {
     padding: 18px;
     display: block;
-    transition: color 200ms;
     cursor: pointer;
-  }
-  .title-button:hover h1 {
     color: rgb(26, 23, 24);
   }
   </style>
   <div class="{{type}}">
-    <template if="{{type == 'header'}}">
-      <div class="window-buttons">
-        <a class="window-button close">&nbsp;</a>
-        <a class="window-button minimize">&nbsp;</a>
-        <a class="window-button maximize">&nbsp;</a>
-      </div>
-    </template>
     <a href="" class="title-button">
       <h1><content></content></h1>
     </a>
+    <template if="{{type == 'header'}}">
+      <div class="window-buttons">
+        <button on-click="{{close}}" class="window-button close">&nbsp;</button>
+        <button on-click="{{minimize}}" class="window-button minimize">&nbsp;</button>
+        <button class="window-button maximize">&nbsp;</button>
+      </div>
+    </template>
   </div>
 </template>
+<script>
+  Polymer('bowery-nav', {
+    close: function (e) {
+      require('remote').getCurrentWindow().close()
+    },
+    minimize: function (e) {
+      require('remote').getCurrentWindow().minimize()
+    }
+  })
+</script>
 </polymer-element>
