@@ -33,11 +33,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     margin: 9px 18px 0 18px;
     padding: 10px;
     opacity: 0;
-
   }
 
   .visible#feedback {
     opacity: 1;
+  }
+
+  .extra {
+    margin: 9px 18px 0 18px;
+    padding: 10px;
   }
 
 
@@ -52,6 +56,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </div>
     </template>
   </form>
+  <div class="extra">
+    <content></content>
+  </div>
 
   <bowery-nav type="footer" on-click="{{postForm}}">{{title}}</bowery-nav>
   <core-ajax id="ajax"

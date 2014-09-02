@@ -14,7 +14,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <link rel="import" href="../polymer/polymer.html">
 
-<polymer-element name="bowery-nav" attributes="type path" on-click="{{handleClick}}">
+<polymer-element name="bowery-nav" attributes="type path" noscript>
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
@@ -97,13 +97,4 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     </a>
   </div>
 </template>
-<script>
-  Polymer({
-    handleClick: function (e) {
-      e.preventDefault()
-      if (this.path)
-        this.fire('bowery-navigate', {path: this.path})
-    }
-  })
-</script>
 </polymer-element>
