@@ -24,7 +24,7 @@ type Event struct {
 // WatchError wraps an error to identify the app origin.
 type WatchError struct {
 	Application *schemas.Application `json:"application"`
-	Err         error        `json:"error"`
+	Err         error                `json:"error"`
 }
 
 func (w *WatchError) Error() string {

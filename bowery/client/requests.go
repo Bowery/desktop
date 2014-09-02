@@ -12,6 +12,10 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
+<<<<<<< HEAD
+=======
+	"github.com/Bowery/gopackages/schemas"
+>>>>>>> b5ffe84... Add GET /applications/{id} route.
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
