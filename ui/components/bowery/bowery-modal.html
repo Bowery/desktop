@@ -26,8 +26,8 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
     transition: all 300ms ease-in;
     transform: scale(0.1);
 
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
 
     top: 0;
     right: 0;
@@ -35,11 +35,13 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
     margin-right: -90px;
     margin-top: -90px;
 
+    cursor: pointer;
+
     z-index: 2;
   }
 
   #circle.large {
-    transform: scale(5);
+    transform: scale(6);
     vertical-align: middle;
     z-index: 3;
   }
@@ -99,12 +101,17 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
       <textarea style="outline: none; width: 100%; height: 126px; background: white; border: none; resize: none;"></textarea>
     </template>
 
-    <template if="{{type == 'info'}}">
+    <template if="{{type == 'edit'}}">
+      <content></content>
+    </template>
+
+    <!-- <template if="{{type == 'info'}}">
       <h1>Info</h1>
       <h2>Important Message</h2>
       <p>Semiotics hashtag cred, Schlitz before they sold out deep v tousled fingerstache freegan. Tumblr whatever farm-to-table pork belly. Gluten-free food truck seitan banjo readymade.</p>
-      <!-- <content></content> -->
-    </template>
+    </template> -->
+
+
   </div>
 </div>
 
@@ -115,12 +122,22 @@ Polymer('bowery-modal', {
     this.expanded = false
     this.circleState = "small"
 
+    var circle = this.$.circle
+
     if (this.type == 'error')
-      this.$.circle.style.background = "rgb(251, 77, 83)"
+      circle.style.background = "rgb(251, 77, 83)"
 
     if (this.type == 'info') {
-      this.$.circle.style.background = "rgb(94, 219, 196)"
-      // this.$.circle.style.background = "rgb(52, 145, 226)"
+      circle.style.background = "rgb(94, 219, 196)"
+      // circle.style.background = "rgb(52, 145, 226)"
+    }
+
+    if (this.type == 'progress') {
+      circle.style.background = "rgb(244, 172, 88)"
+    }
+
+    if (this.type == 'edit') {
+      circle.style.background = "rgb(26, 23, 24)"
     }
 
   },
