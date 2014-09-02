@@ -78,9 +78,11 @@ Polymer('bowery-core', {
   },
   handleLoginAttempt: function (e) {
     var response = e.target.response
-
     if (response.status != "created") {
-      return e.target.giveFeedback(response.error)
+      if (response.error == "EOF") return
+
+      e.target.feedback = response.error
+      return
     }
     this.developer = {}
     this.developer.token = response.token
@@ -97,7 +99,7 @@ Polymer('bowery-core', {
     if (response.error == "EOF")
       return
 
-    e.target.innerHTML = response.error
+    e.target.feedback = response.error
 
   },
   goHome: function (e) {
