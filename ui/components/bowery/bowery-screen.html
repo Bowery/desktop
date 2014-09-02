@@ -17,6 +17,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <style>
     #content {
       display: none;
+      margin-top: 54px;
     }
   </style>
   <div id="content" path="{{path}}">
@@ -26,7 +27,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <script>
 Polymer({
   created: function () {
-    this.globalPath = "/apps" //TODO (thebyrd) find a way to make default page work with web server & atom-shell
+    this.globalPath = "/"
   },
   ready: function () {
     self = this

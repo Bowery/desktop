@@ -1,0 +1,127 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-core` is the bowery desktop app
+
+@group Bowery Core Elements
+@element bowery-core
+-->
+<link rel="import" href="bowery-screen.html">
+<link rel="import" href="bowery-nav.html">
+<link rel="import" href="bowery-apps.html">
+<link rel="import" href="bowery-form.html">
+<link rel="import" href="bowery-modal.html">
+<link rel="import" href="bowery-analytics.html">
+<link rel="import" href="../core-localstorage/core-localstorage.html">
+
+<polymer-element name="bowery-core" attributes="developer">
+<template>
+<bowery-analytics id="analytics"></bowery-analytics>
+<core-localstorage id="db" name="bowery-developer" value="{{developer}}"></core-localstorage>
+<link rel="stylesheet" href="../../bowery/out.css">
+<style>
+  span, pre {
+    color: white;
+  }
+  :host {
+    overflow-x: hidden;
+  }
+
+  .test-modal {
+    position: relative;
+    background: white;
+    height: 45px;
+    width: 345px;
+    margin-top: 80px;
+    margin-left: 9px;
+  }
+</style>
+<bowery-nav type="header" on-click="{{goHome}}">Bowery</bowery-nav>
+
+<bowery-screen path="/login">
+  <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="email password" sendAs="json">
+    <a href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
+  </bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/signup">
+  <bowery-form title="signup" endpoint="http://broome.io/developers" fields="name email password" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
+    <a href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
+  </bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/apps">
+  <bowery-apps></bowery-apps>
+  <bowery-nav type="footer" on-click="{{goNewApp}}">Create App</bowery-nav>
+</bowery-screen>
+
+<bowery-screen path="/apps/new">
+  <bowery-nav type="header">Bowery</bowery-nav>
+  <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
+</bowery-screen>
+
+</template>
+<script>
+Polymer('bowery-core', {
+  ready: function () {
+    this.$.analytics.track("Opened App")
+
+    this.$.db.load()
+    this.developer = this.$.db.value || {}
+
+    if (!this.developer.token)
+      return this.navigate('/login')
+
+    this.navigate('/apps')
+  },
+  handleLoginAttempt: function (e) {
+    var response = e.target.response
+    if (response.status != "created") {
+      if (response.error == "EOF") return
+
+      e.target.feedback = response.error
+      return
+    }
+    this.developer = {}
+    this.developer.token = response.token
+    this.navigate('/apps')
+  },
+  handleSignupAttempt: function (e) {
+    var response = e.target.response
+    if (response.status == "created") {
+      this.developer = response.developer
+      this.$.db.save()
+      return this.navigate('/apps')
+    }
+
+    if (response.error == "EOF")
+      return
+
+    e.target.feedback = response.error
+
+  },
+  goHome: function (e) {
+    e.preventDefault()
+    if (!this.developer.token)
+      return this.navigate('/login')
+
+    this.navigate('/apps')
+  },
+  goNewApp: function (e) {
+    e.preventDefault()
+    this.navigate('/apps/new')
+  },
+  navigate: function (path) {
+    if (typeof path != "string") {
+      var e = path
+      e.preventDefault()
+      path = e.target.getAttribute('href')
+    }
+
+    this.fire('bowery-navigate', {path: path})
+  }
+})
+</script>
+</polymer-element>

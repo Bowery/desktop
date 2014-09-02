@@ -14,36 +14,23 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../core-ajax/core-ajax.html">
 
 
-<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback">
 <template>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
   form {
-    padding-top: 10px;
+    padding-top: 9px;
     overflow: auto;
   }
-  #feedback {
-    /*background: white;*/
-    color: rgb(251, 77, 83);
-    width: 345px;
-    float: left;
-    position: relative;
-    overflow: hidden;
-    transition: opacity 300ms ease-in;
+
+  .extra {
     margin: 9px 18px 0 18px;
     padding: 10px;
-    opacity: 0;
-
-  }
-
-  .visible#feedback {
-    opacity: 1;
   }
 
 
   </style>
   <form id="form">
-    <span id="feedback">feedback</span>
     <!-- TODO (thebyrd) replace with error modal used for everything else. -->
     <template repeat="{{field in fields}}">
       <div class="field-group">
@@ -52,6 +39,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </div>
     </template>
   </form>
+  <div class="extra">
+    <content></content>
+    <p>{{feedback}}</p>
+  </div>
 
   <bowery-nav type="footer" on-click="{{postForm}}">{{title}}</bowery-nav>
   <core-ajax id="ajax"
@@ -74,17 +65,6 @@ Polymer({
       return str.charAt(0).toUpperCase() + str.slice(1)
     }).join(' ')
 
-  },
-  giveFeedback: function (msg) {
-    if (msg == 'EOF') // TODO (sjkaliski) Broome shouldn't send EOF
-      return
-
-    var el = this.$.feedback
-    el.innerHTML = msg
-    el.className = "visible"
-    setTimeout(function () {
-      el.className = ""
-    }, 4000)
   },
   postForm: function (e) {
     e.preventDefault()
