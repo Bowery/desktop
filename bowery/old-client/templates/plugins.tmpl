@@ -1,0 +1,20 @@
+<div class="group plugins">
+  <ul class="list">
+    {{range .Plugins}}
+    <li class="item">
+      <a href="/plugins/{{.Name}}/{{.Version}}">
+        <h3>{{.Name}}</h3>
+        <span class="status"></span>
+        <p class="subtitle">{{.Description}}</p>
+      </a>
+    </li>
+    {{end}}
+  </ul>
+  {{if .DevMode}}
+  <form class="form" method="get" action="/plugins/new">
+    <div class="field-submit">
+      <input class="submit" type="submit" value="Add Plugin">
+    </div>
+  </form>
+  {{end}}
+</div>

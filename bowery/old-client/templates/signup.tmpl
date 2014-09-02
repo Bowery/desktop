@@ -1,0 +1,44 @@
+<header>
+  <h2>Signup</h2>
+  <h5>Funny line.</h5>
+</header>
+<form class="form" method="POST" action="/signup">
+  <div class="field">
+    <label for="name" class="field-label">Name</label>
+    <input type="text" name="name" class="field-input" />
+  </div>
+  <div class="field">
+    <label for="email" class="field-label">Email</label>
+    <input type="text" name="email" class="field-input" />
+  </div>
+  <div class="field">
+    <label for="password" class="field-label">Password</label>
+    <input type="password" name="password" class="field-input" />
+  </div>
+  <div class="field-submit">
+    <input class="submit btn btn-primary" type="submit" value="Submit" />
+  </div>
+</form>
+Already have an account? <a href="/login">Login</a>
+
+<script type="text/javascript">
+
+$(document).ready(function () {
+  var url = window.location.href
+  var idx = url.indexOf('?')
+  var query = {}
+  if (idx > -1) {
+   var items = url.slice(idx+1).split('&')
+   for (var i in items) {
+     var vals = items[i].split('=')
+     query[vals[0]] = vals[1]
+   }
+  }
+
+  if (query.error == 'emailtaken') {
+    $('.field-input[name=email]').parent().addClass('invalid')
+    $('.field-input[name=email]').siblings('.field-label').text('Email is taken')
+  }
+})
+
+</script>

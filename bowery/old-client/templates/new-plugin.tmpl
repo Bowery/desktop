@@ -1,0 +1,50 @@
+<form class="form create-plugin">
+  <div class="field">
+    <input type="text" class="field-input" name="name" autofocus>
+    <label for="name" class="field-label">Name</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="repository">
+    <label for="repository" class="field-label">Repository</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="description">
+    <label for="description" class="field-label">Description</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="requirements-os" placeholder="Leave empty for all. Example: darwin,windows">
+    <label for="requirements-os" class="field-label">Supported Operating Systems</label>
+  </div>
+  <div class="field">
+    <input type="text" class="field-input" name="requirements-deps" placeholder="Example: python2.7,libmysql">
+    <label for="requirements-deps" class="field-label">Dependencies</label>
+  </div>
+  <div class="field-submit">
+    <input class="submit create" type="submit" value="Create Plugin">
+  </div>
+</form>
+
+<script type="text/javascript">
+$(document).ready(function () {
+  createFormEl = $('.create-plugin')
+
+  $('.submit.create').click(function (e) {
+    e.preventDefault()
+    $.ajax({
+      url: '/plugins',
+      method: 'POST',
+      data: createFormEl.serialize()
+    })
+    .done(function (problems) {
+      if (Object.keys(problems).length == 0) {
+        window.location = '/plugins'
+      } else {
+        for (var field in problems) {
+          createFormEl.find('.field-input[name=' + field + ']').addClass('invalid')
+          createFormEl.find('.field-input[name=' + field + '] + .field-label').text(problems[field])
+        }
+      }
+    })
+  })
+})
+</script>

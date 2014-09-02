@@ -1,0 +1,41 @@
+<div class="group plugin">
+  <h3>Description</h4>
+  <p class="subtitle">{{.Plugin.Description}}</p>
+</div>
+
+{{if .Plugin.Requirements}}
+{{if .Plugin.Requirements.OS}}
+<div class="group plugin">
+  <h3>Supported Operating Systems</h3>
+  <p class="subtitle">{{Join .Plugin.Requirements.OS}}</p>
+</div>
+{{end}}
+
+{{if .Plugin.Requirements.Deps}}
+<div class="group plugin">
+  <h3>Dependencies</h3>
+  <p class="subtitle">{{Join .Plugin.Requirements.Deps}}</p>
+</div>
+{{end}}
+{{end}}
+
+<div class="group plugin">
+  <ul class="list">
+
+  {{$name := .Plugin.Name}}
+  {{$version := .Plugin.Version}}
+  {{range .Apps}}
+    <li class="item borderless">
+      <div class="item-title">
+        <a href="/applications/{{.App.ID}}">
+          <h3>{{if .App.Name}}{{.App.Name}}{{else}}{{.App.LocalPath}}{{end}}</h3>
+          <p class="subtitle">{{JoinHostPort .App.RemoteAddr .App.SyncPort}}</p>
+        </a>
+      </div>
+      <div class="toggle {{if .IsActive}}active{{end}}" data-app="{{.App.ID}}" data-plugin-name="{{$name}}" data-plugin-version="{{$version}}">
+        <div class="toggle-handle"></div>
+      </div>
+    </li>
+  {{end}}
+  </ul>
+</div>
