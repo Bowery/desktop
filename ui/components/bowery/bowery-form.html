@@ -35,7 +35,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <template repeat="{{field in fields}}">
       <div class="field-group">
         <label for="{{field}}">{{field | makeReadable}}</label>
-        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}">
+        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}" on-keyup="{{submitIfEnter}}">
       </div>
     </template>
   </form>
@@ -65,6 +65,9 @@ Polymer({
       return str.charAt(0).toUpperCase() + str.slice(1)
     }).join(' ')
 
+  },
+  submitIfEnter: function (e) {
+    if (e.keyCode == 13) this.postForm(e)
   },
   postForm: function (e) {
     e.preventDefault()
