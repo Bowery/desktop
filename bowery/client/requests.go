@@ -55,6 +55,10 @@ type createApplicationReq struct {
 	AWSAccessKey string `json:"aws_access_key"`
 	AWSSecretKey string `json:"aws_secret_key"`
 	Ports        string `json:"ports"`
+	Start        string `json:"start"`
+	Build        string `json:"build"`
+	LocalPath    string `json:"localPath"`
+	RemotePath   string `json:"remotePath"`
 }
 
 // Res is a generic response with status and an error message.
