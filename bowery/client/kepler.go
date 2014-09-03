@@ -3,7 +3,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,14 +12,12 @@ import (
 )
 
 type applicationRes struct {
-	Status      string               `json:"status"`
-	Error       string               `json:"error"`
+	*Res
 	Application *schemas.Application `json:"application"`
 }
 
 type applicationsRes struct {
-	Status       string                 `json:"status"`
-	Error        string                 `json:"error"`
+	*Res
 	Applications []*schemas.Application `json:"applications"`
 }
 
@@ -40,7 +37,7 @@ func GetApplications(token string) ([]*schemas.Application, error) {
 	}
 
 	if appsRes.Status != requests.STATUS_FOUND {
-		return nil, errors.New(appsRes.Error)
+		return nil, appsRes
 	}
 
 	return appsRes.Applications, nil

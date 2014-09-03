@@ -39,6 +39,7 @@ var Routes = []*Route{
 	&Route{"POST", "/applications", createApplicationHandler},
 	&Route{"GET", "/applications", getApplicationsHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
+	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
 }
 
 var r = render.New(render.Options{
@@ -54,6 +55,16 @@ type createApplicationReq struct {
 	AWSAccessKey string `json:"aws_access_key"`
 	AWSSecretKey string `json:"aws_secret_key"`
 	Ports        string `json:"ports"`
+}
+
+// Res is a generic response with status and an error message.
+type Res struct {
+	Status string `json:"status"`
+	Err    string `json:"error"`
+}
+
+func (res *Res) Error() string {
+	return res.Err
 }
 
 // createApplicationHandler creates a new Application which includes:
@@ -119,10 +130,10 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if resBody.Error != "" {
+	if resBody.Status == requests.STATUS_FAILED {
 		r.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
-			"error":  resBody.Error,
+			"error":  resBody.Error(),
 		})
 		return
 	}
@@ -201,5 +212,73 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_FOUND,
 		"application": app,
+	})
+}
+
+func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	token := req.FormValue("token")
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "missing fields",
+		})
+		return
+	}
+
+	addr := fmt.Sprintf("%s/applications/%s?token=%s", config.KenmareAddr, id, token)
+	req, err := http.NewRequest("DELETE", addr, nil)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// Remove the app on kepler.
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+	}
+	defer res.Body.Close()
+
+	removeRes := new(Res)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(removeRes)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// If removal failed on kepler respond with it.
+	if removeRes.Status == requests.STATUS_FAILED {
+		r.JSON(rw, res.StatusCode, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  removeRes.Error(),
+		})
+		return
+	}
+
+	// Remove locally and stop syncer.
+	_, err = applicationManager.Remove(id)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
 	})
 }
