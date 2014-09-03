@@ -20,6 +20,7 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
   :host {
     position: absolute;
   }
+
   #circle {
     border-radius: 100%;
 
@@ -37,19 +38,17 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
 
     cursor: pointer;
 
-    z-index: 2;
+    z-index: 3;
   }
-
   #circle.large {
     transform: scale(6);
     vertical-align: middle;
-    z-index: 3;
+
   }
 
   #content {
     display: none;
     opacity: 0;
-    transition: width 500ms ease-in 1s;
     position: absolute;
     left: -345px;
     color: rgb(245, 245, 245); /*TODO (thebyrd) make this white, but not until red is behind it*/
@@ -84,9 +83,23 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
   pre {
     color: rgb(245, 245, 245);
   }
+
+  #pillow {
+    background-color: white;
+    opacity: 0;
+    transition: opacity 100ms ease-in;
+    position: absolute;
+    z-index: 2;
+    width: 500px;
+    height: 400px;
+  }
+  #pillow.fluffed {
+    opacity: 1;
+  }
 </style>
 
 <div id="circle" class="{{this.circleClass}}" on-click="{{expandCircle}}"></div>
+<div id="pillow"></div>
 <div id="content">
   <div class="inner-content">
     <button class="close" on-click="{{shrinkCircle}}">X</button>
@@ -105,13 +118,12 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
       <content></content>
     </template>
 
-    <!-- <template if="{{type == 'info'}}">
+    <template if="{{type == 'info'}}">
       <h1>Info</h1>
       <h2>Important Message</h2>
       <p>Semiotics hashtag cred, Schlitz before they sold out deep v tousled fingerstache freegan. Tumblr whatever farm-to-table pork belly. Gluten-free food truck seitan banjo readymade.</p>
-    </template> -->
-
-
+    </template>
+    <content></content>
   </div>
 </div>
 
@@ -148,12 +160,19 @@ Polymer('bowery-modal', {
     return (pos - this.getBoundingClientRect()[attr]) + "px"
   },
   expandCircle: function () {
+    var self = this
     this.expanded = true
-    this.$.circle.setAttribute("class", "large")
-    this.$.content.setAttribute("class", "show")
 
+    this.$.pillow.setAttribute("class", "fluffed")
+    this.$.pillow.style.top = this.calcRelPos('top', 55)
+    this.$.pillow.style.left = "-355px"
+
+    this.$.circle.setAttribute("class", "large")
+
+    setTimeout(function () {self.$.content.setAttribute("class", "show")}, 200)
     this.$.content.style.top = this.calcRelPos('top', 65)
     this.$.content.style.left = "-345px"
+
 
     this.fire('bowery-modal-open')
   },
@@ -161,6 +180,7 @@ Polymer('bowery-modal', {
     this.expanded = false
     this.$.circle.setAttribute("class", "")
     this.$.content.setAttribute("class", "")
+    this.$.pillow.setAttribute("class", "")
 
     this.fire('bowery-modal-close')
   }

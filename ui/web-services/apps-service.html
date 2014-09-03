@@ -6,35 +6,9 @@
   `apps` returns the list of apps.
 
   @group Bowery Service Elements
-  @element app-service
+  @element apps-service
 -->
-
-<!--
-  An array of post objects, with the following format:
-
-  <table border="0">
-    <tr>
-      <td><code>id</code></td>
-      <td>String</td>
-      <td>Unique ID for this app.</td>
-    </tr>
-     <tr>
-      <td><code>name</code></td>
-      <td>String</td>
-      <td>App Name</td>
-    </tr>
-    <tr>
-      <td><code>addr</code></td>
-      <td>String</td>
-      <td>Public IP Address of App</td>
-    </tr>
-  </table>
-
-  @attribute apps
-  @type Array
-  @default []
--->
-<polymer-element name="apps-service" attributes="apps">
+<polymer-element name="apps-service" attributes="apps token">
   <template>
     <style>
       :host {
@@ -43,7 +17,7 @@
     </style>
     <core-ajax id="ajax"
       auto
-      url="../api/apps.json"
+      url="/applications?token={{token}}"
       on-core-response="{{appsLoaded}}"
       handleAs="json">
     </core-ajax>
@@ -54,7 +28,10 @@
       this.apps = []
     },
     appsLoaded: function () {
-      this.apps = this.$.ajax.response.slice(0)
+      var response = this.$.ajax.response
+      if (response.status == 'found') {
+        this.apps = response.applications
+      }
     }
   })
   </script>
