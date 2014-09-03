@@ -1,0 +1,74 @@
+<header>
+  <h2>{{.Application.Name}}</h2>
+  <h5>This is your dashboard, your mission control, your home base.</h5>
+</header>
+<form class="form edit-application">
+  <input class="appId" type="hidden" value="{{.Application.ID}}" name="id">
+  <div class="field">
+    <label for="name" class="field-label">Application Name</label>
+    <input type="text" class="field-input" name="name" id="name" value="{{.Application.Name}}">
+  </div>
+  <div class="field">
+    <label for="ip-addr" class="field-label">Remote IP Address</label>
+    <input type="text" class="field-input" name="ip-addr" id="ip-addr" value="{{JoinHostPort .Application.RemoteAddr .Application.SyncPort}}">
+  </div>
+  <div class="field">
+    <label for="local-dir" class="field-label">Local Directory</label>
+    <input type="text" class="field-input" name="local-dir" id="local-dir" value="{{.Application.LocalPath}}">
+  </div>
+  <div class="field">
+    <label for="remote-dir" class="field-label">Remote Directory</label>
+    <input type="text" class="field-input" name="remote-dir" id="remote-dir" value="{{.Application.RemotePath}}">
+  </div>
+  <div class="field">
+    <label for="start" class="field-label">Start Command</label>
+    <input type="text" class="field-input" name="start" id="start" value="{{.Application.Start}}">
+  </div>
+  <div class="field">
+    <label for="build" class="field-label">Build Command</label>
+    <input type="text" class="field-input" name="build" id="build" value="{{.Application.Build}}">
+  </div>
+  <div class="field-submit">
+    <input class="submit edit btn btn-primary" type="submit" value="Update">
+    <input class="submit delete half btn btn-warning" type="submit" value="Delete">
+  </div>
+</form>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    var appId = $('.appId').val()
+
+    $('.edit-application .submit.edit').click(function (e) {
+      e.preventDefault()
+      $.ajax({
+        url: "/applications/" + appId,
+        method: "PUT",
+        data: $('.form.edit-application').serialize()
+      })
+      .done(function (resp) {
+        if (resp.success) {
+          window.location = "/applications"
+        } else {
+          alert(resp.error)
+        }
+      })
+    })
+
+    $('.edit-application .submit.delete').click(function (e) {
+      e.preventDefault()
+      $.ajax({
+        url: "/applications/" + appId,
+        method: "DELETE"
+      })
+      .done(function (resp) {
+        if (resp.success) {
+          window.location = "/applications"
+        } else {
+          console.log(resp)
+          alert(JSON.stringify(resp))
+        }
+      })
+    })
+  })
+
+</script>

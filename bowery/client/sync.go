@@ -2,7 +2,6 @@
 package main
 
 import (
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,20 +10,21 @@ import (
 
 	"github.com/Bowery/gopackages/ignores"
 	"github.com/Bowery/gopackages/log"
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/tar"
 )
 
 // Event describes a file event and the associated application.
 type Event struct {
-	Application *Application `json:"application"`
-	Status      string       `json:"status"`
-	Path        string       `json:"path"`
+	Application *schemas.Application `json:"application"`
+	Status      string               `json:"status"`
+	Path        string               `json:"path"`
 }
 
 // WatchError wraps an error to identify the app origin.
 type WatchError struct {
-	Application *Application `json:"application"`
-	Err         error        `json:"error"`
+	Application *schemas.Application `json:"application"`
+	Err         error                `json:"error"`
 }
 
 func (w *WatchError) Error() string {
@@ -33,13 +33,13 @@ func (w *WatchError) Error() string {
 
 // Watcher syncs file changes for an application to it's remote address.
 type Watcher struct {
-	Application *Application
+	Application *schemas.Application
 	uploadPath  string
 	done        chan struct{}
 }
 
 // NewWatcher creates a watcher.
-func NewWatcher(app *Application) *Watcher {
+func NewWatcher(app *schemas.Application) *Watcher {
 	return &Watcher{
 		Application: app,
 		uploadPath:  filepath.Join(os.TempDir(), "bowery_"+app.ID),
@@ -317,29 +317,37 @@ func NewSyncer() *Syncer {
 }
 
 // GetWatcher gets a watcher for a specific application.
-func (syncer *Syncer) GetWatcher(app *Application) (*Watcher, error) {
+func (syncer *Syncer) GetWatcher(app *schemas.Application) (*Watcher, bool) {
 	for _, watcher := range syncer.Watchers {
 		if watcher != nil && watcher.Application.ID == app.ID {
-			return watcher, nil
+			return watcher, false
 		}
 	}
 
-	return nil, errors.New("invalid app")
+	return nil, true
 }
 
 // Watch starts watching the given application syncing changes.
-func (syncer *Syncer) Watch(app *Application) {
+func (syncer *Syncer) Watch(app *schemas.Application) {
 	watcher := NewWatcher(app)
 	syncer.Watchers = append(syncer.Watchers, watcher)
 
 	// Do the actual event management, and the inital upload.
 	go func() {
+		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-start"}
+		err := watcher.Upload()
+		if err != nil {
+			syncer.Error <- err
+			return
+		}
+		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-finish"}
+
 		watcher.Start(syncer.Event, syncer.Error)
 	}()
 }
 
 // Remove removes an applications syncer.
-func (syncer *Syncer) Remove(app *Application) error {
+func (syncer *Syncer) Remove(app *schemas.Application) error {
 	for idx, watcher := range syncer.Watchers {
 		if watcher != nil && watcher.Application.ID == app.ID {
 			err := watcher.Close()

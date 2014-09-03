@@ -1,0 +1,32 @@
+<header>
+  <h2>Settings</h2>
+  <h5>Funny line.</h5>
+</header>
+<div class="group settings">
+  <form class="form user-settings" method="POST" action="/settings">
+    <div class="field">
+      <label for="name" class="field-label">Name</label>
+      <input type="text" name="name" class="field-input" value="{{.Developer.Name}}" />
+    </div>
+    <div class="field">
+      <label for="email" class="field-label">Email</label>
+      <input type="text" name="email" class="field-input" value="{{.Developer.Email}}" />
+    </div>
+    <div class="field">
+      <label for="password" class="field-label">New Password</label>
+      <input type="password" name="password" class="field-input" />
+    </div>
+    <div class="field">
+      <label for="oldpassword" class="field-label">Old Password</label>
+      <input type="password" name="oldpassword" class="field-input" />
+    </div>
+    <div class="field-submit">
+      <input class="submit btn btn-primary" type="submit" value="Submit" />
+    </div>
+  </form>
+  <a href="/logout">Logout</a>
+  <!-- Dev Mode
+  <div class="toggle dev-mode {{if .DevMode}}active{{end}}">
+    <div class="toggle-handle"></div>
+  </div> -->
+</div>

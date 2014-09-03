@@ -1,0 +1,109 @@
+<header>
+  <h2>New Application</h2>
+  <h5>Some witty line.</h5>
+</header>
+<form class="form verify-application">
+  <div class="field">
+    <label for="ip-addr" class="field-label">Agent IP Address</label>
+    <input type="text" class="field-input remote-addr-field-input" name="ip-addr" id="ip-addr" autofocus>
+  </div>
+  <div class="field">
+    <label for="local-dir" class="field-label">Local Directory</label>
+    <input type="text" class="field-input" name="local-dir" id="local-dir">
+  </div>
+  <div class="field remote-dir-field">
+    <label for="remote-dir" class="field-label">Remote Directory</label>
+    <input type="text" class="field-input" name="remote-dir" id="remote-dir">
+  </div>
+  <div class="field-submit">
+    <input class="submit verify btn btn-primary" type="submit" value="Verify Information">
+  </div>
+</form>
+
+<form class="form create-application">
+  <input class="" type="hidden" value="" name="id">
+  <div class="field">
+    <label for="name" class="field-label">Application Name</label>
+    <input type="text" class="field-input" name="name" id="name" autofocus>
+  </div>
+  <div class="field">
+    <label for="start" class="field-label">Start Command</label>
+    <input type="text" class="field-input" name="start" id="start">
+  </div>
+  <div class="field">
+    <label for="build" class="field-label">Build Command</label>
+    <input type="text" class="field-input" name="build" id="build">
+  </div>
+  <div class="field-submit">
+    <input class="submit create btn btn-primary" type="submit" value="Create Application">
+  </div>
+</form>
+
+
+<script type="text/javascript">
+
+/**
+ * on .submit.verify click event verify ip & directories.
+ * If they're valid then hide .verify-application and show .create-application.
+ * on
+ */
+$(document).ready(function () {
+  var verifyFormEl = $('.verify-application')
+  var createFormEl = $('.create-application')
+
+
+  // Hide Remote addr is Remote IP is localhost
+  var remoteDirFieldEl = $('.remote-dir-field')
+  $('.remote-addr-field-input').on('blur', function (e) {
+    remoteDirFieldEl[/^localhost/.test(e.target.value) ? 'addClass' : 'removeClass']('hidden')
+  })
+
+  $('.submit.verify').click(function (e) {
+    e.preventDefault()
+    $.ajax({
+      url: '/applications/verify',
+      method: 'POST',
+      data: verifyFormEl.serialize()
+    })
+    .done(function (problems) {
+      validInput = Object.keys(problems).length == 0
+      if (validInput) {
+        verifyFormEl.css('display', 'none')
+        createFormEl.css('display', 'block')
+      } else {
+        verifyFormEl.find('.field-input').each(function () {
+          var $parent = $(this).parent()
+          var $label = $(this).siblings('.field-label')
+          var field = $(this).attr('name')
+
+          if (problems[field]) {
+            $parent.addClass('invalid')
+            $label.data('prev-text', $label.text())
+            $label.text(problems[field])
+          } else if ($parent.hasClass('invalid')) {
+            $parent.removeClass('invalid')
+            $label.text($label.data('prev-text'))
+          }
+        })
+      }
+    })
+  })
+
+  $('.submit.create').click(function (e) {
+    e.preventDefault()
+    $.ajax({
+      url: '/applications',
+      method: 'POST',
+      data: verifyFormEl.serialize() + '&' + createFormEl.serialize()
+    })
+    .done(function (resp) {
+      if (resp.success) {
+        window.location = '/applications' // 1993 till infinity.
+      } else {
+        alert(resp.error)
+      }
+    })
+  })
+})
+
+</script>

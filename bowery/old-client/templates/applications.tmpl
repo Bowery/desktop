@@ -1,0 +1,24 @@
+<header>
+  <h2>Welcome to Bowery, {{.Developer.Name}}!</h2>
+  <h5>Beautiful day, isn't it?</h5>
+</header>
+<div class="group applications">
+  <ul class="list">
+    {{range .Applications}}
+    <li class="item" data-app="{{.ID}}">
+      <a href="/applications/{{.ID}}">
+        <div class="app-status app-status-ok"></div>
+        <div class="app-info">
+          <h3>{{if .Name}}{{.Name}}{{else}}{{.LocalPath}}{{end}}</h3>
+          <h5 class="subtitle">{{.LocalPath}}</h5>
+        </div>
+      </a>
+    </li>
+    {{end}}
+    <li class="item">
+      <a href="/applications/new" class="btn btn-success">
+        New App
+      </a>
+    </li>
+  </ul>
+</div>

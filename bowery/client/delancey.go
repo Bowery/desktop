@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/Bowery/gopackages/schemas"
 )
 
 // Res is a generic response with status and an error message.
@@ -26,7 +28,7 @@ func (res *Res) Error() string {
 }
 
 // DelanceyUpload sends an upload request including the given file.
-func DelanceyUpload(app *Application, file *os.File) error {
+func DelanceyUpload(app *schemas.Application, file *os.File) error {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
@@ -82,7 +84,7 @@ func DelanceyUpload(app *Application, file *os.File) error {
 }
 
 // DelanceyUpdate updates the given name with the status and path.
-func DelanceyUpdate(app *Application, full, name, status string) error {
+func DelanceyUpdate(app *schemas.Application, full, name, status string) error {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
@@ -193,7 +195,7 @@ func DelanceyCheck(url string) error {
 }
 
 // DelanceyRemove removes an application from it's delancey endpoint.
-func DelanceyRemove(app *Application) error {
+func DelanceyRemove(app *schemas.Application) error {
 	url := net.JoinHostPort(app.RemoteAddr, app.SyncPort) + "/?id=" + app.ID
 	req, err := http.NewRequest("DELETE", "http://"+url, nil)
 	if err != nil {
