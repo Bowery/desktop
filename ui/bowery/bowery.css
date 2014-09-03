@@ -94,13 +94,3 @@ input:focus {
 button {
   -webkit-app-region: no-drag;
 }
-
-.field-group {
-  background: white;
-  padding: 10px;
-  margin: 9px 18px 0 18px;
-  width: 345px;
-  float: left;
-  position: relative;
-  overflow: hidden;
-}
