@@ -154,11 +154,15 @@ Polymer('bowery-modal', {
 
     this.$.content.style.top = this.calcRelPos('top', 65)
     this.$.content.style.left = "-345px"
+
+    this.fire('bowery-modal-open')
   },
   shrinkCircle: function () {
     this.expanded = false
     this.$.circle.setAttribute("class", "")
     this.$.content.setAttribute("class", "")
+
+    this.fire('bowery-modal-close')
   }
 })
 </script>
