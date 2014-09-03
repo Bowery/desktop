@@ -22,6 +22,7 @@ test: deps
 ui:
 	npm install
 	npm start > debug.log 2>&1 &
+	npm poststart > debug.log 2>&1 &
 
 ui-test: ui
 	npm test
