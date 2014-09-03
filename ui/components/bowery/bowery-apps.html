@@ -10,31 +10,52 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-card.html">
 <link rel="import" href="bowery-modal.html">
 
-<polymer-element name="bowery-apps" noscript>
+<polymer-element name="bowery-apps" attributes="token" noscript>
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
-      .ruled-section {
-        margin-top: 18px;
-        border-top: 1px solid rgb(26, 23, 24);
-        background: rgb(245, 245, 245);
-      }
       .field-group {
         margin: 0;
-        padding: 10px 0;
+        padding: 0;
       }
       input {
         width: 255px;
+        border: none;
+      }
+      bowery-modal * {
+        color: white;
+        background:  rgb(26, 23, 24);
+      }
+      label {
+        color: rgb(245, 245, 245);
       }
 
     </style>
-    <apps-service apps="{{applications}}"></apps-service>
+    <apps-service token="{{token}}" apps="{{applications}}"></apps-service>
     <div id="container" class="">
       <template repeat="{{app in applications}}">
-        <bowery-card data-id="{{app.id}}">
+        <bowery-card data-id="{{app._id}}">
           <h4>{{app.name}}</h4>
-          <span>{{app.addr}}</span>
-          <bowery-modal style="right: 27px; top: 27px;" type="info">
+          <span>{{app.location}}</span>
+          <bowery-modal style="right: 27px; top: 27px;" type="edit">
+            <h1>Edit</h1>
+            <h3>{{app.name}}</h3>
+            <div class="field-group">
+              <label for="start">Start:</label>
+              <input id="start" type="text" name="start" value="{{app.start}}">
+            </div>
+            <div class="field-group">
+              <label for="build">Build:</label>
+              <input id="build" type="text" name="build" value="{{app.build}}">
+            </div>
+            <div class="field-group">
+              <label for="remotePath">Remote Path:</label>
+              <input id="remotePath" type="text" name="remotePath" value="{{app.remotePath}}">
+            </div>
+            <div class="field-group">
+              <label for="localPath">Local Path:</label>
+              <input id="localPath" type="text" name="" value="{{app.localPath}}">
+            </div>
           </bowery-modal>
         </bowery-card>
       </template>
