@@ -23,7 +23,8 @@ app.on('ready', function() {
     resizable: false,
     center: true,
     show: false,
-    frame: false
+    frame: false,
+    icon: path.join(__dirname, 'icon.png')
   })
 
   // 'node-integration': 'disable',

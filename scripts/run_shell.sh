@@ -11,4 +11,10 @@ pushd "${DIR}/build"
 	grunt download-atom-shell
 popd
 
-"${DIR}/build/atom-shell/Atom.app/Contents/MacOS/Atom" "${DIR}/shell"
+if [ ! -d "${DIR}/build/atom-shell/Bowery.app"]; then
+	mv "${DIR}/build/atom-shell/Atom.app" "${DIR}/build/atom-shell/Bowery.app"
+fi
+
+cat "${DIR}/shell/Info.plist" > "${DIR}/build/atom-shell/Bowery.app/Contents/Info.plist"
+
+"${DIR}/build/atom-shell/Bowery.app/Contents/MacOS/Atom" "${DIR}/shell"
