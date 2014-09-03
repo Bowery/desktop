@@ -14,12 +14,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
-      .container {
-        /*overflow-y: auto;*/
-        overflow-x: hidden; /* TODO (thebyrd) this is a bad hack that shouldn't be necessisary if the widths of all child elements added up properly. */
-        padding: 0;
-        height: 400px;
-      }
       .ruled-section {
         margin-top: 18px;
         border-top: 1px solid rgb(26, 23, 24);
@@ -35,7 +29,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
     </style>
     <apps-service apps="{{applications}}"></apps-service>
-    <div id="container" class="container">
+    <div id="container" class="">
       <template repeat="{{app in applications}}">
         <bowery-card data-id="{{app.id}}">
           <h4>{{app.name}}</h4>

@@ -17,7 +17,14 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <style>
     #content {
       display: none;
-      padding-top: 54px;
+      margin: 54px 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 0;
+      height: 374px;
+    }
+    ::-webkit-scrollbar {
+      width: 0 !important;
     }
   </style>
   <div id="content" path="{{path}}">
@@ -35,6 +42,8 @@ Polymer({
       this.$.content.style.display = 'block'
 
     window.addEventListener('bowery-navigate', this.navigate.bind(this))
+    window.addEventListener('bowery-modal-open', this.disableScroll.bind(this))
+    window.addEventListener('bowery-modal-close', this.enableScroll.bind(this))
   },
   navigate: function (e) {
     // If you wanted to use this on the web, this line would enable push state
@@ -45,6 +54,18 @@ Polymer({
     } else {
       this.$.content.style.display = 'block'
     }
+  },
+  disableScroll: function () {
+    // Only matters for active screen
+    if (this.path != this.globalPath) return
+
+    this.$.content.style.overflowY = 'hidden'
+  },
+  enableScroll: function () {
+    // Only matters for active screen
+    if (this.path != this.globalPath) return
+
+    this.$.content.style.overflowY = 'auto'
   }
 })
 </script>

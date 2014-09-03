@@ -19,7 +19,6 @@
   background-color: var(--grey) !important;
   /*color: white;*/
 }
-
 * {
   margin: 0;
   padding: 0;
@@ -28,12 +27,11 @@
 html,body {
   height: 100%;
   font-size: 12px;
+  /*overflow: hidden;*/
 }
-
 body {
   background-color: var(--grey-light);
 }
-
 h1, h2, h3, h4 {
   font-family:"Monosten A", Courier, monospace;
   font-size-adjust:0.5;
@@ -49,7 +47,6 @@ body, a, p, span, input, textarea {
   font-style:normal;
   color: var(--type-light);
 }
-
 p {
   margin-bottom: 18px;
 }
@@ -62,7 +59,6 @@ h1 {
   font-family:"Monosten E", Courier, monospace;
   letter-spacing: 2px;
 }
-
 h2 {
   font-size: 24px;
   line-height: 36px;
@@ -76,16 +72,6 @@ h3 {
 h4 {
   font-size: 12px;
   line-height: 18px;
-}
-
-.field-group {
-  background: white;
-  padding: 10px;
-  margin: 9px 18px 0 18px;
-  width: 345px;
-  float: left;
-  position: relative;
-  overflow: hidden;
 }
 label {
   float: left;
@@ -105,8 +91,16 @@ input {
 input:focus {
   outline: none;
 }
-
-
 button {
   -webkit-app-region: no-drag;
+}
+
+.field-group {
+  background: white;
+  padding: 10px;
+  margin: 9px 18px 0 18px;
+  width: 345px;
+  float: left;
+  position: relative;
+  overflow: hidden;
 }

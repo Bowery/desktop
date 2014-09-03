@@ -14,6 +14,27 @@ app.on('window-all-closed', function() {
     app.quit()
 })
 
+// Start Client and Agent
+var extension = /^win/.test(process.platform) ? ".exe" : ""
+
+!["client", "agent"].forEach(function (binary) {
+  var path = require('path').join(__dirname, "../bin/", binary + extension)
+  var proc = require('child_process').spawn(path, [])
+
+  console.log("Launching", path)
+
+  proc.on('close', function (code) {
+    console.log('client process exited with code:', code)
+    process.exit(code)
+  })
+  proc.stdout.on('data', function (data) {
+    process.stdout.write(data)
+  })
+  proc.stderr.on('data', function (data) {
+    process.stderr.write(data)
+  })
+})
+
 app.on('ready', function() {
   mainWindow = new BrowserWindow({
     title: 'Bowery',
@@ -35,26 +56,8 @@ app.on('ready', function() {
     mainWindow = null
   })
 
-  // Start Client and Agent
-  var extension = /^win/.test(process.platform) ? ".exe" : ""
-
-  !["client", "agent"].forEach(function (binary) {
-    var path = require('path').join(__dirname, "../bin/", binary + extension)
-    var proc = require('child_process').spawn(path, [])
-
-    console.log("Launching", path)
-
-    proc.on('close', function (code) {
-      console.log('client process exited with code:', code)
-      process.exit(code)
-    })
-    proc.stdout.on('data', function (data) {
-      process.stdout.write(data)
-    })
-    proc.stderr.on('data', function (data) {
-      process.stderr.write(data)
-    })
+  mainWindow.webContents.on('did-finish-load', function () {
+    mainWindow.show()
+    mainWindow.focus()
   })
-
-  mainWindow.show()
 })

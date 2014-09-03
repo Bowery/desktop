@@ -24,7 +24,7 @@ func main() {
 	applicationManager = NewApplicationManager()
 	defer applicationManager.Close()
 
-	abs, _ := filepath.Abs("../ui/")
+	abs, _ := filepath.Abs("ui/")
 
 	router := mux.NewRouter()
 	router.NotFoundHandler = http.FileServer(http.Dir(abs))
