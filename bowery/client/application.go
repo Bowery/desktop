@@ -85,6 +85,26 @@ func (am *ApplicationManager) UpdateByID(id string, app *schemas.Application) er
 	return nil
 }
 
+func (am *ApplicationManager) Remove(id string) (*schemas.Application, error) {
+	app, ok := am.Applications[id]
+	if !ok {
+		return nil, fmt.Errorf("no app with id %s exists.", id)
+	}
+
+	err := DelanceyRemove(app)
+	if err != nil {
+		return nil, err
+	}
+
+	err = am.Syncer.Remove(app)
+	if err != nil {
+		return nil, err
+	}
+
+	delete(am.Applications, id)
+	return app, nil
+}
+
 func (am *ApplicationManager) Close() error {
 	return am.Syncer.Close()
 }

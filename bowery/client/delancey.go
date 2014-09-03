@@ -17,16 +17,6 @@ import (
 	"github.com/Bowery/gopackages/schemas"
 )
 
-// Res is a generic response with status and an error message.
-type Res struct {
-	Status string `json:"status"`
-	Err    string `json:"error"`
-}
-
-func (res *Res) Error() string {
-	return res.Err
-}
-
 // DelanceyUpload sends an upload request including the given file.
 func DelanceyUpload(app *schemas.Application, file *os.File) error {
 	var body bytes.Buffer
