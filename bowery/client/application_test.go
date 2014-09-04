@@ -25,7 +25,6 @@ var (
 
 func init() {
 	testApplicationManager = NewApplicationManager()
-	defer testApplicationManager.Close()
 }
 
 func TestAdd(t *testing.T) {

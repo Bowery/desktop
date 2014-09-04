@@ -135,6 +135,8 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	log.Println(resBody.Application)
+
 	if resBody.Status == requests.STATUS_FAILED {
 		r.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
