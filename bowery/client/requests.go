@@ -12,6 +12,7 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
@@ -38,6 +39,7 @@ func (sh *SlashHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 var Routes = []*Route{
 	&Route{"POST", "/applications", createApplicationHandler},
 	&Route{"GET", "/applications", getApplicationsHandler},
+	&Route{"POST", "/applications/{id}", updateApplicationHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
 }
@@ -47,7 +49,7 @@ var r = render.New(render.Options{
 	IsDevelopment: true,
 })
 
-type createApplicationReq struct {
+type applicationReq struct {
 	AMI          string `json:"ami"`
 	EnvID        string `json:"envID"`
 	Token        string `json:"token"`
@@ -78,7 +80,7 @@ func (res *Res) Error() string {
 // file watching.
 func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// Parse request.
-	var reqBody createApplicationReq
+	var reqBody applicationReq
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
@@ -89,8 +91,12 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if reqBody.AMI == "" {
+		reqBody.AMI = "ami-722ff51a"
+	}
+
 	// Validate request.
-	if reqBody.AMI == "" || reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
+	if reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
 		reqBody.AWSSecretKey == "" || reqBody.Token == "" {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -200,6 +206,93 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":       requests.STATUS_FOUND,
 		"applications": apps,
+	})
+}
+
+// updateApplicationHandler updates an application.
+func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+	token := req.FormValue("token")
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+	}
+
+	var reqBody schemas.Application
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	app, err := applicationManager.UpdateByID(id, &reqBody)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	var body bytes.Buffer
+
+	updateBody := applicationReq{
+		Name:       app.Name,
+		Start:      app.Start,
+		Build:      app.Start,
+		RemotePath: app.RemotePath,
+		LocalPath:  app.LocalPath,
+		Token:      token,
+	}
+
+	encoder := json.NewEncoder(&body)
+	err = encoder.Encode(updateBody)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	addr := fmt.Sprintf("%s/applications/%s", config.KenmareAddr, id)
+	request, err := http.NewRequest("PUT", addr, &body)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(request)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	if res.StatusCode != http.StatusOK {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "failed",
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusBadRequest, map[string]interface{}{
+		"status":      requests.STATUS_SUCCESS,
+		"application": app,
 	})
 }
 

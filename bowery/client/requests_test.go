@@ -31,7 +31,7 @@ func TestCreateApplicationHandlerSuccessful(t *testing.T) {
 	defer kenmareServer.Close()
 	config.KenmareAddr = kenmareServer.URL
 
-	reqBody := createApplicationReq{
+	reqBody := applicationReq{
 		AMI:          "ami-722ff51a",
 		EnvID:        "some-id",
 		Token:        "some-token",
@@ -77,7 +77,7 @@ func TestCreateApplicationHandlerMissingFields(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(createApplicationHandler))
 	defer server.Close()
 
-	reqBody := createApplicationReq{
+	reqBody := applicationReq{
 		AMI: "ami-722ff51a",
 	}
 
