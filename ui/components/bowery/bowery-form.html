@@ -12,10 +12,12 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="bowery-analytics.html">
 
 
 <polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback">
 <template>
+  <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
   form {
@@ -42,7 +44,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <template repeat="{{field in fields}}">
       <div class="field-group">
         <label for="{{field}}">{{field | makeReadable}}</label>
-        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}" on-keyup="{{submitIfEnter}}">
+        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
       </div>
     </template>
   </form>
@@ -74,6 +76,7 @@ Polymer({
 
   },
   submitIfEnter: function (e) {
+    this.$.analytics.track('Submited Form with Enter Key')
     if (e.keyCode == 13) this.postForm(e)
   },
   postForm: function (e) {
@@ -88,6 +91,8 @@ Polymer({
     }
 
     this.$.ajax.params = JSON.stringify(params)
+
+    this.$.analytics.track('Submitted ' + this.title + ' Form', params)
   },
   emitResult: function (e, detail) {
 
@@ -102,6 +107,15 @@ Polymer({
     }
 
     this.fire('bowery-form-response')
+  },
+  trackInput: function (e) {
+    if (!e.target.value) return // don't track if they didn't type anything
+
+
+    this.$.analytics.track('Entered Input Text', {
+      field: e.target.name,
+      value: e.target.value
+    })
   }
 })
 </script>

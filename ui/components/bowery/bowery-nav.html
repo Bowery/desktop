@@ -13,9 +13,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="bowery-analytics.html">
 
 <polymer-element name="bowery-nav" attributes="type path">
 <template>
+  <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
   .header, .footer {
@@ -99,7 +101,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       <div class="window-buttons">
         <button on-click="{{close}}" class="window-button close">&nbsp;</button>
         <button on-click="{{minimize}}" class="window-button minimize">&nbsp;</button>
-        <button class="window-button maximize">&nbsp;</button>
+        <button on-click="{{maximize}}" class="window-button maximize">&nbsp;</button>
       </div>
     </template>
   </div>
@@ -107,10 +109,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <script>
   Polymer('bowery-nav', {
     close: function (e) {
+      this.$.analytics.track('Closed Window')
       require('remote').getCurrentWindow().close()
     },
     minimize: function (e) {
+      this.$.analytics.track('Minimized Window')
       require('remote').getCurrentWindow().minimize()
+    },
+    maximize: function (e) {
+      this.$.analytics.track('Maximized Window')
     }
   })
 </script>
