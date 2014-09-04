@@ -89,8 +89,12 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if reqBody.AMI == "" {
+		reqBody.AMI = "ami-722ff51a"
+	}
+
 	// Validate request.
-	if reqBody.AMI == "" || reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
+	if reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
 		reqBody.AWSSecretKey == "" || reqBody.Token == "" {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
