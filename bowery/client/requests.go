@@ -55,6 +55,7 @@ type createApplicationReq struct {
 	AWSAccessKey string `json:"aws_access_key"`
 	AWSSecretKey string `json:"aws_secret_key"`
 	Ports        string `json:"ports"`
+	Name         string `json:"name"`
 	Start        string `json:"start"`
 	Build        string `json:"build"`
 	LocalPath    string `json:"localPath"`
@@ -133,6 +134,8 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	log.Println(resBody.Application)
 
 	if resBody.Status == requests.STATUS_FAILED {
 		r.JSON(rw, http.StatusOK, map[string]string{
@@ -273,7 +276,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Remove locally and stop syncer.
-	_, err = applicationManager.Remove(id)
+	_, err = applicationManager.RemoveByID(id)
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
