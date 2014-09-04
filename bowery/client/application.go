@@ -4,7 +4,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/Bowery/gopackages/schemas"
 )
@@ -26,8 +25,6 @@ func (am *ApplicationManager) load(token string) error {
 	if err != nil {
 		return err
 	}
-
-	log.Println(apps)
 
 	for _, app := range apps {
 		err = am.Add(app)
@@ -75,17 +72,38 @@ func (am *ApplicationManager) GetByID(id string) (*schemas.Application, error) {
 	return app, nil
 }
 
-func (am *ApplicationManager) UpdateByID(id string, app *schemas.Application) error {
-	_, ok := am.Applications[id]
+func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application) (*schemas.Application, error) {
+	app, ok := am.Applications[id]
 	if !ok {
-		return errors.New("invalid app id")
+		return nil, errors.New("invalid app id")
 	}
 
+	if changes.Name != "" {
+		app.Name = changes.Name
+	}
+	if changes.Location != "" {
+		app.Location = changes.Location
+	}
+	if changes.Start != "" {
+		app.Start = changes.Start
+	}
+	if changes.Build != "" {
+		app.Build = changes.Build
+	}
+	if changes.RemotePath != "" {
+		app.RemotePath = changes.RemotePath
+	}
+	if changes.LocalPath != "" {
+		app.LocalPath = changes.LocalPath
+	}
+
+	// todo(steve): update delancey.
+
 	am.Applications[app.ID] = app
-	return nil
+	return app, nil
 }
 
-func (am *ApplicationManager) Remove(id string) (*schemas.Application, error) {
+func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error) {
 	app, ok := am.Applications[id]
 	if !ok {
 		return nil, fmt.Errorf("no app with id %s exists.", id)
