@@ -15,6 +15,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-modal.html">
 <link rel="import" href="bowery-analytics.html">
 <link rel="import" href="../core-localstorage/core-localstorage.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
 
 <polymer-element name="bowery-core" attributes="developer">
 <template>
@@ -61,7 +62,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-nav type="header">Bowery</bowery-nav>
   <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
 </bowery-screen>
-
+<core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 </template>
 <script>
 Polymer('bowery-core', {
@@ -81,12 +82,23 @@ Polymer('bowery-core', {
     if (response.status != "created") {
       if (response.error == "EOF") return
 
+      this.$.analytics.track("Failed Login Attempt", {error: response.error})
       e.target.feedback = response.error
       return
     }
     this.developer = {}
     this.developer.token = response.token
+    this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
+
     this.navigate('/apps')
+  },
+  getUserByToken: function (e) {
+    var response = e.target.response
+    if (response.status == "found") {
+      this.developer = response.developer
+      this.developer['$email'] = this.developer.email // bullshit => https://mixpanel.com/docs/properties-or-segments/special-or-reserved-properties
+      this.$.analytics.register(this.developer)
+    }
   },
   handleSignupAttempt: function (e) {
     var response = e.target.response
@@ -99,11 +111,13 @@ Polymer('bowery-core', {
     if (response.error == "EOF")
       return
 
+    this.$.analytics.track("Failed Signup Attempt", {error: response.error})
     e.target.feedback = response.error
-
   },
   goNewApp: function (e) {
     e.preventDefault()
+
+    this.$.analytics.track("Opened Create App Screen")
     this.navigate('/apps/new')
   },
   navigate: function (path) {
@@ -112,6 +126,7 @@ Polymer('bowery-core', {
       e.preventDefault()
       path = e.target.getAttribute('href')
     }
+    this.$.analytics.track('Navigated to ' + path)
 
     this.fire('bowery-navigate', {path: path})
   }

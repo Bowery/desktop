@@ -12,9 +12,11 @@ A major limitation is that it cannot be used inside elments with `overflow: hidd
 -->
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="bowery-analytics.html">
 
 <polymer-element name="bowery-modal" attributes="type expanded">
 <template>
+<bowery-analytics id="analytics"></bowery-analytics>
 <link rel="stylesheet" href="../../bowery/out.css">
 <style>
   :host {
@@ -173,7 +175,7 @@ Polymer('bowery-modal', {
     this.$.content.style.top = this.calcRelPos('top', 65)
     this.$.content.style.left = "-345px"
 
-
+    this.$.analytics.track('Opened Modal', {type: this.type})
     this.fire('bowery-modal-open')
   },
   shrinkCircle: function () {
@@ -182,6 +184,7 @@ Polymer('bowery-modal', {
     this.$.content.setAttribute("class", "")
     this.$.pillow.setAttribute("class", "")
 
+    this.$.analytics.track('Closed Modal', {type: this.type})
     this.fire('bowery-modal-close')
   }
 })
