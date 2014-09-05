@@ -93,8 +93,10 @@ Polymer({
 
   },
   submitIfEnter: function (e) {
-    this.$.analytics.track('Submited Form with Enter Key')
-    if (e.keyCode == 13) this.postForm(e)
+    if (e.keyCode == 13) {
+      this.$.analytics.track('Submited Form with Enter Key')
+      this.postForm(e)
+    }
   },
   postForm: function (e) {
     e.preventDefault()
