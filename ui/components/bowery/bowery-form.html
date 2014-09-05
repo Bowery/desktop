@@ -44,26 +44,18 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   }
   </style>
   <form id="form">
-    <template if="{{token}}">
-      <input id="token" type="hidden" name="token" value="{{token}}">
-    </template>
-
+    <h1>{{token}}</h1>
     <template repeat="{{field in fields}}">
-        <template if="{{field.type == 'hidden'}}">
-          <input id="{{field.name}}" type="{{field.type}}" name="{{field.name}}" value="{{field.value}}">
+      <input type="hidden" id="token" value="{{token}}">
+      <div class="field-group">
+          <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
+        <template if="{{field.type == 'pill'}}">
+          <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
         </template>
-
-        <template if="{{field.type != 'hidden'}}">
-        <div class="field-group">
-            <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
-          <template if="{{field.type == 'pill'}}">
-            <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
-          </template>
-          <template if="{{field.type != 'pill'}}">
-            <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
-          </template>
-        </div>
-      </template>
+        <template if="{{field.type != 'pill'}}">
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+        </template>
+      </div>
     </template>
   </form>
   <div class="extra">
