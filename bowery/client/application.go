@@ -4,6 +4,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net"
+	"time"
 
 	"github.com/Bowery/gopackages/schemas"
 )
@@ -41,7 +44,24 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		return errors.New("application must have a valid id.")
 	}
 
-	am.Syncer.Watch(app)
+	// Initiate file syncing once the agent
+	// becomes available.
+	go func() {
+		for !app.IsSyncAvailable {
+			<-time.After(5 * time.Second)
+			log.Println("checking agent...")
+			addr := fmt.Sprintf("http://%s/%s", net.JoinHostPort(app.Location, "32056"), "healthz")
+			err := DelanceyCheck(addr)
+			if err == nil {
+				app.IsSyncAvailable = true
+			}
+		}
+
+		log.Println("agent available!")
+
+		am.Syncer.Watch(app)
+	}()
+
 	am.Applications[app.ID] = app
 	return nil
 }
