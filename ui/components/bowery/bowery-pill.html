@@ -15,6 +15,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       * {
         box-sizing: border-box;
       }
+      :host {
+        display: block;
+      }
       button {
         background: transparent;
         text-align: center;
@@ -64,6 +67,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     Polymer('bowery-pill', {
       created: function () {
         this.options = []
+      },
+      ready: function (e) {
+        // Set First as Default
+        this.$.table.querySelector('.btn').setAttribute('class', 'btn active')
       },
       activate: function (e) {
         this.value = e.target.innerHTML

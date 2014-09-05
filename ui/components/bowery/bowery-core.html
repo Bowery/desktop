@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header">Bowery</bowery-nav>
-  <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="{{newAppFields}}"></bowery-form>
+  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}"></bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 </template>
@@ -83,7 +83,8 @@ Polymer('bowery-core', {
     {name: 'remotePath', label: 'Remote Path'},
     {name: 'localPath', label: 'Local Path'},
     {name: 'aws_access_key', label: 'AWS Key'},
-    {name: 'aws_secret_key', label: 'AWS Secret'}
+    {name: 'aws_secret_key', label: 'AWS Secret'},
+    {name: 'token', type: 'hidden'}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -94,6 +95,16 @@ Polymer('bowery-core', {
     if (!this.developer.token)
       return this.navigate('/login')
 
+    this.newAppFields[8].value = this.developer.token // ghetto
+
+    this.navigate('/apps')
+  },
+  handleCreateAppAttempt: function (e) {
+    var response = e.target.response
+    if (response.status != 'success') {
+      this.$.analytics.track("Failed to Create App", {error: response.error})
+      e.target.feedback = response.error
+    }
     this.navigate('/apps')
   },
   handleLoginAttempt: function (e) {

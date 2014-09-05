@@ -39,24 +39,28 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     position: relative;
     overflow: hidden;
   }
-  .pill {
+  bowery-pill {
     margin-left: 90px;
   }
   </style>
   <form id="form">
     <!-- TODO (thebyrd) replace with error modal used for everything else. -->
     <template repeat="{{field in fields}}">
-      <div class="field-group">
-        <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
-        <template if="{{field.type == 'pill'}}">
-            <div class="pill">
-              <bowery-pill options='["t2.micro", "t2.small", "t2.medium"]'></bowery-pill>
-            </div>
+        <template if="{{field.type == 'hidden'}}">
+          <input id="{{field.name}}" type="{{field.type}}" name="{{field.name}}" value="{{field.value}}">
         </template>
-        <template if="{{field.type != 'pill'}}">
-            <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
-        </template>
-      </div>
+
+        <template if="{{field.type != 'hidden'}}">
+        <div class="field-group">
+            <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
+          <template if="{{field.type == 'pill'}}">
+            <bowery-pill id="{{field.name}}" options='["t1.micro", "m1.small", "m1.medium", "m1.large"]' value="{{field.value}}"></bowery-pill>
+          </template>
+          <template if="{{field.type != 'pill'}}">
+            <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+          </template>
+        </div>
+      </template>
     </template>
   </form>
   <div class="extra">
@@ -78,9 +82,6 @@ Polymer({
   created: function () {
     this.fields = []
   },
-  ready: function () {
-    this.type = "login"
-  },
   makeReadable: function (str) {
     strs = str.replace('-', ' ').replace('_', ' ').split(' ')
     return strs.map(function (str) {
@@ -96,7 +97,7 @@ Polymer({
     e.preventDefault()
     var params = {}
     for (var i = 0, field; field = this.fields[i]; i++)
-      params[field.name] = this.$.form[field.name].value
+      params[field.name] = this.$[field.name].value
 
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"
@@ -123,7 +124,6 @@ Polymer({
   },
   trackInput: function (e) {
     if (!e.target.value) return // don't track if they didn't type anything
-
 
     this.$.analytics.track('Entered Input Text', {
       field: e.target.name,
