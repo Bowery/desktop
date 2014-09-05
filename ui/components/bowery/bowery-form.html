@@ -40,20 +40,21 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     overflow: hidden;
   }
   bowery-pill {
-    margin-left: 90px;
+    float: left;
+    margin: 9px 18px 0 18px;
   }
   </style>
   <form id="form">
     <template repeat="{{field in fields}}">
-      <div class="field-group">
+      <template if="{{field.type == 'pill'}}">
+        <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
+      </template>
+      <template if="{{field.type != 'pill'}}">
+        <div class="field-group">
           <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
-        <template if="{{field.type == 'pill'}}">
-          <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
-        </template>
-        <template if="{{field.type != 'pill'}}">
           <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
-        </template>
-      </div>
+        </div>
+      </template>
     </template>
   </form>
   <div class="extra">
