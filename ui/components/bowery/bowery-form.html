@@ -40,28 +40,19 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     overflow: hidden;
   }
   bowery-pill {
-    margin-left: 90px;
+    float: left;
+    margin: 9px 18px 0 18px;
   }
   </style>
   <form id="form">
-    <template if="{{token}}">
-      <input id="token" type="hidden" name="token" value="{{token}}">
-    </template>
-
     <template repeat="{{field in fields}}">
-        <template if="{{field.type == 'hidden'}}">
-          <input id="{{field.name}}" type="{{field.type}}" name="{{field.name}}" value="{{field.value}}">
-        </template>
-
-        <template if="{{field.type != 'hidden'}}">
+      <template if="{{field.type == 'pill'}}">
+        <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
+      </template>
+      <template if="{{field.type != 'pill'}}">
         <div class="field-group">
-            <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
-          <template if="{{field.type == 'pill'}}">
-            <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
-          </template>
-          <template if="{{field.type != 'pill'}}">
-            <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
-          </template>
+          <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
         </div>
       </template>
     </template>
@@ -101,6 +92,7 @@ Polymer({
   postForm: function (e) {
     e.preventDefault()
     var params = {}
+    params.token = this.token
 
     for (var i = 0, field; field = this.fields[i]; i++)
       params[field.name] = this.$[field.name].value
