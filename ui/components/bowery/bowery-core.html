@@ -42,13 +42,13 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <bowery-nav type="header">Bowery</bowery-nav>
 
 <bowery-screen path="/login">
-  <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="email password" sendAs="json">
+  <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
     <a href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/signup">
-  <bowery-form title="signup" endpoint="http://broome.io/developers" fields="name email password" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
+  <bowery-form title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
     <a href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
   </bowery-form>
 </bowery-screen>
@@ -60,12 +60,31 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header">Bowery</bowery-nav>
-  <bowery-form title="Provision" endpoint="http://localhost:32055/apps" fields="name start build size local-path remote-path aws-key aws-secret"></bowery-form>
+  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" token="{{developer.token}}" on-bowery-form-response="{{handleCreateAppAttempt}}"></bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 </template>
 <script>
 Polymer('bowery-core', {
+  loginFields: [
+    {name: 'email'},
+    {name: 'password', type: 'password'}
+  ],
+  signupFields: [
+    {name: 'name'},
+    {name: 'email'},
+    {name: 'password', type: 'password'}
+  ],
+  newAppFields: [
+    {name: 'name'},
+    {name: 'start'},
+    {name: 'build'},
+    {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]},
+    {name: 'remotePath', label: 'Remote Path'},
+    {name: 'localPath', label: 'Local Path'},
+    {name: 'aws_access_key', label: 'AWS Key'},
+    {name: 'aws_secret_key', label: 'AWS Secret'}
+  ],
   ready: function () {
     this.$.analytics.track("Opened App")
 
@@ -75,6 +94,14 @@ Polymer('bowery-core', {
     if (!this.developer.token)
       return this.navigate('/login')
 
+    this.navigate('/apps')
+  },
+  handleCreateAppAttempt: function (e) {
+    var response = e.target.response
+    if (response.status != 'success') {
+      this.$.analytics.track("Failed to Create App", {error: response.error})
+      e.target.feedback = response.error
+    }
     this.navigate('/apps')
   },
   handleLoginAttempt: function (e) {

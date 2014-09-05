@@ -31,6 +31,7 @@
       var response = this.$.ajax.response
       if (response.status == 'found') {
         this.apps = response.applications
+        console.log('apps', response.applications.map(function (a) {return a._id}))
       }
     }
   })

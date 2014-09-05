@@ -13,9 +13,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="bowery-analytics.html">
+<link rel="import" href="bowery-pill.html">
 
 
-<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token">
 <template>
   <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
@@ -38,14 +39,31 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     position: relative;
     overflow: hidden;
   }
+  bowery-pill {
+    margin-left: 90px;
+  }
   </style>
   <form id="form">
-    <!-- TODO (thebyrd) replace with error modal used for everything else. -->
+    <template if="{{token}}">
+      <input id="token" type="hidden" name="token" value="{{token}}">
+    </template>
+
     <template repeat="{{field in fields}}">
-      <div class="field-group">
-        <label for="{{field}}">{{field | makeReadable}}</label>
-        <input id="{{field}}" type="{{field == 'password' ? 'password' : 'text'}}" name="{{field}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
-      </div>
+        <template if="{{field.type == 'hidden'}}">
+          <input id="{{field.name}}" type="{{field.type}}" name="{{field.name}}" value="{{field.value}}">
+        </template>
+
+        <template if="{{field.type != 'hidden'}}">
+        <div class="field-group">
+            <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
+          <template if="{{field.type == 'pill'}}">
+            <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
+          </template>
+          <template if="{{field.type != 'pill'}}">
+            <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+          </template>
+        </div>
+      </template>
     </template>
   </form>
   <div class="extra">
@@ -64,9 +82,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </template>
 <script>
 Polymer({
-  ready: function () {
-    this.fields = this.fields.split(" ")
-    this.type = "login"
+  created: function () {
+    this.fields = []
   },
   makeReadable: function (str) {
     strs = str.replace('-', ' ').replace('_', ' ').split(' ')
@@ -82,8 +99,10 @@ Polymer({
   postForm: function (e) {
     e.preventDefault()
     var params = {}
+
+    alert('token', this.token)
     for (var i = 0, field; field = this.fields[i]; i++)
-      params[field] = this.$.form[field].value
+      params[field.name] = this.$[field.name].value
 
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"
@@ -110,7 +129,6 @@ Polymer({
   },
   trackInput: function (e) {
     if (!e.target.value) return // don't track if they didn't type anything
-
 
     this.$.analytics.track('Entered Input Text', {
       field: e.target.name,

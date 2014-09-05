@@ -1,0 +1,86 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-pill` is a fancy select input field
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<polymer-element name="bowery-pill" attributes="options value">
+  <template>
+    <link rel="stylesheet" href="../../bowery/out.css">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      :host {
+        display: block;
+      }
+      button {
+        background: transparent;
+        text-align: center;
+        line-height: 1;
+        font-size: 14px;
+        border: 0;
+        border-radius: 0;
+        -webkit-appearence: none;
+        outline: none;
+        width: 100%;
+        margin: 0;
+        width: 100%;
+        position: relative;
+        float: left;
+      }
+      button:hover {
+        cursor: pointer;
+      }
+      button.active {
+        border-bottom: 1px solid rgb(26, 23, 24);
+      }
+      .table {
+        width: 100%;
+        display: table;
+        table-layout: fixed;
+        border-collapse: separate;
+        vertical-align: middle;
+        position: relative;
+        vertical-align: middle;
+      }
+      .cell {
+        display: table-cell;
+        float: none;
+        width: 1%;
+        vertical-align: middle;
+      }
+    </style>
+    <div id="table" class="table">
+      <template repeat="{{opt in options}}">
+        <div class="cell">
+          <button class="btn" on-click="{{activate}}">{{opt}}</button>
+        </div>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer('bowery-pill', {
+      created: function () {
+        this.options = []
+      },
+      ready: function (e) {
+        // Set First as Default
+        this.$.table.querySelector('.btn').setAttribute('class', 'btn active')
+      },
+      activate: function (e) {
+        this.value = e.target.innerHTML
+        var els = this.$.table.querySelectorAll('.btn')
+        for (var i = 0, el; el = els[i]; i++)
+          el.setAttribute('class', 'btn')
+
+        e.target.setAttribute('class', 'btn active')
+      }
+    })
+  </script>
+
+</polymer-element>
