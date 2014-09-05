@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header">Bowery</bowery-nav>
-  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}"></bowery-form>
+  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" token="{{developer.token}}" on-bowery-form-response="{{handleCreateAppAttempt}}"></bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 </template>
@@ -79,12 +79,11 @@ Polymer('bowery-core', {
     {name: 'name'},
     {name: 'start'},
     {name: 'build'},
-    {name: 'instance_type', label: 'Size', type: 'pill'},
+    {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]},
     {name: 'remotePath', label: 'Remote Path'},
     {name: 'localPath', label: 'Local Path'},
     {name: 'aws_access_key', label: 'AWS Key'},
-    {name: 'aws_secret_key', label: 'AWS Secret'},
-    {name: 'token', type: 'hidden'}
+    {name: 'aws_secret_key', label: 'AWS Secret'}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -94,8 +93,6 @@ Polymer('bowery-core', {
 
     if (!this.developer.token)
       return this.navigate('/login')
-
-    this.newAppFields[8].value = this.developer.token // ghetto
 
     this.navigate('/apps')
   },

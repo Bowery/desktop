@@ -16,7 +16,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-pill.html">
 
 
-<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token">
 <template>
   <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
@@ -44,7 +44,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   }
   </style>
   <form id="form">
-    <!-- TODO (thebyrd) replace with error modal used for everything else. -->
+    <template if="{{token}}">
+      <input id="token" type="hidden" name="token" value="{{token}}">
+    </template>
+
     <template repeat="{{field in fields}}">
         <template if="{{field.type == 'hidden'}}">
           <input id="{{field.name}}" type="{{field.type}}" name="{{field.name}}" value="{{field.value}}">
@@ -54,7 +57,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <div class="field-group">
             <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
           <template if="{{field.type == 'pill'}}">
-            <bowery-pill id="{{field.name}}" options='["t1.micro", "m1.small", "m1.medium", "m1.large"]' value="{{field.value}}"></bowery-pill>
+            <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value}}"></bowery-pill>
           </template>
           <template if="{{field.type != 'pill'}}">
             <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
@@ -96,6 +99,8 @@ Polymer({
   postForm: function (e) {
     e.preventDefault()
     var params = {}
+
+    alert('token', this.token)
     for (var i = 0, field; field = this.fields[i]; i++)
       params[field.name] = this.$[field.name].value
 
