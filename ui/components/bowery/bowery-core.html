@@ -101,6 +101,7 @@ Polymer('bowery-core', {
     if (response.status != 'success') {
       this.$.analytics.track("Failed to Create App", {error: response.error})
       e.target.feedback = response.error
+      return
     }
     this.navigate('/apps')
   },
