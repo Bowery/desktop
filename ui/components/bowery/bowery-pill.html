@@ -70,7 +70,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       },
       ready: function (e) {
         // Set First as Default
-        this.$.table.querySelector('.btn').setAttribute('class', 'btn active')
+        var el = this.$.table.querySelector('.btn')
+        el.setAttribute('class', 'btn active')
+        this.value = el.innerHTML
       },
       activate: function (e) {
         this.value = e.target.innerHTML

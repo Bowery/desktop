@@ -44,9 +44,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   }
   </style>
   <form id="form">
-    <h1>{{token}}</h1>
     <template repeat="{{field in fields}}">
-      <input type="hidden" id="token" value="{{token}}">
       <div class="field-group">
           <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
         <template if="{{field.type == 'pill'}}">
@@ -93,6 +91,7 @@ Polymer({
   postForm: function (e) {
     e.preventDefault()
     var params = {}
+    params.token = this.token
 
     for (var i = 0, field; field = this.fields[i]; i++)
       params[field.name] = this.$[field.name].value
