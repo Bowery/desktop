@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/schemas"
 )
 
@@ -51,7 +52,7 @@ func DelanceyUpload(app *schemas.Application, file *os.File) error {
 		return err
 	}
 
-	res, err := http.Post("http://"+net.JoinHostPort(app.Location, "32056"), writer.FormDataContentType(), &body)
+	res, err := http.Post("http://"+net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort), writer.FormDataContentType(), &body)
 	if err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func DelanceyUpdate(app *schemas.Application, full, name, status string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(app.Location, "32056"), &body)
+	req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort), &body)
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ func DelanceyCheck(url string) error {
 
 // DelanceyRemove removes an application from it's delancey endpoint.
 func DelanceyRemove(app *schemas.Application) error {
-	url := net.JoinHostPort(app.Location, "32056") + "/?id=" + app.ID
+	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort) + "/?id=" + app.ID
 	req, err := http.NewRequest("DELETE", "http://"+url, nil)
 	if err != nil {
 		return err

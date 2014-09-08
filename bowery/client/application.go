@@ -12,14 +12,16 @@ import (
 )
 
 type ApplicationManager struct {
-	Applications map[string]*schemas.Application
-	Syncer       *Syncer
+	Applications  map[string]*schemas.Application
+	Syncer        *Syncer
+	StreamManager *StreamManager
 }
 
 func NewApplicationManager() *ApplicationManager {
 	return &ApplicationManager{
-		Applications: make(map[string]*schemas.Application),
-		Syncer:       NewSyncer(),
+		Applications:  make(map[string]*schemas.Application),
+		Syncer:        NewSyncer(),
+		StreamManager: NewStreamManager(),
 	}
 }
 
@@ -44,8 +46,8 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		return errors.New("application must have a valid id.")
 	}
 
-	// Initiate file syncing once the agent
-	// becomes available.
+	// Initiate file syncing and stream connection
+	// once the agent becomes available.
 	go func() {
 		for !app.IsSyncAvailable {
 			<-time.After(1 * time.Second)
@@ -60,6 +62,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		log.Println("agent available!")
 
 		am.Syncer.Watch(app)
+		am.StreamManager.Connect(app)
 	}()
 
 	am.Applications[app.ID] = app
@@ -135,6 +138,11 @@ func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error
 	}
 
 	err = am.Syncer.Remove(app)
+	if err != nil {
+		return nil, err
+	}
+
+	err = am.StreamManager.Remove(app)
 	if err != nil {
 		return nil, err
 	}
