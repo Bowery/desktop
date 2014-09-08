@@ -117,9 +117,9 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 		app.LocalPath = changes.LocalPath
 	}
 
-	// todo(steve): update delancey.
-
-	am.Applications[app.ID] = app
+	// Reset the syncer so a upload is done.
+	am.Syncer.Remove(app)
+	am.Syncer.Watch(app)
 	return app, nil
 }
 
