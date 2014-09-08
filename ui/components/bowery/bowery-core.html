@@ -66,9 +66,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-nav type="footer" href="/apps/edit" on-click="{{navigate}}">Edit App</bowery-nav>
 </bowery-screen>
 
+<bowery-screen path="/apps/edit">
+  <bowery-form title="Save" endpoint="/applications/{app._id}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+    <a href="/apps/status" on-click="{{navigate}}">Nevermind. Take me back.</a>
+  </bowery-form>
+</bowery-screen>
+
 <bowery-screen path="/apps/new">
-  <bowery-nav type="header">Bowery</bowery-nav>
-  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}" token="{{developer.token}}"></bowery-form>
+  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}" token="{{developer.token}}">
+    <a href="/apps" on-click="{{navigate}}">I'm lost. Take me home.</a>
+  </bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 <core-ajax id="appAjax" handleAs="json" on-core-response="{{getAppById}}" auto></core-ajax>
@@ -94,12 +101,14 @@ Polymer('bowery-core', {
     {name: 'email'},
     {name: 'password', type: 'password'}
   ],
-  newAppFields: [
+  editAppFields: [
     {name: 'name'},
     {name: 'start'},
     {name: 'build'},
     {name: 'remotePath', label: 'Remote Path'},
-    {name: 'localPath', label: 'Local Path'},
+    {name: 'localPath', label: 'Local Path'}
+  ],
+  newAppFields: [
     {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]},
     {name: 'aws_access_key', label: 'AWS Key'},
     {name: 'aws_secret_key', label: 'AWS Secret'}
