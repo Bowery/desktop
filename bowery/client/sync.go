@@ -334,13 +334,13 @@ func (syncer *Syncer) Watch(app *schemas.Application) {
 
 	// Do the actual event management, and the inital upload.
 	go func() {
-		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-start"}
+		// syncer.Event <- &Event{Application: watcher.Application, Status: "upload-start"}
 		err := watcher.Upload()
 		if err != nil {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-finish"}
+		// syncer.Event <- &Event{Application: watcher.Application, Status: "upload-finish"}
 
 		watcher.Start(syncer.Event, syncer.Error)
 	}()

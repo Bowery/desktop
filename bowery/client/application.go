@@ -48,12 +48,12 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 	// becomes available.
 	go func() {
 		for !app.IsSyncAvailable {
-			<-time.After(5 * time.Second)
+			<-time.After(1 * time.Second)
 			log.Println("checking agent...")
-			addr := fmt.Sprintf("http://%s/%s", net.JoinHostPort(app.Location, "32056"), "healthz")
-			err := DelanceyCheck(addr)
+			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
 			if err == nil {
 				app.IsSyncAvailable = true
+				app.Status = "running"
 			}
 		}
 
