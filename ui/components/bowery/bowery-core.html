@@ -83,7 +83,8 @@ Polymer('bowery-core', {
     {name: 'localPath', label: 'Local Path'},
     {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]},
     {name: 'aws_access_key', label: 'AWS Key'},
-    {name: 'aws_secret_key', label: 'AWS Secret'}
+    {name: 'aws_secret_key', label: 'AWS Secret'},
+    {name: 'token', type: 'hidden'}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -91,9 +92,11 @@ Polymer('bowery-core', {
     this.$.db.load()
     this.developer = this.$.db.value || {}
 
-    if (!this.developer.token)
+    if (!this.developer.token) {
       return this.navigate('/login')
+    }
 
+    this.$.newAppForm.token = this.developer.token
     this.navigate('/apps')
   },
   handleCreateAppAttempt: function (e) {

@@ -11,7 +11,7 @@ pushd "${DIR}/build"
 	grunt download-atom-shell
 popd
 
-if [ ! -d "${DIR}/build/atom-shell/Bowery.app"]; then
+if [ ! -d "${DIR}/build/atom-shell/Bowery.app" ]; then
 	mv "${DIR}/build/atom-shell/Atom.app" "${DIR}/build/atom-shell/Bowery.app"
 fi
 
