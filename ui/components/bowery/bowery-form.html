@@ -110,14 +110,13 @@ Polymer({
     try {
       this.response = JSON.parse(detail.xhr.responseText)
     } catch (e) {
-      console.log(detail.xhr.responseText)
       this.response = {
         status: 'failed',
         error: 'internal server error'
       }
     }
 
-    this.fire('bowery-form-response')
+    this.fire('bowery-form-response', {fields: this.fields})
   },
   trackInput: function (e) {
     if (!e.target.value) return // don't track if they didn't type anything

@@ -126,6 +126,9 @@ Polymer('bowery-core', {
       return this.navigate('/login')
     }
 
+    this.newAppFields[0].value = this.developer.aws_access_key
+    this.newAppFields[1].value = this.developer.aws_access_secret
+
     this.navigate('/apps')
   },
   handleCreateAppAttempt: function (e) {
@@ -138,6 +141,12 @@ Polymer('bowery-core', {
     this.app = response.application
     for (var i = 0, field; field = this.editAppFields[i]; i++)
       field.value = this.app[field.name]
+
+    var key = e.detail.fields[0].value
+    var secret = e.detail.fields[1].value
+
+    this.developer.aws_access_key = key
+    this.developer.aws_access_secret = secret
 
     this.navigate('/apps/edit')
   },
@@ -187,9 +196,21 @@ Polymer('bowery-core', {
     this.$.analytics.track("Failed Signup Attempt", {error: response.error})
     e.target.feedback = response.error
   },
+  parameterize: function (obj) {
+    var out = ""
+    for (var key in obj) {
+      out += key + "=" + obj[key] + "&"
+    }
+    return out
+  },
   deleteApp: function (e) {
     e.preventDefault()
-    this.$.deleteAppAjax.url = "/applications/" + this.app._id + "?token=" + this.developer.token
+    var tokens = {
+      token: this.developer.token,
+      aws_access_key: this.developer.aws_access_key,
+      aws_secret_key: this.developer.aws_access_secret
+    }
+    this.$.deleteAppAjax.url = "/applications/" + this.app._id + "?" + this.parameterize(tokens)
   },
   handleDeleteAppAttempt: function (e) {
     var response = e.target.response
