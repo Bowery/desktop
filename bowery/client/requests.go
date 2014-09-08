@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/sys"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
@@ -96,17 +99,34 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate request.
-	// missingFields :=
-	if reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
-		reqBody.AWSSecretKey == "" || reqBody.Token == "" {
+	missingFields := []string{}
+	if reqBody.InstanceType == "" {
+		missingFields = append(missingFields, "Instance Type")
+	}
+	if reqBody.AWSAccessKey == "" {
+		missingFields = append(missingFields, "AWS Key")
+	}
+	if reqBody.AWSSecretKey == "" {
+		missingFields = append(missingFields, "AWS Secret")
+	}
+
+	if len(missingFields) > 0 {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
-			"error":  "missing fields",
+			"error":  strings.Join(missingFields, ", ") + " are required.",
 		})
 		return
 	}
 
-	//
+	localDir := reqBody.LocalPath
+	reqBody.LocalPath, err = formatLocalDir(localDir)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  fmt.Sprintf("%s is not a valid path.", localDir),
+		})
+		return
+	}
 
 	// Encode request.
 	var data bytes.Buffer
@@ -382,4 +402,21 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
+}
+
+func formatLocalDir(localDir string) (string, error) {
+	if len(localDir) > 0 && localDir[0] == '~' {
+		localDir = filepath.Join(os.Getenv(sys.HomeVar), string(localDir[1:]))
+	}
+	if (len(localDir) > 0 && filepath.Separator == '/' && localDir[0] != '/') ||
+		(filepath.Separator != '/' && filepath.VolumeName(localDir) == "") {
+		localDir = filepath.Join(os.Getenv(sys.HomeVar), localDir)
+	}
+
+	// Validate local path.
+	if stat, err := os.Stat(localDir); os.IsNotExist(err) || !stat.IsDir() {
+		return "", err
+	}
+
+	return localDir, nil
 }
