@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -23,6 +24,17 @@ func main() {
 
 	applicationManager = NewApplicationManager()
 	defer applicationManager.Close()
+
+	go func() {
+		for {
+			select {
+			case ev := <-applicationManager.Syncer.Event:
+				log.Println(ev)
+			case err := <-applicationManager.Syncer.Error:
+				log.Println(err)
+			}
+		}
+	}()
 
 	abs, _ := filepath.Abs("ui/")
 
