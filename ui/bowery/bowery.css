@@ -76,8 +76,6 @@ h4 {
 label {
   float: left;
   margin-right: 9px;
-  top: 19;
-  left: 28;
   position: absolute;
 }
 input {
@@ -93,4 +91,28 @@ input:focus {
 }
 button {
   -webkit-app-region: no-drag;
+  background: transparent;
+  text-align: center;
+  line-height: 1;
+  font-size: 14px;
+  border: 0;
+  border-radius: 0;
+  -webkit-appearence: none;
+  outline: none;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  position: relative;
+  float: left;
+  background: white;
+}
+
+.ok {
+  color: #41C524;
+}
+.error {
+  color: #F64A4D;
+}
+.provisioning {
+  color: #F5AC4E;
 }

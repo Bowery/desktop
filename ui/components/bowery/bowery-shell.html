@@ -1,0 +1,95 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-shell` allows users to interact with their app and get meaningful feedback
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<polymer-element name="bowery-shell" attributes="app">
+  <template>
+    <link rel="stylesheet" href="../../bowery/out.css">
+    <style>
+    .message {
+      margin: 9px 18px;
+    }
+    .executer {
+      padding: 0 18px;
+      margin-bottom: 9px;
+      width: 364px;
+      float: left;
+      position: relative;
+      overflow: hidden;
+    }
+    label {
+      top: 9px;
+      left: 36px;
+    }
+    input {
+      width: 229px;
+      height: 18px;
+      margin-right: 9px;
+      padding: 9px 18px 9px 36px;
+    }
+    button {
+      background: white;
+      width: 72px;
+      height: 36px;
+      float: right;
+      cursor: pointer;
+      padding: 9px;
+    }
+    .logs {
+      background: white;
+      width: 364px;
+      margin: 9px 18px;
+      min-height: 108px;
+      max-height: 234px;
+      overflow: auto;
+    }
+    .extra {
+      margin-left: 18px;
+    }
+    </style>
+    <p class="message">All good in the hood.</p>
+    <div class="executer">
+      <label>></label>
+      <input type="text">
+      <button>RUN</button>
+    </div>
+    <div id="logs" class="logs">
+      <pre>
+[negroni] Completed 200 OK in 1.062925ms
+[negroni] Started GET /applications
+[negroni] Completed 200 OK in 139.604us
+[negroni] Started POST /applications
+[negroni] Completed 400 Bad Request in 37.854us [62057:0906/143534:INFO:CONSOLE(34)] "apps", source: http://localhost:32055/web-services/apps-service.html
+[62057:0906/152033:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options! [62057:0906/182455:WARNING:dns_config_service_posix.cc(292)] Failed to read DnsConfig.
+[62057:0906/182509:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options! [62057:0906/182509:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options!
+[negroni] Completed 200 OK in 1.062925ms
+[negroni] Started GET /applications
+[negroni] Completed 200 OK in 139.604us
+[negroni] Started POST /applications
+[negroni] Completed 400 Bad Request in 37.854us [62057:0906/143534:INFO:CONSOLE(34)] "apps", source: http://localhost:32055/web-services/apps-service.html
+[62057:0906/152033:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options! [62057:0906/182455:WARNING:dns_config_service_posix.cc(292)] Failed to read DnsConfig.
+[62057:0906/182509:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options! [62057:0906/182509:WARNING:dns_config_service_posix.cc(151)] dns_config has unhandled options!
+[negroni] Completed 200 OK in 1.062925ms
+[negroni] Started GET /applications
+[negroni] Completed 200 OK in 139.604us
+      </pre>
+    </div>
+    <div class="extra">
+      <content></content>
+    </div>
+  </template>
+  <script>
+    Polymer('bowery-shell', {
+      ready: function () {
+
+      }
+    })
+  </script>
+
+</polymer-element>
