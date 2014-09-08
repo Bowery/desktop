@@ -87,7 +87,7 @@ Polymer('bowery-core', {
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
-
+    
     this.$.db.load()
     this.developer = this.$.db.value || {}
 

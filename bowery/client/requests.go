@@ -96,6 +96,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate request.
+	// missingFields :=
 	if reqBody.InstanceType == "" || reqBody.AWSAccessKey == "" ||
 		reqBody.AWSSecretKey == "" || reqBody.Token == "" {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
@@ -104,6 +105,8 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	//
 
 	// Encode request.
 	var data bytes.Buffer
