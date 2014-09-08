@@ -6,11 +6,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 `bowery-apps` shows a list of applications and their states.
 -->
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../../web-services/apps-service.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="bowery-card.html">
 <link rel="import" href="bowery-modal.html">
 
-<polymer-element name="bowery-apps" attributes="token" noscript>
+<polymer-element name="bowery-apps" attributes="token">
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
@@ -31,36 +31,60 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       label {
         color: rgb(245, 245, 245);
       }
+      bowery-card {
+        position: relative;
+      }
+      .status {
+        position: absolute;
+        right: 18px;
+        top: 18px;
+        text-align: right;
+        text-transform: uppercase;
+      }
+      bowery-card:hover .status {
+        text-decoration: underline;
+      }
 
     </style>
-    <apps-service token="{{token}}" apps="{{applications}}"></apps-service>
     <div id="container" class="">
       <template repeat="{{app in applications}}">
-        <bowery-card data-id="{{app._id}}">
+        <bowery-card data-id="{{app._id}}" on-click="{{goToStatus}}">
           <h4>{{app.name}}</h4>
           <span>{{app.location}}</span>
-          <bowery-modal style="right: 27px; top: 27px;" type="edit">
-            <h1>Edit</h1>
-            <h3>{{app.name}}</h3>
-            <div class="field-group">
-              <label for="start">Start:</label>
-              <input id="start" type="text" name="start" value="{{app.start}}">
-            </div>
-            <div class="field-group">
-              <label for="build">Build:</label>
-              <input id="build" type="text" name="build" value="{{app.build}}">
-            </div>
-            <div class="field-group">
-              <label for="remotePath">Remote Path:</label>
-              <input id="remotePath" type="text" name="remotePath" value="{{app.remotePath}}">
-            </div>
-            <div class="field-group">
-              <label for="localPath">Local Path:</label>
-              <input id="localPath" type="text" name="" value="{{app.localPath}}">
-            </div>
-          </bowery-modal>
+          <template if="{{app.status == 'running'}}">
+            <span class="status ok">ok</span>
+          </template>
+          <template if="{{app.status == 'provisioning'}}">
+            <span class="status provisioning">provisioning</span>
+          </template>
+          <template if="{{app.status == 'error'}}">
+            <span class="status error">error</span>
+          </template>
         </bowery-card>
       </template>
     </div>
+
+  <core-ajax id="ajax"
+    auto
+    url="/applications?token={{token}}"
+    on-core-response="{{appsLoaded}}"
+    handleAs="json">
+  </core-ajax>
   </template>
+  <script>
+  Polymer('bowery-apps', {
+    created: function () {
+      this.applications = []
+    },
+    appsLoaded: function () {
+      var response = this.$.ajax.response
+      if (response.status == 'found')
+        this.applications = response.applications
+    },
+    goToStatus: function (e) {
+      this.fire('bowery-navigate', {path: '/apps/status', app: e.target.dataset.id || e.target.parentNode.dataset.id})
+    }
+
+  })
+  </script>
 </polymer-element>

@@ -13,6 +13,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-apps.html">
 <link rel="import" href="bowery-form.html">
 <link rel="import" href="bowery-modal.html">
+<link rel="import" href="bowery-shell.html">
 <link rel="import" href="bowery-analytics.html">
 <link rel="import" href="../core-localstorage/core-localstorage.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
@@ -55,7 +56,14 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps">
   <bowery-apps token="{{developer.token}}"></bowery-apps>
-  <bowery-nav type="footer" on-click="{{goNewApp}}">Create App</bowery-nav>
+  <bowery-nav type="footer" href="/apps/new" on-click="{{navigate}}">Create App</bowery-nav>
+</bowery-screen>
+
+<bowery-screen path="/apps/status">
+  <bowery-shell app="{{app}}">
+    <a href="/apps" on-click="{{navigate}}">I'm over it. Take me home.</a>
+  </bowery-shell>
+  <bowery-nav type="footer" href="/apps/edit" on-click="{{navigate}}">Edit App</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/new">
@@ -63,9 +71,20 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}" token="{{developer.token}}"></bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
+<core-ajax id="appAjax" handleAs="json" on-core-response="{{getAppById}}" auto></core-ajax>
 </template>
 <script>
 Polymer('bowery-core', {
+  created: function () {
+    // The current app being shown
+    this.app = {}
+
+    // All of the current users application
+    this.applications = []
+
+    // The current user
+    this.developer = {}
+  },
   loginFields: [
     {name: 'email'},
     {name: 'password', type: 'password'}
@@ -87,7 +106,8 @@ Polymer('bowery-core', {
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
-    
+    window.addEventListener('bowery-navigate', this.onNavigate.bind(this))
+
     this.$.db.load()
     this.developer = this.$.db.value || {}
 
@@ -143,12 +163,6 @@ Polymer('bowery-core', {
     this.$.analytics.track("Failed Signup Attempt", {error: response.error})
     e.target.feedback = response.error
   },
-  goNewApp: function (e) {
-    e.preventDefault()
-
-    this.$.analytics.track("Opened Create App Screen")
-    this.navigate('/apps/new')
-  },
   navigate: function (path) {
     if (typeof path != "string") {
       var e = path
@@ -158,6 +172,20 @@ Polymer('bowery-core', {
     this.$.analytics.track('Navigated to ' + path)
 
     this.fire('bowery-navigate', {path: path})
+  },
+
+  /**
+   * A hack for passing params between screens.
+   * TODO (thebyrd) replace with something that's easier to debug
+   */
+  onNavigate: function (e) {
+    if (e.detail.app)
+      this.$.appAjax.url = '/applications/' + e.detail.app
+  },
+  getAppById: function (e) {
+    var response = e.target.response
+    if (response.status == 'found')
+      this.app = response.application
   }
 })
 </script>

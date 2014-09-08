@@ -42,8 +42,6 @@ Polymer({
       this.$.content.style.display = 'block'
 
     window.addEventListener('bowery-navigate', this.navigate.bind(this))
-    window.addEventListener('bowery-modal-open', this.disableScroll.bind(this))
-    window.addEventListener('bowery-modal-close', this.enableScroll.bind(this))
   },
   navigate: function (e) {
     // If you wanted to use this on the web, this line would enable push state
@@ -54,18 +52,6 @@ Polymer({
     } else {
       this.$.content.style.display = 'block'
     }
-  },
-  disableScroll: function () {
-    // Only matters for active screen
-    if (this.path != this.globalPath) return
-
-    this.$.content.style.overflowY = 'hidden'
-  },
-  enableScroll: function () {
-    // Only matters for active screen
-    if (this.path != this.globalPath) return
-
-    this.$.content.style.overflowY = 'auto'
   }
 })
 </script>
