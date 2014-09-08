@@ -119,13 +119,15 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	localDir := reqBody.LocalPath
-	reqBody.LocalPath, err = formatLocalDir(localDir)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  fmt.Sprintf("%s is not a valid path.", localDir),
-		})
-		return
+	if localDir != "" {
+		reqBody.LocalPath, err = formatLocalDir(localDir)
+		if err != nil {
+			r.JSON(rw, http.StatusBadRequest, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  fmt.Sprintf("%s is not a valid path.", localDir),
+			})
+			return
+		}
 	}
 
 	// Encode request.
@@ -240,6 +242,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
 		})
+		return
 	}
 
 	var reqBody schemas.Application
@@ -340,7 +343,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 
-	token := req.FormValue("token")
+	token := req.URL.Query().Get("token")
 	if token == "" {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -366,6 +369,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
+		return
 	}
 	defer res.Body.Close()
 

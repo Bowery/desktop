@@ -19,11 +19,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         display: block;
         height: 36px;
       }
+      button {
+        color: #DCDDDF;
+        font-size: 12px;
+        border-bottom: 2px solid #DCDDDF; // hipster buttons
+      }
       button:hover {
         cursor: pointer;
       }
       button.active {
-        border-bottom: 1px solid rgb(26, 23, 24);
+        color: rgb(109, 109, 111);
       }
       .table {
         width: 100%;
@@ -39,6 +44,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         float: none;
         width: 1%;
         vertical-align: middle;
+        padding-right: 18px;
+      }
+      .cell:last-child {
+        padding-right: 0;
       }
     </style>
     <div id="table" class="table">

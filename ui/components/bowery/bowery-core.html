@@ -67,8 +67,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps/edit">
-  <bowery-form title="Save" endpoint="/applications/{app._id}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
-    <a href="/apps/status" on-click="{{navigate}}">Nevermind. Take me back.</a>
+  <bowery-form title="Save" endpoint="/applications/{{app._id}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+    <a href="/apps/status" on-click="{{navigate}}">Nevermind. Take me back.</a> |
+    <a href="" on-click="{{deleteApp}}" class="error">Delete This App</a>
   </bowery-form>
 </bowery-screen>
 
@@ -79,6 +80,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 <core-ajax id="appAjax" handleAs="json" on-core-response="{{getAppById}}" auto></core-ajax>
+<core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
 <script>
 Polymer('bowery-core', {
@@ -109,9 +111,9 @@ Polymer('bowery-core', {
     {name: 'localPath', label: 'Local Path'}
   ],
   newAppFields: [
-    {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]},
     {name: 'aws_access_key', label: 'AWS Key'},
-    {name: 'aws_secret_key', label: 'AWS Secret'}
+    {name: 'aws_secret_key', label: 'AWS Secret'},
+    {name: 'instance_type', label: 'Size', type: 'pill', options: ["m1.small", "m1.medium", "m1.large"]}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -130,6 +132,19 @@ Polymer('bowery-core', {
     var response = e.target.response
     if (response.status != 'success') {
       this.$.analytics.track("Failed to Create App", {error: response.error})
+      e.target.feedback = response.error
+      return
+    }
+    this.app = response.application
+    for (var i = 0, field; field = this.editAppFields[i]; i++)
+      field.value = this.app[field.name]
+
+    this.navigate('/apps/edit')
+  },
+  handleEditAppAttempt: function (e) {
+    var response = e.target.response
+    if (response.status != 'success') {
+      this.$.analytics.track("Failed to Edit App", {error: response.error})
       e.target.feedback = response.error
       return
     }
@@ -172,6 +187,17 @@ Polymer('bowery-core', {
     this.$.analytics.track("Failed Signup Attempt", {error: response.error})
     e.target.feedback = response.error
   },
+  deleteApp: function (e) {
+    e.preventDefault()
+    this.$.deleteAppAjax.url = "/applications/" + this.app._id + "?token=" + this.developer.token
+  },
+  handleDeleteAppAttempt: function (e) {
+    var response = e.target.response
+    if (response.status == 'success')
+      return this.navigate('/apps')
+
+    alert('unable to delete ')
+  },
   navigate: function (path) {
     if (typeof path != "string") {
       var e = path
@@ -193,8 +219,11 @@ Polymer('bowery-core', {
   },
   getAppById: function (e) {
     var response = e.target.response
-    if (response.status == 'found')
+    if (response.status == 'found') {
       this.app = response.application
+      for (var i = 0, field; field = this.editAppFields[i]; i++)
+        field.value = this.app[field.name]
+    }
   }
 })
 </script>
