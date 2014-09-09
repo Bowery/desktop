@@ -57,6 +57,7 @@ type applicationReq struct {
 	AMI          string `json:"ami"`
 	EnvID        string `json:"envID"`
 	Token        string `json:"token"`
+	Location     string `json:"location"`
 	InstanceType string `json:"instance_type"`
 	AWSAccessKey string `json:"aws_access_key"`
 	AWSSecretKey string `json:"aws_secret_key"`
@@ -261,22 +262,13 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	token := req.FormValue("token")
-	if token == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  "token required",
-		})
-		return
-	}
 
-	var reqBody schemas.Application
+	var reqBody applicationReq
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"token": token,
-			"id":    id,
+			"id": id,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -285,7 +277,25 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	app, err := applicationManager.UpdateByID(id, &reqBody)
+	token := reqBody.Token
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	changes := &schemas.Application{
+		Name:       reqBody.Name,
+		Location:   reqBody.Location,
+		Start:      reqBody.Start,
+		Build:      reqBody.Build,
+		RemotePath: reqBody.RemotePath,
+		LocalPath:  reqBody.LocalPath,
+	}
+
+	app, err := applicationManager.UpdateByID(id, changes)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"token":   token,
@@ -307,7 +317,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		Build:      app.Start,
 		RemotePath: app.RemotePath,
 		LocalPath:  app.LocalPath,
-		Token:      token,
+		Token:      reqBody.Token,
 	}
 
 	encoder := json.NewEncoder(&body)
