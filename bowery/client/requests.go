@@ -45,6 +45,7 @@ var Routes = []*Route{
 	&Route{"POST", "/applications/{id}", updateApplicationHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
+	&Route{"GET", "/_/sse/{id}", sseHandler},
 }
 
 var r = render.New(render.Options{
@@ -56,6 +57,7 @@ type applicationReq struct {
 	AMI          string `json:"ami"`
 	EnvID        string `json:"envID"`
 	Token        string `json:"token"`
+	Location     string `json:"location"`
 	InstanceType string `json:"instance_type"`
 	AWSAccessKey string `json:"aws_access_key"`
 	AWSSecretKey string `json:"aws_secret_key"`
@@ -260,22 +262,13 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	token := req.FormValue("token")
-	if token == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  "token required",
-		})
-		return
-	}
 
-	var reqBody schemas.Application
+	var reqBody applicationReq
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"token": token,
-			"id":    id,
+			"id": id,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -284,7 +277,25 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	app, err := applicationManager.UpdateByID(id, &reqBody)
+	token := reqBody.Token
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	changes := &schemas.Application{
+		Name:       reqBody.Name,
+		Location:   reqBody.Location,
+		Start:      reqBody.Start,
+		Build:      reqBody.Build,
+		RemotePath: reqBody.RemotePath,
+		LocalPath:  reqBody.LocalPath,
+	}
+
+	app, err := applicationManager.UpdateByID(id, changes)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"token":   token,
@@ -306,7 +317,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		Build:      app.Start,
 		RemotePath: app.RemotePath,
 		LocalPath:  app.LocalPath,
-		Token:      token,
+		Token:      reqBody.Token,
 	}
 
 	encoder := json.NewEncoder(&body)
@@ -500,6 +511,43 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
+}
+
+func sseHandler(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	f, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "sse not unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	messageChan := make(chan map[string]interface{})
+	ssePool.newClients <- messageChan
+	defer func() {
+		ssePool.defunctClients <- messageChan
+	}()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	for i := 0; i < 10; i++ {
+		msg := <-messageChan
+
+		if msg["appID"] != id {
+			return
+		}
+
+		data, err := json.Marshal(msg)
+		if err != nil {
+			return
+		}
+
+		fmt.Fprintf(w, "data: %v\n\n", string(data))
+		f.Flush()
+	}
 }
 
 func formatLocalDir(localDir string) (string, error) {

@@ -49,7 +49,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 	// Initiate file syncing and stream connection
 	// once the agent becomes available.
 	go func() {
-		for !app.IsSyncAvailable {
+		for app != nil && !app.IsSyncAvailable {
 			<-time.After(1 * time.Second)
 			log.Println("checking agent...")
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
