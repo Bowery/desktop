@@ -134,6 +134,8 @@ Polymer('bowery-core', {
   handleCreateAppAttempt: function (e) {
     var response = e.target.response
     if (response.status != 'success') {
+      if (response.error == "EOF") return
+
       this.$.analytics.track("Failed to Create App", {error: response.error})
       e.target.feedback = response.error
       return
@@ -153,6 +155,8 @@ Polymer('bowery-core', {
   handleEditAppAttempt: function (e) {
     var response = e.target.response
     if (response.status != 'success') {
+      if (response.error == "EOF") return
+
       this.$.analytics.track("Failed to Edit App", {error: response.error})
       e.target.feedback = response.error
       return
