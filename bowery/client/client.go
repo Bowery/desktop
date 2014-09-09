@@ -50,6 +50,8 @@ func main() {
 		route.HandlerFunc(r.Handler)
 	}
 
+	go ssePool.run()
+
 	app := negroni.Classic()
 	app.UseHandler(&SlashHandler{router})
 	app.Run(port)

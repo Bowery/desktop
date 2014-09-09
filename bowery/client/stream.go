@@ -122,6 +122,7 @@ func (s *Stream) Start() {
 		if len(string(data[:n])) > 0 {
 			sMsg := map[string]interface{}{}
 			json.Unmarshal(data[:n], &sMsg)
+			sMsg["appID"] = s.application.ID
 			switch sMsg["type"] {
 			// todo(steve): add plugin errors.
 			// case "plugin_error":
@@ -132,7 +133,7 @@ func (s *Stream) Start() {
 				return
 			}
 
-			// wsPool.broadcast <- sMsg
+			ssePool.messages <- sMsg
 		}
 	}
 }

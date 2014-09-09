@@ -208,7 +208,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// when it is available.
 	app := resBody.Application
 	go func() {
-		for app.Status != "running" {
+		for app != nil && app.Status != "running" {
 			<-time.After(5 * time.Second)
 			addr := fmt.Sprintf("%s/applications/%s", config.KenmareAddr, app.ID)
 			res, err := http.Get(addr)
@@ -396,7 +396,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	r.JSON(rw, http.StatusBadRequest, map[string]interface{}{
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"application": app,
 	})
@@ -535,6 +535,7 @@ func sseHandler(w http.ResponseWriter, req *http.Request) {
 
 	for i := 0; i < 10; i++ {
 		msg := <-messageChan
+		log.Println(msg)
 
 		if msg["appID"] != id {
 			return
