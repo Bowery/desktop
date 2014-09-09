@@ -55,7 +55,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps">
-  <bowery-apps token="{{developer.token}}"></bowery-apps>
+  <bowery-apps applications="{{applications}}"></bowery-apps>
   <bowery-nav type="footer" href="/apps/new" on-click="{{navigate}}">Create App</bowery-nav>
 </bowery-screen>
 
@@ -80,6 +80,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 <core-ajax id="appAjax" handleAs="json" on-core-response="{{getAppById}}" auto></core-ajax>
+<core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
 <script>
@@ -215,6 +216,14 @@ Polymer('bowery-core', {
       aws_secret_key: this.developer.aws_access_secret
     }
     this.$.deleteAppAjax.url = "/applications/" + this.app._id + "?" + this.parameterize(tokens)
+    this.$.appsAjax.params = {cachebuster: Date.now()}
+  },
+  getApps: function (e, detail) {
+    var r = JSON.parse(detail.response)
+    if (r.status == "found")
+      this.applications = r.applications
+    else
+      this.logout()
   },
   handleDeleteAppAttempt: function (e) {
     var response = e.target.response
@@ -232,6 +241,11 @@ Polymer('bowery-core', {
     this.$.analytics.track('Navigated to ' + path)
 
     this.fire('bowery-navigate', {path: path})
+  },
+  logout: function () {
+    this.developer = {}
+    this.$.db.save()
+    this.navigate('/login')
   },
 
   /**

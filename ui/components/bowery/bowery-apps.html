@@ -10,7 +10,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-card.html">
 <link rel="import" href="bowery-modal.html">
 
-<polymer-element name="bowery-apps" attributes="token">
+<polymer-element name="bowery-apps" attributes="applications">
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
@@ -50,7 +50,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       <template repeat="{{app in applications}}">
         <bowery-card data-id="{{app._id}}" on-click="{{goToStatus}}">
           <h4>{{app.name}}</h4>
-          <span>{{app.location}}</span>
+          <span>{{app.location || 'Waiting on AWS for ip address'}}</span>
           <template if="{{app.status == 'running'}}">
             <span class="status ok">ok</span>
           </template>
@@ -64,27 +64,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </template>
     </div>
 
-  <core-ajax id="ajax"
-    auto
-    url="/applications?token={{token}}"
-    on-core-response="{{appsLoaded}}"
-    handleAs="json">
-  </core-ajax>
   </template>
   <script>
   Polymer('bowery-apps', {
     created: function () {
       this.applications = []
     },
-    appsLoaded: function () {
-      var response = this.$.ajax.response
-      if (response.status == 'found')
-        this.applications = response.applications
-    },
     goToStatus: function (e) {
       this.fire('bowery-navigate', {path: '/apps/status', app: e.target.dataset.id || e.target.parentNode.dataset.id})
     }
-
   })
   </script>
 </polymer-element>
