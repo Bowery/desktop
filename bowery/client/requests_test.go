@@ -11,10 +11,12 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
+	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/schemas"
 )
 
 func init() {
+	rollbarC = rollbar.NewClient("", "testing")
 	applicationManager = NewApplicationManager()
 	defer applicationManager.Close()
 }
@@ -57,6 +59,7 @@ func TestCreateApplicationHandlerSuccessful(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		t.Error("request failed with non 200 status code.")
@@ -92,6 +95,7 @@ func TestCreateApplicationHandlerMissingFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusBadRequest {
 		t.Error("request did not fail as expected.")

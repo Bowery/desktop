@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/Bowery/gopackages/config"
+	"github.com/Bowery/gopackages/rollbar"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
@@ -14,6 +16,7 @@ var (
 	env                string
 	port               string
 	applicationManager *ApplicationManager
+	rollbarC           *rollbar.Client
 )
 
 func main() {
@@ -21,6 +24,7 @@ func main() {
 	flag.StringVar(&port, "port", ":32055", "Port to listen on.")
 	flag.Parse()
 
+	rollbarC = rollbar.NewClient(config.RollbarToken, env)
 	applicationManager = NewApplicationManager()
 	defer applicationManager.Close()
 
