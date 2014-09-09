@@ -79,7 +79,7 @@ type dataProcessor func(*Stream, []byte) ([]byte, error)
 func (s *Stream) Start() {
 	var err error
 	for {
-		log.Println("Attempting to connect.")
+		log.Println("attempting to connect to tcp")
 		port := config.BoweryAgentProdLogPort
 		log.Println(fmt.Sprintf("remote addr: %v, logport: %v", s.application.Location, port))
 		s.conn, err = net.Dial("tcp", s.application.Location+":"+port)
@@ -92,7 +92,7 @@ func (s *Stream) Start() {
 				}
 			}
 		}
-		log.Println("Successfully connected")
+		log.Println("successfully connected to tcp")
 		break
 	}
 	for {
@@ -131,8 +131,8 @@ func (s *Stream) Start() {
 			default:
 				return
 			}
-			// todo(steve): add web sockets.
-			// wsPool.broadcast <- msg
+
+			// wsPool.broadcast <- sMsg
 		}
 	}
 }

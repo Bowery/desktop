@@ -45,6 +45,7 @@ var Routes = []*Route{
 	&Route{"POST", "/applications/{id}", updateApplicationHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
+	&Route{"GET", "/_/sse/{id}", sseHandler},
 }
 
 var r = render.New(render.Options{
@@ -500,6 +501,43 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
+}
+
+func sseHandler(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	f, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "sse not unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	messageChan := make(chan map[string]interface{})
+	ssePool.newClients <- messageChan
+	defer func() {
+		ssePool.defunctClients <- messageChan
+	}()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	for i := 0; i < 10; i++ {
+		msg := <-messageChan
+
+		if msg["appID"] != id {
+			return
+		}
+
+		data, err := json.Marshal(msg)
+		if err != nil {
+			return
+		}
+
+		fmt.Fprintf(w, "data: %v\n\n", string(data))
+		f.Flush()
+	}
 }
 
 func formatLocalDir(localDir string) (string, error) {

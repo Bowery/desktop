@@ -53,6 +53,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 			<-time.After(1 * time.Second)
 			log.Println("checking agent...")
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
+			// log.Println(err)
 			if err == nil {
 				app.IsSyncAvailable = true
 				app.Status = "running"
