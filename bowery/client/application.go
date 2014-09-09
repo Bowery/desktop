@@ -107,12 +107,6 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 	if changes.Location != "" {
 		app.Location = changes.Location
 	}
-	if changes.Start != "" {
-		app.Start = changes.Start
-	}
-	if changes.Build != "" {
-		app.Build = changes.Build
-	}
 	if changes.RemotePath != "" {
 		app.RemotePath = changes.RemotePath
 	}
@@ -120,9 +114,17 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 		app.LocalPath = changes.LocalPath
 	}
 
+	// Empty commands are ok.
+	app.Start = changes.Start
+	app.Build = changes.Build
+
 	// Reset the syncer so a upload is done.
 	am.Syncer.Remove(app)
 	am.Syncer.Watch(app)
+
+	// Reset the log manager.
+	am.StreamManager.Remove(app)
+	am.StreamManager.Connect(app)
 	return app, nil
 }
 
