@@ -255,6 +255,9 @@ Polymer('bowery-core', {
   onNavigate: function (e) {
     if (e.detail.app)
       this.$.appAjax.url = '/applications/' + e.detail.app
+
+    if (e.detail.path == '/apps')
+      this.$.appsAjax.params = {cacheBust: Date.now()}
   },
   getAppById: function (e) {
     var response = e.target.response
