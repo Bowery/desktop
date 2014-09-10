@@ -54,10 +54,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <bowery-card data-id="{{app._id}}" on-click="{{goToStatus}}">
           <h4>{{app.name}}</h4>
           <span class="unclickable">{{app.location || 'Waiting on AWS for ip address'}}</span>
-          <template if="{{app.status == 'running'}}">
+          <template if="{{app.status == 'running' && app.location}}">
             <span class="status ok">ok</span>
           </template>
-          <template if="{{app.status == 'provisioning'}}">
+          <template if="{{app.status == 'provisioning' || !app.location}}">
             <span class="status provisioning">provisioning</span>
           </template>
           <template if="{{app.status == 'error'}}">
