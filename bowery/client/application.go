@@ -56,6 +56,12 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 			if err == nil {
 				app.IsSyncAvailable = true
 				app.Status = "running"
+				msg := map[string]interface{}{
+					"appID":   app.ID,
+					"type":    "status",
+					"message": app.Status,
+				}
+				ssePool.messages <- msg
 			}
 		}
 
