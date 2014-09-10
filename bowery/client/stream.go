@@ -105,7 +105,9 @@ func (s *Stream) Start() {
 		n, err := s.conn.Read(data)
 		if err != nil && err != io.EOF {
 			for {
-				s.conn.Close()
+				if s.conn != nil {
+					s.conn.Close()
+				}
 				s.conn, err = net.Dial("tcp", s.application.Location+":"+config.BoweryAgentProdLogPort)
 				if err != nil {
 					if opError, ok := err.(*net.OpError); ok {
