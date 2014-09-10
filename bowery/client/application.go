@@ -78,18 +78,27 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 func (am *ApplicationManager) GetAll(token string) ([]*schemas.Application, error) {
 	// Only fetch applications if this is the first load.
 	// todo(steve): do this better.
+	appsArray := []*schemas.Application{}
 	if len(am.Applications) == 0 {
 		if err := am.load(token); err != nil {
 			return nil, err
 		}
+
+		for _, a := range am.Applications {
+			appsArray = append(appsArray, a)
+		}
+	} else {
+		apps, err := GetApplications(token)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, a := range apps {
+			appsArray = append(appsArray, a)
+		}
 	}
 
-	apps := []*schemas.Application{}
-	for _, a := range am.Applications {
-		apps = append(apps, a)
-	}
-
-	return apps, nil
+	return appsArray, nil
 }
 
 func (am *ApplicationManager) GetByID(id string) (*schemas.Application, error) {
