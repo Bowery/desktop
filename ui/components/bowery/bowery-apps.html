@@ -44,13 +44,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       bowery-card:hover {
         cursor: pointer;
       }
+      .unclickable {
+        cursor: text;
+      }
 
     </style>
     <div id="container" class="">
       <template repeat="{{app in applications}}">
         <bowery-card data-id="{{app._id}}" on-click="{{goToStatus}}">
           <h4>{{app.name}}</h4>
-          <span>{{app.location || 'Waiting on AWS for ip address'}}</span>
+          <span class="unclickable">{{app.location || 'Waiting on AWS for ip address'}}</span>
           <template if="{{app.status == 'running'}}">
             <span class="status ok">ok</span>
           </template>
@@ -71,6 +74,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       this.applications = []
     },
     goToStatus: function (e) {
+      if (e.target.className == 'unclickable')
+        return
+
       this.fire('bowery-navigate', {path: '/apps/status', app: e.target.dataset.id || e.target.parentNode.dataset.id})
     }
   })
