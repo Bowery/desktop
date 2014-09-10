@@ -32,6 +32,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"POST"}, UploadServiceHandler},
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
+	&Route{"/command", []string{"POST"}, RunCommandHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
 	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
@@ -250,6 +251,52 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Body["status"] = "removed"
+	res.Send(http.StatusOK)
+}
+
+// POST /command, Run a command.
+func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+
+	body := new(runCmdReq)
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(body)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	// Validate body.
+	missingFields := make([]string, 0)
+	if body.AppID == "" {
+		missingFields = append(missingFields, "appID")
+	}
+	if body.Cmd == "" {
+		missingFields = append(missingFields, "cmd")
+	}
+
+	if len(missingFields) > 0 {
+		res.Body["error"] = "Fields " + strings.Join(missingFields, ", ") + " are required."
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	app := Applications[body.AppID]
+	if app == nil {
+		res.Body["error"] = fmt.Sprintf("no app exists with id %s", body.AppID)
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	cmd := parseCmd(body.Cmd, app.Path, app.StdoutWriter, app.StderrWriter)
+	go func() {
+		if err := cmd.Run(); err != nil {
+			app.StderrWriter.Write([]byte(err.Error()))
+		}
+	}()
+
+	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
 }
 

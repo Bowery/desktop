@@ -11,6 +11,11 @@ import (
 	"github.com/Bowery/gopackages/sys"
 )
 
+type runCmdReq struct {
+	AppID string `json:"appId"`
+	Cmd   string `json:"cmd"`
+}
+
 // Application defines an application.
 type Application struct {
 	// Unique identifier.
