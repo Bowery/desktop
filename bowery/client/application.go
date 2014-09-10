@@ -49,7 +49,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 	// Initiate file syncing and stream connection
 	// once the agent becomes available.
 	go func() {
-		for app != nil && !app.IsSyncAvailable {
+		for app != nil && !app.IsSyncAvailable && app.Location != "" {
 			<-time.After(1 * time.Second)
 			log.Println("checking agent...")
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
@@ -140,12 +140,7 @@ func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error
 		return nil, fmt.Errorf("no app with id %s exists.", id)
 	}
 
-	err := DelanceyRemove(app)
-	if err != nil {
-		return nil, err
-	}
-
-	err = am.Syncer.Remove(app)
+	err := am.Syncer.Remove(app)
 	if err != nil {
 		return nil, err
 	}
