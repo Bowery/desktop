@@ -129,13 +129,12 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	localDir := reqBody.LocalPath
-	if localDir != "" {
-		reqBody.LocalPath, err = formatLocalDir(localDir)
+	if reqBody.LocalPath != "" {
+		_, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
 			r.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
-				"error":  fmt.Sprintf("%s is not a valid path.", localDir),
+				"error":  fmt.Sprintf("%s is not a valid path.", reqBody.LocalPath),
 			})
 			return
 		}
@@ -297,6 +296,17 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"error":  "token required",
 		})
 		return
+	}
+
+	if reqBody.LocalPath != "" {
+		_, err = formatLocalDir(reqBody.LocalPath)
+		if err != nil {
+			r.JSON(rw, http.StatusBadRequest, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  fmt.Sprintf("%s is not a valid path.", reqBody.LocalPath),
+			})
+			return
+		}
 	}
 
 	changes := &schemas.Application{
