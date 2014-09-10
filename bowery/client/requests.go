@@ -46,6 +46,7 @@ var Routes = []*Route{
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
 	&Route{"POST", "/commands", createCommandHandler},
+	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse/{id}", sseHandler},
 }
 
@@ -573,13 +574,22 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func sseHandler(w http.ResponseWriter, req *http.Request) {
+// logoutHandler clears the current application state.
+func logoutHandler(rw http.ResponseWriter, req *http.Request) {
+	applicationManager.Empty()
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
+}
+
+func sseHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 
-	f, ok := w.(http.Flusher)
+	f, ok := rw.(http.Flusher)
 	if !ok {
-		http.Error(w, "sse not unsupported", http.StatusInternalServerError)
+		http.Error(rw, "sse not unsupported", http.StatusInternalServerError)
 		return
 	}
 
@@ -589,9 +599,9 @@ func sseHandler(w http.ResponseWriter, req *http.Request) {
 		ssePool.defunctClients <- messageChan
 	}()
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
+	rw.Header().Set("Content-Type", "text/event-stream")
+	rw.Header().Set("Cache-Control", "no-cache")
+	rw.Header().Set("Connection", "keep-alive")
 
 	for i := 0; i < 10; i++ {
 		msg := <-messageChan
@@ -606,7 +616,7 @@ func sseHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		fmt.Fprintf(w, "data: %v\n\n", string(data))
+		fmt.Fprintf(rw, "data: %v\n\n", string(data))
 		f.Flush()
 	}
 }

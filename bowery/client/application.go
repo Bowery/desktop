@@ -156,3 +156,12 @@ func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error
 func (am *ApplicationManager) Close() error {
 	return am.Syncer.Close()
 }
+
+func (am *ApplicationManager) Empty() {
+	for _, app := range am.Applications {
+		am.Syncer.Remove(app)
+		am.StreamManager.Remove(app)
+	}
+
+	am.Applications = make(map[string]*schemas.Application)
+}
