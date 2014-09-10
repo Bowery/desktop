@@ -45,6 +45,7 @@ var Routes = []*Route{
 	&Route{"POST", "/applications/{id}", updateApplicationHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
+	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"GET", "/_/sse/{id}", sseHandler},
 }
 
@@ -52,6 +53,12 @@ var r = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 })
+
+type commandReq struct {
+	AppID string `json:"appID"`
+	Cmd   string `json:"cmd"`
+	Token string `json:"token"`
+}
 
 type applicationReq struct {
 	AMI          string `json:"ami"`
@@ -502,6 +509,60 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token": token,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
+}
+
+func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
+	var reqBody commandReq
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{})
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	token := reqBody.Token
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	if reqBody.Cmd == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "non-empty command required",
+		})
+		return
+	}
+
+	app, err := applicationManager.GetByID(reqBody.AppID)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// todo(larz): send command to agent, see delancey.go:218.
+	err = DelanceyExec(app, reqBody.Cmd)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})

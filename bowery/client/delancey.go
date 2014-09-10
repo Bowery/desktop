@@ -214,3 +214,8 @@ func DelanceyRemove(app *schemas.Application) error {
 
 	return removeRes
 }
+
+func DelanceyExec(app *schemas.Application, cmd string) error {
+	// todo(larz): send request to agent.
+	return nil
+}
