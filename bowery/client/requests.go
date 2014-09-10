@@ -229,11 +229,16 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			decoder = json.NewDecoder(res.Body)
 			decoder.Decode(&resBody)
 
-			log.Println("provisioning status: " + resBody.Application.Status)
-
 			if resBody.Application != nil {
+				log.Println("provisioning status: " + resBody.Application.Status)
 				app = resBody.Application
 				applicationManager.UpdateByID(app.ID, app)
+				msg := map[string]interface{}{
+					"appID":   app.ID,
+					"type":    "status",
+					"message": app.Status,
+				}
+				ssePool.messages <- msg
 			}
 		}
 	}()
