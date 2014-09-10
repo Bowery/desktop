@@ -216,6 +216,37 @@ func DelanceyRemove(app *schemas.Application) error {
 }
 
 func DelanceyExec(app *schemas.Application, cmd string) error {
-	// todo(larz): send request to agent.
-	return nil
+	req := &commandReq{
+		AppID: app.ID,
+		Cmd:   cmd,
+	}
+
+	var body bytes.Buffer
+	encoder := json.NewEncoder(&body)
+	err := encoder.Encode(req)
+	if err != nil {
+		return err
+	}
+
+	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	res, err := http.Post("http://"+url, "application/json", &body)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// Decode json response.
+	execRes := new(Res)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(execRes)
+	if err != nil {
+		return err
+	}
+
+	// Started so no error.
+	if execRes.Status == "success" {
+		return nil
+	}
+
+	return execRes
 }
