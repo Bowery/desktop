@@ -559,7 +559,6 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// todo(larz): send command to agent, see delancey.go:218.
 	err = DelanceyExec(app, reqBody.Cmd)
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{

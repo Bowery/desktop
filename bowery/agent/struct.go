@@ -12,7 +12,7 @@ import (
 )
 
 type runCmdReq struct {
-	AppID string `json:"appId"`
+	AppID string `json:"appID"`
 	Cmd   string `json:"cmd"`
 }
 
