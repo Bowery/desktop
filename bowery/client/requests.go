@@ -428,8 +428,9 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
+	token := req.URL.Query().Get("token")
 
-	app, err := applicationManager.GetByID(id)
+	app, err := GetApplication(id, token)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"id": id,
@@ -566,7 +567,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	app, err := applicationManager.GetByID(reqBody.AppID)
+	app, err := GetApplication(reqBody.AppID, token)
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,

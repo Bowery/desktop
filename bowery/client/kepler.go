@@ -42,3 +42,25 @@ func GetApplications(token string) ([]*schemas.Application, error) {
 
 	return appsRes.Applications, nil
 }
+
+func GetApplication(id, token string) (*schemas.Application, error) {
+	addr := fmt.Sprintf("%s/applications/%s?token=%s", config.KenmareAddr, id, token)
+	res, err := http.Get(addr)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	appRes := new(applicationRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(appRes)
+	if err != nil {
+		return nil, err
+	}
+
+	if appRes.Status != requests.STATUS_FOUND {
+		return nil, appRes
+	}
+
+	return appRes.Application, nil
+}
