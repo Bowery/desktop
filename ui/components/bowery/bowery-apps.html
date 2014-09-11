@@ -47,7 +47,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       .unclickable {
         cursor: text;
       }
-      .message {
+      #message {
+        display: none;
         padding: 18px;
       }
 
@@ -60,7 +61,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
           <template if="{{app.status == 'running' && app.location}}">
             <span class="status ok">ok</span>
           </template>
-          <template if="{{app.status == 'provisioning' || !app.location}}">
+          <template if="{{app.status != 'error' && (app.status == 'provisioning' || !app.location)}}">
             <span class="status provisioning">provisioning</span>
           </template>
           <template if="{{app.status == 'error'}}">
@@ -69,7 +70,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         </bowery-card>
       </template>
       <template if="{{applications.length == 0}}">
-        <div class="message">
+        <div id="message">
           <h3>First time here?</h3>
           <p>To get started, click to 'CREATE APP' button at the bottom of the screen.</p>
           <p>For more information please see http://bowery.io.</p>
@@ -81,6 +82,14 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   Polymer('bowery-apps', {
     created: function () {
       this.applications = []
+    },
+    ready: function () {
+      var self = this
+      setTimeout(function () {
+        if (self.$.message)
+          self.$.message.style.display = 'block'
+      }, 1000)
+
     },
     goToStatus: function (e) {
       if (e.target.className == 'unclickable')

@@ -47,7 +47,7 @@ var Routes = []*Route{
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"GET", "/logout", logoutHandler},
-	&Route{"GET", "/_/sse/{id}", sseHandler},
+	&Route{"GET", "/_/sse", sseHandler},
 }
 
 var r = render.New(render.Options{
@@ -600,9 +600,6 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func sseHandler(rw http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-
 	f, ok := rw.(http.Flusher)
 	if !ok {
 		http.Error(rw, "sse not unsupported", http.StatusInternalServerError)
@@ -622,10 +619,6 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 	for i := 0; i < 10; i++ {
 		msg := <-messageChan
 		log.Println(msg)
-
-		if msg["appID"] != id {
-			return
-		}
 
 		data, err := json.Marshal(msg)
 		if err != nil {

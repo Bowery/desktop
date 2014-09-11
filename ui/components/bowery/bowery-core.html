@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps/status">
-  <bowery-shell app="{{app}}">
+  <bowery-shell app="{{app}}" logs="{{app.logs}}">
     <a href="/apps" on-click="{{navigate}}">I'm over it. Take me home.</a>
   </bowery-shell>
   <bowery-nav type="footer" href="/apps/edit" on-click="{{navigate}}">Edit App</bowery-nav>
@@ -123,6 +123,9 @@ Polymer('bowery-core', {
     this.$.db.load()
     this.developer = this.$.db.value || {}
 
+    var sse = new EventSource('/_/sse')
+    sse.addEventListener('message', this.handleSSE.bind(this))
+
     if (!this.developer.token) {
       return this.navigate('/login')
     }
@@ -131,6 +134,20 @@ Polymer('bowery-core', {
     this.newAppFields[1].value = this.developer.aws_access_secret
 
     this.navigate('/apps')
+  },
+  handleSSE: function (e) {
+    var event = JSON.parse(e.data)
+    console.log('sse $$$', event)
+
+    if (event.type == 'status')
+      for (var i = 0, app; app = this.applications[i]; i++)
+        if (app._id == event.appID)
+          return (this.applications[i].status = event.message.status)
+
+    if (event.type == 'logs')
+      if (this.app._id == event.appID)
+        this.app.logs += '\n$$$$' + event.message
+
   },
   handleCreateAppAttempt: function (e) {
     var response = e.target.response
@@ -220,6 +237,7 @@ Polymer('bowery-core', {
   },
   getApps: function (e, detail) {
     var r = JSON.parse(detail.response)
+    console.log('$$$ getApps', r)
     if (r.status == "found")
       this.applications = r.applications
     else
@@ -247,6 +265,9 @@ Polymer('bowery-core', {
     this.$.db.save()
     this.navigate('/login')
   },
+  reloadApps: function () {
+    this.$.appsAjax.params = {cacheBust: Date.now()}
+  },
 
   /**
    * A hack for passing params between screens.
@@ -257,7 +278,7 @@ Polymer('bowery-core', {
       this.$.appAjax.url = '/applications/' + e.detail.app
 
     if (e.detail.path == '/apps')
-      this.$.appsAjax.params = {cacheBust: Date.now()}
+      this.reloadApps()
   },
   getAppById: function (e) {
     var response = e.target.response

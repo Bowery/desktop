@@ -43,12 +43,10 @@ app.on('ready', function() {
     height: 460,
     resizable: false,
     center: true,
-    show: false,
+    show: true,
     frame: false,
     icon: path.join(__dirname, 'icon.png')
   })
-
-  // 'node-integration': 'disable',
 
   mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
 
@@ -57,7 +55,6 @@ app.on('ready', function() {
   })
 
   mainWindow.webContents.on('did-finish-load', function () {
-    mainWindow.show()
     mainWindow.focus()
   })
 })
