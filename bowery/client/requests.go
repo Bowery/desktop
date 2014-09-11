@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
@@ -129,8 +128,9 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	localPath := ""
 	if reqBody.LocalPath != "" {
-		_, err = formatLocalDir(reqBody.LocalPath)
+		localPath, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
 			r.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
@@ -139,6 +139,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	reqBody.LocalPath = localPath
 
 	// Encode request.
 	var data bytes.Buffer
@@ -210,41 +211,9 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// If the environment for this application is still being provisioned
-	// run pings in a goroutine so the application can be updated
-	// when it is available.
-	app := resBody.Application
-	go func() {
-		for app != nil && app.Status != "running" {
-			<-time.After(5 * time.Second)
-			addr := fmt.Sprintf("%s/applications/%s", config.KenmareAddr, app.ID)
-			res, err := http.Get(addr)
-			if err != nil {
-				continue
-			}
-			defer res.Body.Close()
-
-			var resBody applicationRes
-			decoder = json.NewDecoder(res.Body)
-			decoder.Decode(&resBody)
-
-			if resBody.Application != nil {
-				log.Println("provisioning status: " + resBody.Application.Status)
-				app = resBody.Application
-				applicationManager.UpdateByID(app.ID, app)
-				msg := map[string]interface{}{
-					"appID":   app.ID,
-					"type":    "status",
-					"message": app,
-				}
-				ssePool.messages <- msg
-			}
-		}
-	}()
-
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
-		"application": app,
+		"application": resBody.Application,
 	})
 }
 
@@ -279,6 +248,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
+		log.Println("decoding", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"id": id,
 		})
@@ -291,6 +261,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	token := reqBody.Token
 	if token == "" {
+		log.Println("no token", err)
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
@@ -298,9 +269,11 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	localPath := ""
 	if reqBody.LocalPath != "" {
-		_, err = formatLocalDir(reqBody.LocalPath)
+		localPath, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
+			log.Println("path", err)
 			r.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  fmt.Sprintf("%s is not a valid path.", reqBody.LocalPath),
@@ -311,15 +284,15 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	changes := &schemas.Application{
 		Name:       reqBody.Name,
-		Location:   reqBody.Location,
 		Start:      reqBody.Start,
 		Build:      reqBody.Build,
 		RemotePath: reqBody.RemotePath,
-		LocalPath:  reqBody.LocalPath,
+		LocalPath:  localPath,
 	}
 
 	app, err := applicationManager.UpdateByID(id, changes)
 	if err != nil {
+		log.Println("update local", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"token":   token,
 			"id":      id,
@@ -337,7 +310,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	updateBody := applicationReq{
 		Name:       app.Name,
 		Start:      app.Start,
-		Build:      app.Start,
+		Build:      app.Build,
 		RemotePath: app.RemotePath,
 		LocalPath:  app.LocalPath,
 		Token:      reqBody.Token,
@@ -346,6 +319,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	encoder := json.NewEncoder(&body)
 	err = encoder.Encode(updateBody)
 	if err != nil {
+		log.Println("encode", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"token":      token,
 			"id":         id,
@@ -361,6 +335,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	addr := fmt.Sprintf("%s/applications/%s", config.KenmareAddr, id)
 	request, err := http.NewRequest("PUT", addr, &body)
 	if err != nil {
+		log.Println("update kenmare", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"token":      token,
 			"id":         id,
@@ -376,6 +351,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	request.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(request)
 	if err != nil {
+		log.Println("update kenmare 2", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"token":      token,
 			"id":         id,
@@ -394,6 +370,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder = json.NewDecoder(res.Body)
 	err = decoder.Decode(&resBody)
 	if err != nil {
+		log.Println("parse res", err)
 		rollbarC.Report(err, map[string]interface{}{
 			"token":      token,
 			"id":         id,
@@ -407,6 +384,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if resBody.Status == requests.STATUS_FAILED {
+		log.Println("failed res", err)
 		rollbarC.Report(resBody, map[string]interface{}{
 			"token":      token,
 			"id":         id,
@@ -428,9 +406,8 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	token := req.URL.Query().Get("token")
 
-	app, err := GetApplication(id, token)
+	app, err := GetApplication(id)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"id": id,
@@ -567,7 +544,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	app, err := GetApplication(reqBody.AppID, token)
+	app, err := GetApplication(reqBody.AppID)
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
