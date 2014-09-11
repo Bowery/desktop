@@ -142,7 +142,7 @@ Polymer('bowery-core', {
     if (event.type == 'status')
       for (var i = 0, app; app = this.applications[i]; i++)
         if (app._id == event.appID)
-          return (this.applications[i].status = event.message)
+          return (this.applications[i].status = event.message.status)
 
     if (event.type == 'logs')
       if (this.app._id == event.appID)
