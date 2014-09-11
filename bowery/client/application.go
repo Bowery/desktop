@@ -46,12 +46,32 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		return errors.New("application must have a valid id.")
 	}
 
-	// Initiate file syncing and stream connection
-	// once the agent becomes available.
+	// Check the status of the application on Kenmare.
 	go func() {
-		for app != nil && !app.IsSyncAvailable && app.Location != "" {
-			<-time.After(1 * time.Second)
-			log.Println("checking agent...")
+		// Check the application status every 5 seconds
+		// via Kenmare. If the app status changes to
+		// running proceed.
+		for app != nil && app.Status != "running" {
+			<-time.After(5 * time.Second)
+			application, err := GetApplication(app.ID)
+			if err != nil {
+				continue
+			}
+			log.Println("provisioning status: " + application.Status)
+			app.Status = application.Status
+			app.Location = application.Location
+			msg := map[string]interface{}{
+				"appID":   app.ID,
+				"type":    "status",
+				"message": app,
+			}
+			ssePool.messages <- msg
+		}
+
+		// Ping the agent to verify it's healthy. Once a healthy
+		// response is returned, update the database.
+		for app != nil && !app.IsSyncAvailable {
+			<-time.After(5 * time.Second)
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
 			if err == nil {
 				app.IsSyncAvailable = true
@@ -62,12 +82,19 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 					"message": app,
 				}
 				ssePool.messages <- msg
+				break
 			}
 		}
 
-		log.Println("agent available!")
+		// Update application.
+		application, _ := GetApplication(app.ID)
+		app, _ = am.UpdateByID(app.ID, application)
 
+		// Finally, watch the app for file changes
+		// and connect to the log port.
+		am.Syncer.Remove(app)
 		am.Syncer.Watch(app)
+		am.StreamManager.Remove(app)
 		am.StreamManager.Connect(app)
 	}()
 
@@ -133,13 +160,15 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 	app.Start = changes.Start
 	app.Build = changes.Build
 
-	// Reset the syncer so a upload is done.
-	am.Syncer.Remove(app)
-	am.Syncer.Watch(app)
+	// Reset the syncer so an upload is done.
+	if app.Location != "" && app.IsSyncAvailable {
+		am.Syncer.Remove(app)
+		am.Syncer.Watch(app)
 
-	// Reset the log manager.
-	am.StreamManager.Remove(app)
-	am.StreamManager.Connect(app)
+		// Reset the log manager.
+		am.StreamManager.Remove(app)
+		am.StreamManager.Connect(app)
+	}
 	return app, nil
 }
 

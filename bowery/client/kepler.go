@@ -43,8 +43,8 @@ func GetApplications(token string) ([]*schemas.Application, error) {
 	return appsRes.Applications, nil
 }
 
-func GetApplication(id, token string) (*schemas.Application, error) {
-	addr := fmt.Sprintf("%s/applications/%s?token=%s", config.KenmareAddr, id, token)
+func GetApplication(id string) (*schemas.Application, error) {
+	addr := fmt.Sprintf("%s/applications/%s", config.KenmareAddr, id)
 	res, err := http.Get(addr)
 	if err != nil {
 		return nil, err
