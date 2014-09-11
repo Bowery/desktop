@@ -235,7 +235,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				msg := map[string]interface{}{
 					"appID":   app.ID,
 					"type":    "status",
-					"message": app.Status,
+					"message": app,
 				}
 				ssePool.messages <- msg
 			}

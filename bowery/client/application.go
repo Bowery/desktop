@@ -59,7 +59,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				msg := map[string]interface{}{
 					"appID":   app.ID,
 					"type":    "status",
-					"message": app.Status,
+					"message": app,
 				}
 				ssePool.messages <- msg
 			}
