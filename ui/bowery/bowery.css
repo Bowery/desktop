@@ -14,6 +14,16 @@
   --type-light: rgb(109, 109, 111);
 }
 
+@font-face {
+    font-family: "Monosten A";
+    src: url('../fonts/Monosten-A.otf');
+}
+
+@font-face {
+    font-family: "Monosten E";
+    src: url('../fonts/Monosten-E.otf');
+}
+
 *::selection {
   /*background-color: rgb(245, 245, 245) !important;*/
   background-color: var(--grey) !important;

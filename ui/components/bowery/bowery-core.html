@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps/status">
-  <bowery-shell app="{{app}}">
+  <bowery-shell app="{{app}}" logs="{{app.logs}}">
     <a href="/apps" on-click="{{navigate}}">I'm over it. Take me home.</a>
   </bowery-shell>
   <bowery-nav type="footer" href="/apps/edit" on-click="{{navigate}}">Edit App</bowery-nav>
@@ -143,6 +143,11 @@ Polymer('bowery-core', {
       for (var i = 0, app; app = this.applications[i]; i++)
         if (app._id == event.appID)
           return (this.applications[i].status = event.message)
+
+    if (event.type == 'logs')
+      if (this.app._id == event.appID)
+        this.app.logs += '\n$$$$' + event.message
+
   },
   handleCreateAppAttempt: function (e) {
     var response = e.target.response
