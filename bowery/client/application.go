@@ -132,7 +132,7 @@ func (am *ApplicationManager) GetAll(token string) ([]*schemas.Application, erro
 		}
 	}
 
-	sort.Reverse(byCreatedAt(appsArray))
+	sort.Sort(sort.Reverse(byCreatedAt(appsArray)))
 	return appsArray, nil
 }
 
