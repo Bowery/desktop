@@ -263,10 +263,20 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// Ensure that a valid token is provided.
 	token := reqBody.Token
 	if token == "" {
-		log.Println("no token", err)
+		log.Println("no token")
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
+		})
+		return
+	}
+
+	// Ensure that a name is provided.
+	if reqBody.Name == "" {
+		log.Println("no name")
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "name required",
 		})
 		return
 	}
