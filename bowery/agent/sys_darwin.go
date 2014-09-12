@@ -5,6 +5,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -47,8 +48,8 @@ func GetPidTree(cpid int) (*Proc, error) {
 
 		ppid, err := getPpid(pid)
 		if err != nil {
-			_, ok := err.(*pidError)
-			if ok {
+			// The process has already exited, so just ignore.
+			if os.IsNotExist(err) {
 				continue
 			}
 
@@ -77,7 +78,7 @@ func getPpid(pid int) (int, error) {
 
 	out := strings.TrimSpace(buf.String())
 	if out == "" {
-		return 0, &pidError{pid: pid}
+		return 0, os.ErrNotExist
 	}
 
 	return strconv.Atoi(out)
@@ -103,12 +104,4 @@ func pidList() ([]int, error) {
 	}
 
 	return pids, scanner.Err()
-}
-
-type pidError struct {
-	pid int
-}
-
-func (pe *pidError) Error() string {
-	return "No ppid found for pid " + strconv.Itoa(pe.pid)
 }

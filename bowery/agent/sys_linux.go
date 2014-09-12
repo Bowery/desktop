@@ -28,6 +28,11 @@ func GetPidTree(cpid int) (*Proc, error) {
 
 		ppid, err := getPpid(pid)
 		if err != nil {
+			// The process has already exited, so just ignore.
+			if os.IsNotExist(err) {
+				continue
+			}
+
 			return nil, err
 		}
 
