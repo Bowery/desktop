@@ -10,11 +10,17 @@ import (
 
 // GetPidTree gets the processes tree.
 func GetPidTree(cpid int) (*Proc, error) {
+	proc := &Proc{Pid: cpid, Ppid: -1, Children: make([]*Proc, 0)}
+
 	ppid, err := getPpid(cpid)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return proc, nil
+		}
+
 		return nil, err
 	}
-	proc := &Proc{Pid: cpid, Ppid: ppid, Children: make([]*Proc, 0)}
+	proc.Ppid = ppid
 
 	pids, err := pidList()
 	if err != nil {
