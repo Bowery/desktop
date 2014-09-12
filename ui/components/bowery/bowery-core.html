@@ -144,9 +144,9 @@ Polymer('bowery-core', {
         if (app._id == event.appID)
           return (this.applications[i].status = event.message.status)
 
-    if (event.type == 'logs')
+    if (event.type == 'log')
       if (this.app._id == event.appID)
-        this.app.logs += '\n$$$$' + event.message
+        this.app.logs += event.message
 
   },
   handleCreateAppAttempt: function (e) {
