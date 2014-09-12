@@ -244,6 +244,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 
+	// Parse the request.
 	var reqBody applicationReq
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
@@ -259,6 +260,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Ensure that a valid token is provided.
 	token := reqBody.Token
 	if token == "" {
 		log.Println("no token", err)
@@ -269,6 +271,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Parse the local path, allows for ~/ support.
 	localPath := ""
 	if reqBody.LocalPath != "" {
 		localPath, err = formatLocalDir(reqBody.LocalPath)
@@ -282,6 +285,8 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// Only the name, start and stop commands, and
+	// remote and local paths can be changed.
 	changes := &schemas.Application{
 		Name:       reqBody.Name,
 		Start:      reqBody.Start,
@@ -290,6 +295,8 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		LocalPath:  localPath,
 	}
 
+	// Update the local cache of the application.
+	// This resets the watcher and stream for the application.
 	app, err := applicationManager.UpdateByID(id, changes)
 	if err != nil {
 		log.Println("update local", err)
@@ -305,8 +312,9 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Send the updates to Kenmare to persist in
+	// the database.
 	var body bytes.Buffer
-
 	updateBody := applicationReq{
 		Name:       app.Name,
 		Start:      app.Start,
@@ -397,12 +405,14 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Respond OK with the application.
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"application": app,
 	})
 }
 
+// getApplicationHandler fetches an application.
 func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
@@ -425,6 +435,7 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// removeApplicationHandler removes an application.
 func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]

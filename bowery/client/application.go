@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sort"
 	"time"
 
 	"github.com/Bowery/gopackages/schemas"
@@ -102,9 +103,15 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 	return nil
 }
 
+// byCreatedAt implements the Sort interface for
+// a slice of applications.
+type byCreatedAt []*schemas.Application
+
+func (v byCreatedAt) Len() int           { return len(v) }
+func (v byCreatedAt) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v byCreatedAt) Less(i, j int) bool { return v[i].CreatedAt.Unix() < v[j].CreatedAt.Unix() }
+
 func (am *ApplicationManager) GetAll(token string) ([]*schemas.Application, error) {
-	// Only fetch applications if this is the first load.
-	// todo(steve): do this better.
 	appsArray := []*schemas.Application{}
 	if len(am.Applications) == 0 {
 		if err := am.load(token); err != nil {
@@ -125,6 +132,7 @@ func (am *ApplicationManager) GetAll(token string) ([]*schemas.Application, erro
 		}
 	}
 
+	sort.Reverse(byCreatedAt(appsArray))
 	return appsArray, nil
 }
 
