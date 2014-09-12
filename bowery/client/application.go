@@ -201,6 +201,11 @@ func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error
 }
 
 func (am *ApplicationManager) Close() error {
+	err := am.StreamManager.Close()
+	if err != nil {
+		return err
+	}
+
 	return am.Syncer.Close()
 }
 

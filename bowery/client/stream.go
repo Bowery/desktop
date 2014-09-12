@@ -3,12 +3,12 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Bowery/gopackages/config"
@@ -20,134 +20,174 @@ var (
 	logDir = filepath.Join(os.Getenv(sys.HomeVar), ".bowery", "logs")
 )
 
+// Stream streams logs from a network connection for an application.
+type Stream struct {
+	Application *schemas.Application
+	conn        net.Conn
+	mutex       sync.Mutex
+	done        chan struct{}
+	isDone      bool
+}
+
+// NewStream creates a new stream for an application.
+func NewStream(app *schemas.Application) *Stream {
+	var mutex sync.Mutex
+
+	return &Stream{
+		Application: app,
+		mutex:       mutex,
+		done:        make(chan struct{}),
+	}
+}
+
+// Start receives log messages from an application log server and restarts
+// if the connection fails.
+func (s *Stream) Start() {
+	// If previously called Close reset the state.
+	s.mutex.Lock()
+	if s.isDone {
+		s.isDone = false
+		s.done = make(chan struct{})
+	}
+	s.mutex.Unlock()
+
+	s.connect()
+
+	for {
+		// Check if we're done.
+		select {
+		case <-s.done:
+			return
+		default:
+		}
+
+		data := make([]byte, 128)
+		n, err := s.conn.Read(data)
+		if err != nil && err != io.EOF {
+			s.connect() // Just try to reconnect.
+		}
+		data = data[:n]
+
+		// No data so just continue.
+		if err == io.EOF || len(data) <= 0 {
+			continue
+		}
+
+		msg := make(map[string]interface{})
+		json.Unmarshal(data, &msg)
+		msg["appID"] = s.Application.ID
+
+		switch msg["type"] {
+		// todo(steve): add plugin errors.
+		// case "plugin_error":
+		// 	ErrProcessor(s, data)
+		case "log":
+			LogProcessor(s, data)
+		default:
+			return
+		}
+
+		ssePool.messages <- msg
+	}
+}
+
+// Close closes the connections log connection.
+func (s *Stream) Close() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.isDone {
+		return nil
+	}
+	close(s.done)
+	s.isDone = true
+
+	conn := s.conn
+	s.conn = nil
+	if conn != nil {
+		return conn.Close()
+	}
+
+	return nil
+}
+
+// connect will continuously try to connect to the applications log server.
+func (s *Stream) connect() {
+	var err error
+
+	for {
+		addr := net.JoinHostPort(s.Application.Location, config.BoweryAgentProdLogPort)
+		log.Println("attempting to connect to tcp addr", addr)
+
+		// Ensure previous connection is closed.
+		if s.conn != nil {
+			s.conn.Close()
+		}
+
+		s.conn, err = net.Dial("tcp", addr)
+		if err != nil {
+			opErr, ok := err.(*net.OpError)
+			if ok && (opErr.Op == "read" || opErr.Op == "dial") {
+				log.Println("Failed to connect. Retrying...")
+
+				<-time.After(1 * time.Second)
+				continue
+			}
+		}
+
+		log.Println("successfully connected to tcp addr", addr)
+		break
+	}
+}
+
+// StreamManager holds a list of application streams.
 type StreamManager struct {
 	Streams []*Stream
 }
 
-type Stream struct {
-	application *schemas.Application
-	conn        net.Conn
-	done        chan struct{}
-}
-
+// NewStreamManager creates an empty stream list.
 func NewStreamManager() *StreamManager {
 	return &StreamManager{
 		Streams: make([]*Stream, 0),
 	}
 }
 
+// Connect starts streaming for a given application.
 func (sm *StreamManager) Connect(app *schemas.Application) {
 	s := NewStream(app)
-	go s.Start()
 	sm.Streams = append(sm.Streams, s)
+
+	go s.Start()
 }
 
+// Remove stops streaming for a given application.
 func (sm *StreamManager) Remove(app *schemas.Application) error {
-	var (
-		i        int
-		toDelete bool = false
-		s        *Stream
-	)
-
-	for i, s = range sm.Streams {
-		if s.application.Name == app.Name {
-			if err := s.Close(); err != nil {
+	for idx, stream := range sm.Streams {
+		if stream != nil && stream.Application.ID == app.ID {
+			err := stream.Close()
+			if err != nil {
 				return err
-			} else {
-				toDelete = true
 			}
-			break
-		}
-	}
 
-	if toDelete {
-		sm.Streams = append(sm.Streams[:i], sm.Streams[i+1:]...)
+			sm.Streams[idx] = nil
+		}
 	}
 
 	return nil
 }
 
-func NewStream(app *schemas.Application) *Stream {
-	s := new(Stream)
-	s.application = app
-	s.done = make(chan struct{})
-	return s
-}
+// Close stops all of the application streams.
+func (sm *StreamManager) Close() error {
+	for _, stream := range sm.Streams {
+		if stream == nil {
+			continue
+		}
 
-type dataProcessor func(*Stream, []byte) ([]byte, error)
-
-func (s *Stream) Start() {
-	var err error
-	for {
-		log.Println("attempting to connect to tcp")
-		port := config.BoweryAgentProdLogPort
-		log.Println(fmt.Sprintf("remote addr: %v, logport: %v", s.application.Location, port))
-		s.conn, err = net.Dial("tcp", s.application.Location+":"+port)
+		err := stream.Close()
 		if err != nil {
-			if opError, ok := err.(*net.OpError); ok {
-				if opError.Op == "read" || opError.Op == "dial" {
-					log.Println("Failed to connect. Retrying...")
-					<-time.After(1 * time.Second)
-					continue
-				}
-			}
-		}
-		log.Println("successfully connected to tcp")
-		break
-	}
-	for {
-		select {
-		case <-s.done:
-			return
-		default:
-		}
-		data := make([]byte, 128)
-		n, err := s.conn.Read(data)
-		if err != nil && err != io.EOF {
-			for {
-				if s.conn != nil {
-					s.conn.Close()
-				}
-				s.conn, err = net.Dial("tcp", s.application.Location+":"+config.BoweryAgentProdLogPort)
-				if err != nil {
-					if opError, ok := err.(*net.OpError); ok {
-						if opError.Op == "read" || opError.Op == "dial" {
-							<-time.After(1 * time.Second)
-							continue
-						}
-					}
-				}
-				break
-			}
-		}
-
-		if len(string(data[:n])) > 0 {
-			sMsg := map[string]interface{}{}
-			json.Unmarshal(data[:n], &sMsg)
-			sMsg["appID"] = s.application.ID
-			switch sMsg["type"] {
-			// todo(steve): add plugin errors.
-			// case "plugin_error":
-			// 	ErrProcessor(s, data[:n])
-			case "log":
-				LogProcessor(s, data[:n])
-			default:
-				return
-			}
-
-			ssePool.messages <- sMsg
+			return err
 		}
 	}
-}
 
-func (s *Stream) Close() error {
-	var err error
-
-	close(s.done)
-
-	if s.conn != nil {
-		err = s.conn.Close()
-	}
-
-	return err
+	return nil
 }

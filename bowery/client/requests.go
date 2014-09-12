@@ -535,6 +535,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// createCommandHandler runs a command on an application agent.
 func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	var reqBody commandReq
 	decoder := json.NewDecoder(req.Body)
