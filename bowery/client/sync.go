@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Bowery/gopackages/ignores"
@@ -35,14 +36,19 @@ func (w *WatchError) Error() string {
 type Watcher struct {
 	Application *schemas.Application
 	uploadPath  string
+	mutex       sync.Mutex
 	done        chan struct{}
+	isDone      bool
 }
 
 // NewWatcher creates a watcher.
 func NewWatcher(app *schemas.Application) *Watcher {
+	var mutex sync.Mutex
+
 	return &Watcher{
 		Application: app,
 		uploadPath:  filepath.Join(os.TempDir(), "bowery_"+app.ID),
+		mutex:       mutex,
 		done:        make(chan struct{}),
 	}
 }
@@ -52,6 +58,14 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	stats := make(map[string]os.FileInfo)
 	found := make([]string, 0)
 	local := watcher.Application.LocalPath
+
+	// If previously called Close reset the state.
+	watcher.mutex.Lock()
+	if watcher.isDone {
+		watcher.isDone = false
+		watcher.done = make(chan struct{})
+	}
+	watcher.mutex.Unlock()
 
 	ignoreList, err := ignores.Get(local)
 	if err != nil {
@@ -286,7 +300,14 @@ func (watcher *Watcher) Update(name, status string) error {
 
 // Close closes the watcher and removes existing upload paths.
 func (watcher *Watcher) Close() error {
+	watcher.mutex.Lock()
+	defer watcher.mutex.Unlock()
+
+	if watcher.isDone {
+		return nil
+	}
 	close(watcher.done)
+	watcher.isDone = true
 
 	return watcher.wrapErr(os.RemoveAll(watcher.uploadPath))
 }
