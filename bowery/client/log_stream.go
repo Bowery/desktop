@@ -37,7 +37,7 @@ func (sw *syncWriter) Close() error {
 
 func LogProcessor(s *Stream, data []byte) ([]byte, error) {
 	data = append(data, '\n')
-	file, err := os.OpenFile(filepath.Join(logDir, s.application.ID+".log"),
+	file, err := os.OpenFile(filepath.Join(logDir, s.Application.ID+".log"),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func LogProcessor(s *Stream, data []byte) ([]byte, error) {
 	}
 
 	return json.Marshal(map[string]interface{}{
-		"appID":   s.application.ID,
+		"appID":   s.Application.ID,
 		"message": d["message"],
 	})
 }
