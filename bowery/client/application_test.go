@@ -67,7 +67,7 @@ func TestUpdateByIDInvalidField(t *testing.T) {
 
 	app, err := testApplicationManager.UpdateByID(testApplication.ID, changes)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if app.Status == "provisioning" {

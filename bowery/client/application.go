@@ -159,6 +159,7 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 		changes.RemotePath == "" &&
 		changes.LocalPath == "" &&
 		changes.Start == "" &&
+		changes.Status == "" &&
 		changes.Build == "" {
 		return nil, errors.New("invalid requests")
 	}
