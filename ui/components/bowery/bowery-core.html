@@ -67,7 +67,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps/edit">
-  <bowery-form title="Save" endpoint="/applications/{{app._id}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+  <bowery-form title="Save" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
     <a href="/apps/status" on-click="{{navigate}}">Nevermind. Take me back.</a> |
     <a href="" on-click="{{deleteApp}}" class="error">Delete This App</a>
   </bowery-form>
@@ -170,7 +170,7 @@ Polymer('bowery-core', {
 
     this.navigate('/apps/edit')
   },
-  handleEditAppAttempt: function (e) {
+  handleEditAppAttempt: function (e, detail) {
     var response = e.target.response
     if (response.status != 'success') {
       if (response.error == "EOF") return
@@ -179,6 +179,12 @@ Polymer('bowery-core', {
       e.target.feedback = response.error
       return
     }
+
+    this.app = detail.model
+    for (var i = 0, app; app = this.applications[i]; i++)
+      if (app._id == this.app._id)
+        this.applications[i] = this.app
+
     this.navigate('/apps')
   },
   handleLoginAttempt: function (e) {
@@ -265,9 +271,6 @@ Polymer('bowery-core', {
     this.$.db.save()
     this.navigate('/login')
   },
-  reloadApps: function () {
-    this.$.appsAjax.params = {cacheBust: Date.now()}
-  },
 
   /**
    * A hack for passing params between screens.
@@ -276,16 +279,11 @@ Polymer('bowery-core', {
   onNavigate: function (e) {
     if (e.detail.app)
       this.$.appAjax.url = '/applications/' + e.detail.app
-
-    if (e.detail.path == '/apps')
-      this.reloadApps()
   },
   getAppById: function (e) {
     var response = e.target.response
     if (response.status == 'found') {
       this.app = response.application
-      for (var i = 0, field; field = this.editAppFields[i]; i++)
-        field.value = this.app[field.name]
     }
   }
 })
