@@ -615,7 +615,7 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Cache-Control", "no-cache")
 	rw.Header().Set("Connection", "keep-alive")
 
-	for i := 0; i < 10; i++ {
+	for {
 		msg := <-messageChan
 		log.Println(msg)
 
