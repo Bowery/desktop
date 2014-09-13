@@ -1,5 +1,4 @@
 // Copyright 2013-2014 Bowery, Inc.
-// Contains system specific routines.
 package main
 
 import (
@@ -28,36 +27,7 @@ type processEntry struct {
 	szExeFile         [260]byte // MAX_PATH is 260, only use byte if using ascii ver procs.
 }
 
-// GetPidTree gets the processes tree.
-func GetPidTree(cpid int) (*Proc, error) {
-	var root *Proc
-	procs, err := listProcs()
-	if err != nil {
-		return nil, err
-	}
-	children := make([]*Proc, 0)
-
-	for _, proc := range procs {
-		if proc.Pid == cpid {
-			root = proc
-			continue
-		}
-
-		if proc.Ppid == cpid {
-			p, err := GetPidTree(proc.Pid)
-			if err != nil {
-				return nil, err
-			}
-
-			children = append(children, p)
-		}
-	}
-
-	root.Children = children
-	return root, nil
-}
-
-// listProcs retrieves a list of all the process pids/ppids running.
+// listProcs returns a list of the running processes.
 func listProcs() ([]*Proc, error) {
 	handle, _, err := createSnapshot.Call(2, 0)
 	if syscall.Handle(handle) == syscall.InvalidHandle {
