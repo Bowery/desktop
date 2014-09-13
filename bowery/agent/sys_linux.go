@@ -15,7 +15,7 @@ func GetPidTree(cpid int) (*Proc, error) {
 	ppid, err := getPpid(cpid)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return proc, nil
+			return nil, nil
 		}
 
 		return nil, err

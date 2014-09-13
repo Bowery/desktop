@@ -243,7 +243,9 @@ func killByCmd(cmd *exec.Cmd) error {
 			return err
 		}
 
-		return proc.Kill()
+		if proc != nil {
+			return proc.Kill()
+		}
 	}
 
 	return nil
