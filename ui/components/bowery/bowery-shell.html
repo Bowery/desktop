@@ -7,8 +7,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
 
-<polymer-element name="bowery-shell" attributes="app logs">
+<polymer-element name="bowery-shell" attributes="app logs token">
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
@@ -56,7 +57,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <p class="message">All good in the hood.</p>
     <div class="executer">
       <label>></label>
-      <input type="text">
+      <input id="cmd" type="text">
       <button on-click="{{runCmd}}">RUN</button>
     </div>
     <div id="logs" class="logs">
@@ -65,6 +66,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <div class="extra">
       <content></content>
     </div>
+    <core-ajax id="ajax" contentType="application/json" url="/commands" method="POST" handleAs="json" on-core-complete="{{handleCmdResponse}}" auto></core-ajax>
   </template>
   <script>
     Polymer('bowery-shell', {
@@ -72,10 +74,18 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
       },
       runCmd: function (e) {
-        var cmd = e.target.value
+        var cmd = this.$.cmd.value
         console.log('$$$ runCmd', cmd)
+        if (cmd) this.$.ajax.body = this.$.ajax.params = JSON.stringify({appID: this.app._id, token: this.token, cmd: cmd})
+      },
+      handleCmdResponse: function (e, detail) {
+        var response = JSON.parse(detail.xhr.responseText)
+        if (response.status == "success") {
+          this.$.cmd.value = ""
+        } else {
+          this.$.message.innerHTML = response.error
+        }
       }
-
     })
   </script>
 

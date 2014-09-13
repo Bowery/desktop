@@ -229,7 +229,7 @@ func DelanceyExec(app *schemas.Application, cmd string) error {
 	}
 
 	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
-	res, err := http.Post("http://"+url, "application/json", &body)
+	res, err := http.Post("http://"+url+"/command", "application/json", &body)
 	if err != nil {
 		return err
 	}
