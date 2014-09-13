@@ -73,6 +73,8 @@ func (s *Stream) Start() {
 			continue
 		}
 
+		log.Println("data in stream.go#Start", string(data))
+
 		msg := make(map[string]interface{})
 		json.Unmarshal(data, &msg)
 		msg["appID"] = s.Application.ID
@@ -157,6 +159,7 @@ func (sm *StreamManager) Connect(app *schemas.Application) {
 	s := NewStream(app)
 	sm.Streams = append(sm.Streams, s)
 
+	log.Println("streamManager#Connect called", app)
 	go s.Start()
 }
 

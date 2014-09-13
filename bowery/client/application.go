@@ -95,7 +95,9 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// and connect to the log port.
 		am.Syncer.Remove(app)
 		am.Syncer.Watch(app)
-		am.StreamManager.Remove(app)
+		if err := am.StreamManager.Remove(app); err != nil {
+			log.Println("StreamManager.Remove Failed", err)
+		}
 		am.StreamManager.Connect(app)
 	}()
 
@@ -151,6 +153,17 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 		return nil, errors.New("invalid app id")
 	}
 
+	// If everything is empty then ignore it
+	if changes.Name == "" &&
+		changes.Location == "" &&
+		changes.RemotePath == "" &&
+		changes.LocalPath == "" &&
+		changes.Start == "" &&
+		changes.Status == "" &&
+		changes.Build == "" {
+		return nil, errors.New("invalid requests")
+	}
+
 	if changes.Name != "" {
 		app.Name = changes.Name
 	}
@@ -170,7 +183,9 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 
 	// Reset the syncer so an upload is done.
 	if app.Location != "" && app.IsSyncAvailable {
-		am.Syncer.Remove(app)
+		if err := am.Syncer.Remove(app); err != nil {
+			log.Println("StreamManager.Remove Failed in UpdateByID", err)
+		}
 		am.Syncer.Watch(app)
 
 		// Reset the log manager.
