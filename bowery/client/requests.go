@@ -532,6 +532,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
+		"id": id,
 	})
 }
 

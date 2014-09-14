@@ -97,8 +97,6 @@ Polymer({
     for (var i = 0, field; field = this.fields[i]; i++)
       params[field.name] = this.model[field.name] = this.$[field.name].value
 
-    console.log('$$$$ params', params)
-
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"
       this.$.ajax.body = JSON.stringify(params)
