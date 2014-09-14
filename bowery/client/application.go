@@ -53,7 +53,6 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// via Kenmare. If the app status changes to
 		// running proceed.
 		for app != nil && app.Status != "running" {
-			<-time.After(5 * time.Second)
 			application, err := GetApplication(app.ID)
 			if err != nil {
 				continue
@@ -67,12 +66,12 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				"message": app,
 			}
 			ssePool.messages <- msg
+			<-time.After(5 * time.Second)
 		}
 
 		// Ping the agent to verify it's healthy. Once a healthy
 		// response is returned, update the database.
 		for app != nil && !app.IsSyncAvailable {
-			<-time.After(5 * time.Second)
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
 			if err == nil {
 				app.IsSyncAvailable = true
@@ -85,21 +84,13 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				ssePool.messages <- msg
 				break
 			}
+			<-time.After(5 * time.Second)
 		}
 
 		if app != nil {
 			// Update application.
 			application, _ := GetApplication(app.ID)
 			app, _ = am.UpdateByID(app.ID, application)
-
-			// Finally, watch the app for file changes
-			// and connect to the log port.
-			am.Syncer.Remove(app)
-			am.Syncer.Watch(app)
-			if err := am.StreamManager.Remove(app); err != nil {
-				log.Println("StreamManager.Remove Failed", err)
-			}
-			am.StreamManager.Connect(app)
 		}
 	}()
 
