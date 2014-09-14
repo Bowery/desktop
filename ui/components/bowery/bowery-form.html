@@ -46,7 +46,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <form id="form">
     <template repeat="{{field in fields}}">
       <template if="{{field.type == 'pill'}}">
-        <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{field.value || model[field.name]}}"></bowery-pill>
+        <bowery-pill id="{{field.name}}" options='{{field.options}}' value="{{model[field.name]}}"></bowery-pill>
       </template>
       <template if="{{field.type != 'pill'}}">
         <div class="field-group">
@@ -96,6 +96,8 @@ Polymer({
 
     for (var i = 0, field; field = this.fields[i]; i++)
       params[field.name] = this.model[field.name] = this.$[field.name].value
+
+    console.log('$$$$ params', params)
 
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"

@@ -13,7 +13,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
-    .message {
+    #message {
       margin: 9px 18px;
     }
     .executer {
@@ -54,7 +54,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       margin-left: 18px;
     }
     </style>
-    <p class="message">All good in the hood.</p>
+    <p id="message">All good in the hood.</p>
     <div class="executer">
       <label>></label>
       <input id="cmd" type="text">
@@ -82,7 +82,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         var response = JSON.parse(detail.xhr.responseText)
         if (response.status == "success") {
           this.$.cmd.value = ""
-        } else {
+        } else if (response.error != "EOF") {
           this.$.message.innerHTML = response.error
         }
       }
