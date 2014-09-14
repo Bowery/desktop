@@ -91,15 +91,6 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 			// Update application.
 			application, _ := GetApplication(app.ID)
 			app, _ = am.UpdateByID(app.ID, application)
-
-			// Finally, watch the app for file changes
-			// and connect to the log port.
-			am.Syncer.Remove(app)
-			am.Syncer.Watch(app)
-			if err := am.StreamManager.Remove(app); err != nil {
-				log.Println("StreamManager.Remove Failed", err)
-			}
-			am.StreamManager.Connect(app)
 		}
 	}()
 
