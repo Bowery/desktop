@@ -53,7 +53,6 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// via Kenmare. If the app status changes to
 		// running proceed.
 		for app != nil && app.Status != "running" {
-			<-time.After(5 * time.Second)
 			application, err := GetApplication(app.ID)
 			if err != nil {
 				continue
@@ -67,12 +66,12 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				"message": app,
 			}
 			ssePool.messages <- msg
+			<-time.After(5 * time.Second)
 		}
 
 		// Ping the agent to verify it's healthy. Once a healthy
 		// response is returned, update the database.
 		for app != nil && !app.IsSyncAvailable {
-			<-time.After(5 * time.Second)
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
 			if err == nil {
 				app.IsSyncAvailable = true
@@ -85,6 +84,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				ssePool.messages <- msg
 				break
 			}
+			<-time.After(5 * time.Second)
 		}
 
 		if app != nil {
