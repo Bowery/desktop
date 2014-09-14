@@ -137,7 +137,6 @@ Polymer('bowery-core', {
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
-    console.log('sse $$$', event)
 
     if (event.type == 'status')
       for (var i = 0, app; app = this.applications[i]; i++)
@@ -251,9 +250,10 @@ Polymer('bowery-core', {
   },
   handleDeleteAppAttempt: function (e) {
     var response = e.target.response
-    if (response.status == 'success')
+    if (response.status == 'success') {
+      console.log('response', response)
       return this.navigate('/apps')
-
+    }
     alert('unable to delete ')
   },
   navigate: function (path) {

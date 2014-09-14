@@ -123,7 +123,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if len(missingFields) > 0 {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
-			"error":  strings.Join(missingFields, ", ") + " are required.",
+			"error":  strings.Join(missingFields, ", ") + " is required.",
 		})
 		return
 	}
