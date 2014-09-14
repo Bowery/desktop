@@ -158,6 +158,7 @@ Polymer('bowery-core', {
       return
     }
     this.app = response.application
+    this.applications.push(this.app)
     for (var i = 0, field; field = this.editAppFields[i]; i++)
       field.value = this.app[field.name]
 
@@ -251,7 +252,11 @@ Polymer('bowery-core', {
   handleDeleteAppAttempt: function (e) {
     var response = e.target.response
     if (response.status == 'success') {
-      console.log('response', response)
+
+      this.applications = this.applications.filter(function (app) {
+        return app._id != response.id
+      })
+
       return this.navigate('/apps')
     }
     alert('unable to delete ')
