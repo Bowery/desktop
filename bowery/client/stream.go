@@ -64,7 +64,9 @@ func (s *Stream) Start() {
 		data := make([]byte, 128)
 		n, err := s.conn.Read(data)
 		if err != nil && err != io.EOF {
+			log.Println("[logs] end of file, reconnecting...")
 			s.connect() // Just try to reconnect.
+			continue
 		}
 		data = data[:n]
 
@@ -73,7 +75,7 @@ func (s *Stream) Start() {
 			continue
 		}
 
-		log.Println("data in stream.go#Start", string(data))
+		log.Println("[logs] data in stream.go#Start", string(data))
 
 		msg := make(map[string]interface{})
 		json.Unmarshal(data, &msg)
@@ -119,10 +121,11 @@ func (s *Stream) connect() {
 
 	for {
 		addr := net.JoinHostPort(s.Application.Location, config.BoweryAgentProdLogPort)
-		log.Println("attempting to connect to tcp addr", addr)
+		log.Println("[logs] attempting to connect to tcp addr", addr)
 
 		// Ensure previous connection is closed.
 		if s.conn != nil {
+			log.Println("[logs] closing previous connection")
 			s.conn.Close()
 		}
 
@@ -130,14 +133,14 @@ func (s *Stream) connect() {
 		if err != nil {
 			opErr, ok := err.(*net.OpError)
 			if ok && (opErr.Op == "read" || opErr.Op == "dial") {
-				log.Println("Failed to connect. Retrying...")
+				log.Println("[logs] failed to connect. retrying...")
 
 				<-time.After(1 * time.Second)
 				continue
 			}
 		}
 
-		log.Println("successfully connected to tcp addr", addr)
+		log.Println("[logs] successfully connected to tcp addr", addr)
 		break
 	}
 }
@@ -159,7 +162,7 @@ func (sm *StreamManager) Connect(app *schemas.Application) {
 	s := NewStream(app)
 	sm.Streams = append(sm.Streams, s)
 
-	log.Println("streamManager#Connect called", app)
+	log.Println("[logs] streamManager#Connect called", app)
 	go s.Start()
 }
 
