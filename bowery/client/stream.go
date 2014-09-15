@@ -3,7 +3,6 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -24,6 +23,7 @@ var (
 type Stream struct {
 	Application *schemas.Application
 	conn        net.Conn
+	decoder     *json.Decoder
 	mutex       sync.Mutex
 	done        chan struct{}
 	isDone      bool
@@ -61,37 +61,33 @@ func (s *Stream) Start() {
 		default:
 		}
 
-		data := make([]byte, 128)
-		n, err := s.conn.Read(data)
-		if err != nil && err != io.EOF {
-			log.Println("[logs] end of file, reconnecting...")
-			s.connect() // Just try to reconnect.
+		data := make(map[string]interface{})
+		err := s.decoder.Decode(&data)
+		if err != nil {
+			if isJSONError(err) {
+				log.Println("[logs] json error, skipping", err)
+			} else {
+				log.Println("[logs] network error, reconnecting...")
+				s.connect()
+			}
+
 			continue
 		}
-		data = data[:n]
+		data["appID"] = s.Application.ID
+		log.Println("[logs] data in stream.go#Start", data)
 
-		// No data so just continue.
-		if err == io.EOF || len(data) <= 0 {
-			continue
-		}
-
-		log.Println("[logs] data in stream.go#Start", string(data))
-
-		msg := make(map[string]interface{})
-		json.Unmarshal(data, &msg)
-		msg["appID"] = s.Application.ID
-
-		switch msg["type"] {
+		switch data["type"] {
 		// todo(steve): add plugin errors.
 		// case "plugin_error":
 		// 	ErrProcessor(s, data)
 		case "log":
-			LogProcessor(s, data)
+			msg, _ := json.Marshal(data)
+			LogProcessor(s, msg)
 		default:
 			return
 		}
 
-		ssePool.messages <- msg
+		ssePool.messages <- data
 	}
 }
 
@@ -140,6 +136,7 @@ func (s *Stream) connect() {
 			}
 		}
 
+		s.decoder = json.NewDecoder(s.conn)
 		log.Println("[logs] successfully connected to tcp addr", addr)
 		break
 	}
@@ -196,4 +193,17 @@ func (sm *StreamManager) Close() error {
 	}
 
 	return nil
+}
+
+// isJSONError detects json unmarshaling errors.
+func isJSONError(err error) bool {
+	switch err.(type) {
+	case *json.InvalidUnmarshalError,
+		*json.SyntaxError,
+		*json.UnmarshalTypeError,
+		*json.UnsupportedValueError:
+		return true
+	}
+
+	return false
 }
