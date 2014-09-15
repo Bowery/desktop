@@ -18,7 +18,6 @@ type StreamManager struct {
 }
 
 // NewStreamManager returns a stream manager with an instantiated TCP connection
-// BUG: when a client disconnects, it can't reconnect w/o restarting the server
 func NewStreamManager() *StreamManager {
 	return &StreamManager{
 		tcp: NewTCP(),
