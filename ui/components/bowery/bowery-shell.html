@@ -57,7 +57,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <p id="message">All good in the hood.</p>
     <div class="executer">
       <label>></label>
-      <input id="cmd" type="text">
+      <input id="cmd" type="text" on-keyup="{{runCmdOnEnter}}">
       <button on-click="{{runCmd}}">RUN</button>
     </div>
     <div id="logs" class="logs">
@@ -76,6 +76,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       runCmd: function (e) {
         var cmd = this.$.cmd.value
         if (cmd) this.$.ajax.body = this.$.ajax.params = JSON.stringify({appID: this.app._id, token: this.token, cmd: cmd})
+      },
+      runCmdOnEnter: function (e) {
+        if (e.keyCode == 13) {
+          this.runCmd()
+        }
       },
       handleCmdResponse: function (e, detail) {
         var response = JSON.parse(detail.xhr.responseText)
