@@ -105,7 +105,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reqBody.AMI == "" {
-		reqBody.AMI = "ami-9460ccfc"
+		reqBody.AMI = "ami-346ec15c"
 	}
 
 	// Validate request.
