@@ -1,39 +1,52 @@
 // Copyright 2014 Bowery, Inc.
 
+var fs = require('fs')
 var app = require('app')  // Module to control application life.
 var path = require('path')
 var BrowserWindow = require('browser-window')  // Module to create native browser window.
 
 // Report crashes to our server.
 require('crash-reporter').start()
+try {
+  var pid = require('fs').readFileSync('client_pid')
+  if (pid) process.kill(pid)
+} catch (e) {
+  console.log('yolo. no pid file found.')
+}
+
 
 var mainWindow = null
 
 app.on('window-all-closed', function() {
-  if (process.platform != 'darwin')
-    app.quit()
+  // if (process.platform != 'darwin')
+  app.quit()
+  proc.kill()
 })
 
 // Start Client and Agent
 var extension = /^win/.test(process.platform) ? ".exe" : ""
+var clientPath = path.join(__dirname, "../bin/", "client" + extension)
+var proc = require('child_process').spawn(clientPath, [])
 
-!["client", "agent"].forEach(function (binary) {
-  var path = require('path').join(__dirname, "../bin/", binary + extension)
-  var proc = require('child_process').spawn(path, [])
+require('fs').writeFileSync('client_pid', proc.pid)
 
-  console.log("Launching", path)
-
-  proc.on('close', function (code) {
-    console.log('client process exited with code:', code)
-    process.exit(code)
-  })
-  proc.stdout.on('data', function (data) {
-    process.stdout.write(data)
-  })
-  proc.stderr.on('data', function (data) {
-    process.stderr.write(data)
-  })
+proc.on('close', function (code) {
+  console.log('client process exited with code:', code)
+  process.exit(code)
 })
+proc.stdout.on('data', function (data) {
+  process.stdout.write(data)
+})
+proc.stderr.on('data', function (data) {
+  process.stderr.write(data)
+})
+
+// 'SIGKILL', 'SIGTERM',
+var exitEvents = ['SIGINT', 'SIGTERM', 'SIGHUP', 'exit', 'kill']
+for (var i = 0, e; e = exitEvents[i]; i++)
+  process.on(e, function () {
+      proc.kill()
+  })
 
 app.on('ready', function() {
   mainWindow = new BrowserWindow({

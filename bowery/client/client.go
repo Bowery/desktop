@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/Bowery/gopackages/config"
@@ -18,6 +19,7 @@ var (
 	port               string
 	applicationManager *ApplicationManager
 	rollbarC           *rollbar.Client
+	AbsPath            string
 )
 
 func main() {
@@ -40,7 +42,8 @@ func main() {
 		}
 	}()
 
-	abs, _ := filepath.Abs("ui/")
+	abs, _ := filepath.Abs(filepath.Join(filepath.Dir(os.Args[0]), "../ui/"))
+	AbsPath = abs
 
 	router := mux.NewRouter()
 	router.NotFoundHandler = http.FileServer(http.Dir(abs))

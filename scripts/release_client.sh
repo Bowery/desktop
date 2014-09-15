@@ -28,17 +28,6 @@ goxc \
     go-install \
     xc &> "${DIR}/goxc.log"
 
-
-cd "$DIR/bowery/agent"
-echo "--> Cross compling agent..."
-goxc \
-    -tasks-="validate" \
-    -d="${DIR}/pkg" \
-    -bc="linux windows,386 darwin,amd64" \
-    -pv="${VERSION}" \
-    go-install \
-    xc &> "${DIR}/goxc.log"
-
 cd "$DIR/bowery/client"
 
 echo "--> Downloading shells..."
@@ -60,42 +49,51 @@ unzip -q /tmp/atom/windows_386.zip -d "${DIR}/pkg/windows_386"
 echo "--> Copying client and app into shells..."
 # Move Client For OSX
 RESOURCES="${DIR}/pkg/darwin_amd64/Atom.app/Contents/Resources"
-mkdir -p "${RESOURCES}/bin/"
+mkdir -p "${RESOURCES}/bin"
+mkdir -p "${RESOURCES}/app"
 cp -rf "${DIR}/pkg/${VERSION}/darwin_amd64/" "${RESOURCES}/bin/"
-cp -rf "${DIR}/ui" "${RESOURCES}/bin/"
+cp -rf "${DIR}/ui" "${RESOURCES}/"
 rm -rf "${RESOURCES}/default_app/"
-mkdir -p "${RESOURCES}/app/"
 cp -r "${DIR}/shell/" "${RESOURCES}/app/"
+mv "${DIR}/pkg/darwin_amd64/Atom.app" "${DIR}/pkg/darwin_amd64/Bowery.app"
+rm "${DIR}/pkg/darwin_amd64/LICENSE"
+cat "${DIR}/shell/Info.plist" > "${DIR}/pkg/darwin_amd64/Bowery.app/Contents/Info.plist"
 
 # Move Client for Win32
 RESOURCES="${DIR}/pkg/windows_386/resources"
 rm -rf "${RESOURCES}/default_app"
 mkdir -p "${RESOURCES}/bin"
+mkdir -p "${RESOURCES}/app"
 cp -rf "${DIR}/pkg/${VERSION}/windows_386/" "${RESOURCES}/bin/"
-cp -rf "${DIR}/ui" "${RESOURCES}/bin/"
+cp -rf "${DIR}/ui" "${RESOURCES}/"
 rm -rf "${RESOURCES}/default_app/"
 mkdir -p "${RESOURCES}/app/"
 cp -r "${DIR}/shell/" "${RESOURCES}/app/"
+rm "${DIR}/pkg/windows_386/LICENSE"
 
 # Move Client for Linux amd64
 RESOURCES="${DIR}/pkg/linux_amd64/resources"
 rm -rf "${RESOURCES}/default_app"
 mkdir -p "${RESOURCES}/bin"
+mkdir -p "${RESOURCES}/app"
 cp -rf "${DIR}/pkg/${VERSION}/linux_amd64/" "${RESOURCES}/bin/"
-cp -rf "${DIR}/ui" "${RESOURCES}/bin/"
+cp -rf "${DIR}/ui" "${RESOURCES}/"
 rm -rf "${RESOURCES}/default_app/"
 mkdir -p "${RESOURCES}/app/"
 cp -r "${DIR}/shell/" "${RESOURCES}/app/"
+rm "${DIR}/pkg/linux_amd64/LICENSE"
 
 # Move Client for Linux 386
 RESOURCES="${DIR}/pkg/linux_386/resources"
 rm -rf "${RESOURCES}/default_app"
 mkdir -p "${RESOURCES}/bin"
+mkdir -p "${RESOURCES}/app"
 cp -rf "${DIR}/pkg/${VERSION}/linux_386/" "${RESOURCES}/bin/"
-cp -rf "${DIR}/ui" "${RESOURCES}/bin/"
+cp -rf "${DIR}/ui" "${RESOURCES}/"
 rm -rf "${RESOURCES}/default_app/"
 mkdir -p "${RESOURCES}/app/"
 cp -r "${DIR}/shell/" "${RESOURCES}/app/"
+rm "${DIR}/pkg/linux_386/LICENSE"
 
 # Remove Client Binaries once copy is complete
 rm -rf "${DIR}/pkg/${VERSION}"
