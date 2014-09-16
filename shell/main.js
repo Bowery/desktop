@@ -8,7 +8,7 @@ var BrowserWindow = require('browser-window')  // Module to create native browse
 // Report crashes to our server.
 require('crash-reporter').start()
 try {
-  var pid = require('fs').readFileSync('client_pid')
+  var pid = require('fs').readFileSync('/tmp/bowery_client_pid')
   if (pid) process.kill(pid)
 } catch (e) {
   console.log('yolo. no pid file found.')
@@ -28,7 +28,13 @@ var extension = /^win/.test(process.platform) ? ".exe" : ""
 var clientPath = path.join(__dirname, "../bin/", "client" + extension)
 var proc = require('child_process').spawn(clientPath, [])
 
-require('fs').writeFileSync('client_pid', proc.pid)
+try {
+  require('fs').writeFileSync('/tmp/bowery_client_pid', proc.pid)
+  require('fs').writeFileSync('/tmp/bowery_dir', __dirname)
+} catch (e) {
+  console.log(e, 'could not write pidfile')
+}
+
 
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)

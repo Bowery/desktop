@@ -58,6 +58,9 @@ cp -r "${DIR}/shell/" "${RESOURCES}/app/"
 mv "${DIR}/pkg/darwin_amd64/Atom.app" "${DIR}/pkg/darwin_amd64/Bowery.app"
 rm "${DIR}/pkg/darwin_amd64/LICENSE"
 cat "${DIR}/shell/Info.plist" > "${DIR}/pkg/darwin_amd64/Bowery.app/Contents/Info.plist"
+cp -f "${DIR}/shell/atom.icns" "${DIR}/build/atom-shell/Bowery.app/Contents/Resources/bowery.icns"
+./set_icon.sh "${DIR}/shell/atom/icon.png" "${DIR}/build/atom-shell/Bowery.app"
+
 
 # Move Client for Win32
 RESOURCES="${DIR}/pkg/windows_386/resources"
