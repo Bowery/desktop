@@ -83,6 +83,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
+<script src="gifstream.js"></script>
 <script>
 Polymer('bowery-core', {
   created: function () {
@@ -121,6 +122,17 @@ Polymer('bowery-core', {
     this.$.analytics.track("Opened App")
     window.addEventListener('bowery-navigate', this.onNavigate.bind(this))
 
+    // Drag & Drop Swag
+    window.addEventListener('dragenter', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    })
+    window.addEventListener('dragover', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    })
+    window.addEventListener('drop', this.createAppFromDroppedImage)
+
     this.$.db.load()
     this.developer = this.$.db.value || {}
 
@@ -135,6 +147,22 @@ Polymer('bowery-core', {
     this.newAppFields[1].value = this.developer.aws_access_secret
 
     this.navigate('/apps')
+  },
+  createAppFromDroppedImage: function (e) {
+    e.preventDefault()
+    var file = e.dataTransfer.files[0];
+    if (file.type != "image/gif") {
+      return alert("File must be a gif, not " + file.type)
+    }
+    var self = this
+    var reader = new FileReader();
+    reader.onload = function (evt) {
+      (new GifStream(evt.target.result)).parseID(function (comExt) {
+          console.log('$$$$ ID', comExt.comment)
+      })
+      // TODO (thebyrd) Navigate to Create App Page w/ the environment ID already set
+    }
+    reader.readAsBinaryString(file)
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
@@ -244,7 +272,6 @@ Polymer('bowery-core', {
   },
   getApps: function (e, detail) {
     var r = JSON.parse(detail.response)
-    console.log('$$$ getApps', r)
     if (r.status == "found")
       this.applications = r.applications
     else
