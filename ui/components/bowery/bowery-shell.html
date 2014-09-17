@@ -86,6 +86,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         var response = JSON.parse(detail.xhr.responseText)
         if (response.status == "success") {
           this.$.cmd.value = ""
+          this.$.logs.scrollTop = this.$.logs.scrollHeight
         } else if (response.error != "EOF") {
           this.$.message.innerHTML = response.error
         }
