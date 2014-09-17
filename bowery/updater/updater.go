@@ -63,8 +63,7 @@ func main() {
 	// Check for updates.
 	go func() {
 		for {
-			//<-time.After(4 * time.Hour)
-			<-time.After(10 * time.Second)
+			<-time.After(4 * time.Hour)
 			log.Println("Update is being checked")
 
 			newVersionURL, err := checkUpdate(updateURL)
@@ -255,10 +254,10 @@ func isExecutable(info os.FileInfo) bool {
 	}
 
 	// Windows style with PATHEXT.
-	ext := filepath.Ext(info.Name())
+	ext := strings.ToLower(filepath.Ext(info.Name()))
 	list := filepath.SplitList(os.Getenv("PATHEXT"))
 	for _, supportedExt := range list {
-		if ext == supportedExt {
+		if ext == strings.ToLower(supportedExt) {
 			return true
 		}
 	}
