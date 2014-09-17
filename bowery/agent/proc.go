@@ -20,74 +20,6 @@ var (
 	mutex           sync.Mutex
 )
 
-// Proc describes a process and its children.
-type Proc struct {
-	Pid      int
-	Ppid     int
-	Children []*Proc
-}
-
-// Kill kills a process and its children.
-func (proc *Proc) Kill() error {
-	p, err := os.FindProcess(proc.Pid)
-	if err != nil {
-		return err
-	}
-
-	err = p.Kill()
-	if err != nil {
-		return err
-	}
-
-	if proc.Children != nil {
-		for _, p := range proc.Children {
-			err = p.Kill()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// GetPidTree gets the process tree for a pid. The returned process structure
-// is nil if the given pid is not a running process.
-func GetPidTree(cpid int) (*Proc, error) {
-	var root *Proc
-
-	procs, err := listProcs()
-	if err != nil {
-		return nil, err
-	}
-	children := make([]*Proc, 0)
-
-	for _, proc := range procs {
-		// We've found the root process.
-		if proc.Pid == cpid {
-			root = proc
-			continue
-		}
-
-		// Found a child process.
-		if proc.Ppid == cpid {
-			p, err := GetPidTree(proc.Pid)
-			if err != nil {
-				return nil, err
-			}
-
-			if p != nil {
-				children = append(children, p)
-			}
-		}
-	}
-
-	if root != nil {
-		root.Children = children
-	}
-	return root, nil
-}
-
 // Restart restarts the services processes, the init cmd is only restarted
 // if initReset is true. Commands to run are only updated if reset is true.
 // A channel is returned and signaled if the commands start or the build fails.
@@ -275,7 +207,7 @@ func startProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) error {
 // killByCmd kills the process tree for a given cmd.
 func killByCmd(cmd *exec.Cmd) error {
 	if cmd != nil && cmd.Process != nil {
-		proc, err := GetPidTree(cmd.Process.Pid)
+		proc, err := sys.GetPidTree(cmd.Process.Pid)
 		if err != nil {
 			return err
 		}
