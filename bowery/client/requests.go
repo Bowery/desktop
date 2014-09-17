@@ -585,6 +585,15 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	err = KenmareCreateEvent(app, reqBody.Cmd)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})

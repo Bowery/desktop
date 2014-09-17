@@ -16,6 +16,11 @@ type runCmdReq struct {
 	Cmd   string `json:"cmd"`
 }
 
+type runCmdsReq struct {
+	AppID string   `json:"appID"`
+	Cmds  []string `json:"cmds"`
+}
+
 // Application defines an application.
 type Application struct {
 	// Unique identifier.
