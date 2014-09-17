@@ -131,7 +131,7 @@ Polymer('bowery-core', {
       e.stopPropagation()
       e.preventDefault()
     })
-    window.addEventListener('drop', this.createAppFromDroppedImage)
+    window.addEventListener('drop', this.createAppFromDroppedImage.bind(this))
 
     this.$.db.load()
     this.developer = this.$.db.value || {}
@@ -157,12 +157,18 @@ Polymer('bowery-core', {
     var self = this
     var reader = new FileReader();
     reader.onload = function (evt) {
-      (new GifStream(evt.target.result)).parseID(function (comExt) {
-          console.log('$$$$ ID', comExt.comment)
-      })
+      (new GifStream(evt.target.result)).parseID(self.populateNewAppScreen.bind(self))
       // TODO (thebyrd) Navigate to Create App Page w/ the environment ID already set
     }
     reader.readAsBinaryString(file)
+  },
+  populateNewAppScreen: function (comExt) {
+    var envID = comExt && comExt.comment
+
+    if (envID) this.newAppFields[2].value = envID
+
+    this.app = {}
+    this.navigate("/apps/new")
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
