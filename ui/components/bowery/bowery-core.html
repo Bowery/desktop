@@ -75,7 +75,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}" token="{{developer.token}}">
-    <a href="/apps" on-click="{{navigate}}">I'm lost. Take me home.</a>
+    <a href="/apps" on-click="{{navigate}}">I'm lost. Take me home.</a> | <a href="https://console.aws.amazon.com/iam/#users" on-click="{{openExternalWindow}}">What are AWS Keys?</a>
   </bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
@@ -294,6 +294,15 @@ Polymer('bowery-core', {
       return this.navigate('/apps')
     }
     alert('unable to delete ')
+  },
+  openExternalWindow: function (path) {
+    if (typeof path != "string") {
+      var e = path
+      e.preventDefault()
+      path = e.target.getAttribute('href')
+    }
+    this.$.analytics.track('Opened external window ' + path)
+    window.open(path, "", "resizable,scrollbars,status")
   },
   navigate: function (path) {
     if (typeof path != "string") {
