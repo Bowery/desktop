@@ -7,6 +7,6 @@ import (
 )
 
 func isDisconnected(operr *net.OpError) bool {
-	return operr.Err == syscall.EPIPE || open.Err == syscall.WSAECONNRESET ||
-		open.Err == syscall.ERROR_BROKEN_PIPE
+	return operr.Err == syscall.EPIPE || operr.Err == syscall.WSAECONNRESET ||
+		operr.Err == syscall.ERROR_BROKEN_PIPE
 }

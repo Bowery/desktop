@@ -1,79 +1,81 @@
 #!/bin/bash
 
 # Get the parent directory of where this script is.
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
-DIR="$( cd -P "$( dirname "$SOURCE" )/../" && pwd )"
+source="${BASH_SOURCE[0]}"
+while [ -h "${source}" ] ; do source="$(readlink "${source}")"; done
+root="$( cd -P "$( dirname "${source}" )/../" && pwd )"
 CGO_ENABLED=0
 
-DIR="$DIR/bowery/agent"
+agent="${root}/bowery/agent"
+updater="${root}/bowery/updater"
+bucket=bowery.sh
+s3endpoint="https://${bucket}.s3.amazonaws.com"
 
-echo "here $DIR"
-# Change into that dir because we expect that
-cd "$DIR"
+echo "Agent dir ${agent}"
+cd "${agent}"
 
-# Determine the version that we're building based on the contents
-# of delancey/VERSION.
-VERSION=$(cat ../VERSION)
-VERSIONDIR="${VERSION}"
-echo "Version: ${VERSION}"
+# Get the version we're building.
+version="$(cat ../VERSION)"
+echo "Version: ${version}"
 
-# Make sure that if we're killed, we kill all our subprocseses
-# trap "kill 0" SIGINT SIGTERM EXIT
+#go get -u github.com/laher/goxc
 
-# Make sure goxc is installed
-go get -u github.com/laher/goxc
-
-# This function builds whatever directory we're in...
+# Build the agent.
 goxc \
-    -tasks-="validate" \
-    -d="${DIR}/pkg" \
-    -pv="${VERSION}" \
-    $XC_OPTS \
-    go-install \
-    xc
+  -wd="${agent}" \
+  -d="${agent}/pkg" \
+  -pv="${version}" \
+  ${XC_OPTS} \
+  xc
 
-# tar+gzip all the packages
-mkdir -p "./pkg/${VERSIONDIR}/dist"
-for PLATFORM in $(find "./pkg/${VERSIONDIR}" -mindepth 1 -maxdepth 1 -type d); do
-    PLATFORM_NAME=$(basename ${PLATFORM})
-    ARCHIVE_NAME="${VERSIONDIR}_${PLATFORM_NAME}"
+# Build the updater, output to agent/pkg.
+goxc \
+  -wd="${updater}" \
+  -d="${agent}/pkg" \
+  -pv="${version}" \
+  ${XC_OPTS} \
+  xc
 
-    if [ $PLATFORM_NAME = "dist" ]; then
-        continue
-    fi
+# Tar+gzip up the binaries and add download urls to the VERSION file.
+mkdir -p "pkg/${version}/dist"
+echo "${version}" > "pkg/${version}/dist/VERSION"
+for platform in $(find "pkg/${version}" -mindepth 1 -maxdepth 1 -type d); do
+  platform_name="$(basename "${platform}")"
+  archive="${version}_${platform_name}.tar.gz"
 
-    pushd ${PLATFORM}
-    tar -czf "${DIR}/pkg/${VERSIONDIR}/dist/${ARCHIVE_NAME}.tar.gz" ./*
-    popd
+  if [[ "${platform_name}" == "dist" ]]; then
+    continue
+  fi
+
+  pushd "${platform}"
+  tar -czf "${agent}/pkg/${version}/dist/${archive}" *
+  echo "${s3endpoint}/${archive}" >> "${agent}/pkg/${version}/dist/VERSION"
+  popd
 done
 
-echo $VERSION > "./pkg/${VERSIONDIR}/dist/VERSION"
-cp -r "${DIR}/init/"* "./pkg/${VERSIONDIR}/dist/"
-cp "../../scripts/install_agent.sh" "./pkg/${VERSIONDIR}/dist/"
-
-# Make the checksums
-pushd "./pkg/${VERSIONDIR}/dist"
-shasum -a256 * > "./${VERSIONDIR}_SHA256SUMS"
+# Copy support files and checksums
+cp -r "${agent}/init/"* "pkg/${version}/dist"
+cp "${root}/scripts/install_agent.sh" "pkg/${version}/dist"
+pushd "pkg/${version}/dist"
+shasum -a256 * > "${version}_SHA256SUMS"
 popd
 
-for ARCHIVE in ./pkg/${VERSION}/dist/*; do
-    ARCHIVE_NAME=$(basename ${ARCHIVE})
-    echo Uploading: $ARCHIVE_NAME from $ARCHIVE
-    file=$ARCHIVE_NAME
-    bucket=bowery.sh
-    resource="/${bucket}/${file}"
-    contentType="application/octet-stream"
-    dateValue=`date -u +"%a, %d %h %Y %T +0000"`
-    stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-    s3Key=AKIAI6ICZKWF5DYYTETA
-    s3Secret=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
-    signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-    curl -k\
-        -T ${ARCHIVE} \
-        -H "Host: ${bucket}.s3.amazonaws.com" \
-        -H "Date: ${dateValue}" \
-        -H "Content-Type: ${contentType}" \
-        -H "Authorization: AWS ${s3Key}:${signature}" \
-        https://${bucket}.s3.amazonaws.com/${file}
+for archive in "pkg/${version}/dist/"*; do
+  name=$(basename ${archive})
+  echo "Uploading: ${name} from ${archive}"
+  file="${name}"
+  resource="/${bucket}/${file}"
+  contentType="application/octet-stream"
+  dateValue="$(date -u +"%a, %d %h %Y %T +0000")"
+  stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
+  s3Key=AKIAI6ICZKWF5DYYTETA
+  s3Secret=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
+  signature="$(echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64)"
+  curl -k \
+    -T ${archive} \
+    -H "Host: ${bucket}.s3.amazonaws.com" \
+    -H "Date: ${dateValue}" \
+    -H "Content-Type: ${contentType}" \
+    -H "Authorization: AWS ${s3Key}:${signature}" \
+    "${s3endpoint}/${file}"
 done
