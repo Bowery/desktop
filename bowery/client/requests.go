@@ -625,17 +625,23 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Cache-Control", "no-cache")
 	rw.Header().Set("Connection", "keep-alive")
 
+	notify := rw.(http.CloseNotifier).CloseNotify()
 	for {
-		msg := <-messageChan
-		log.Println(msg)
+		select {
+		case <-notify:
+			break
+		default:
+			msg := <-messageChan
+			log.Println(msg)
 
-		data, err := json.Marshal(msg)
-		if err != nil {
-			return
+			data, err := json.Marshal(msg)
+			if err != nil {
+				return
+			}
+
+			fmt.Fprintf(rw, "data: %v\n\n", string(data))
+			f.Flush()
 		}
-
-		fmt.Fprintf(rw, "data: %v\n\n", string(data))
-		f.Flush()
 	}
 }
 
