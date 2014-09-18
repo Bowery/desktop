@@ -630,8 +630,7 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 		select {
 		case <-notify:
 			break
-		default:
-			msg := <-messageChan
+		case msg := <-messageChan:
 			log.Println(msg)
 
 			data, err := json.Marshal(msg)
