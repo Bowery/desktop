@@ -33,6 +33,7 @@ var Routes = []*Route{
 	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
 	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
 	&Route{"/command", []string{"POST"}, RunCommandHandler},
+	&Route{"/commands", []string{"POST"}, RunCommandsHandler},
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
 	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
@@ -295,6 +296,29 @@ func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
 			app.StderrWriter.Write([]byte(err.Error()))
 		}
 	}()
+
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// POST /commands, Run multiple commands. Do not respond successfully
+// until all commands have finished running.
+func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+
+	body := new(runCmdsReq)
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(body)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	for _, c := range body.Cmds {
+		cmd := parseCmd(c, sys.HomeVar, nil, nil)
+		cmd.Run()
+	}
 
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
