@@ -23,7 +23,7 @@ import (
 	"github.com/Bowery/gopackages/sys"
 )
 
-const usage = `usage: updater <update url> <current version url> <command> [arguments]`
+const usage = `usage: updater <update url> <current version> <command> [arguments]`
 
 var (
 	ErrNotFound = errors.New("Update version url not found for current system")
@@ -51,7 +51,7 @@ func main() {
 		os.Exit(2)
 	}
 	updateURL := os.Args[1]
-	versionURL := os.Args[2]
+	version := os.Args[2]
 	cmdArgs := os.Args[3:]
 
 	binDir, err := osext.ExecutableFolder()
@@ -66,18 +66,18 @@ func main() {
 			<-time.After(4 * time.Hour)
 			log.Println("Update is being checked")
 
-			newVersionURL, err := checkUpdate(updateURL)
+			newVersion, newVersionURL, err := checkUpdate(updateURL)
 			if err != nil {
 				log.Println("Update error:", err)
 				continue
 			}
 
-			if newVersionURL == versionURL {
+			if newVersion == version {
 				log.Println("Version hasn't changed")
 				continue
 			}
 
-			log.Println("Getting contents from new version at", newVersionURL)
+			log.Println("Getting contents for version", newVersion, "at", newVersionURL)
 			contents, err := getVersion(newVersionURL)
 			if err != nil {
 				log.Println("Update error:", err)
@@ -114,7 +114,7 @@ func main() {
 				continue
 			}
 
-			versionURL = newVersionURL
+			version = newVersion
 
 			pid := getPid()
 			if pid > 0 {
@@ -178,33 +178,40 @@ func main() {
 }
 
 // checkUpdate gets the most recent version url from an update url
-func checkUpdate(url string) (string, error) {
+func checkUpdate(url string) (string, string, error) {
 	res, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
-		return "", errors.New("Status code not in 2xx class: " + res.Status)
+		return "", "", errors.New("Status code not in 2xx class: " + res.Status)
 	}
 
 	// Scan each line looking for the version url for the current system.
+	version := ""
+	line := 0
 	scanner := bufio.NewScanner(res.Body)
 	for scanner.Scan() {
 		text := scanner.Text()
+		line++
+		if line <= 1 {
+			version = text
+			continue
+		}
 
 		if strings.Contains(text, runtime.GOOS) && strings.Contains(text, runtime.GOARCH) {
-			return text, nil
+			return version, text, nil
 		}
 	}
 
 	err = scanner.Err()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return "", ErrNotFound
+	return "", "", ErrNotFound
 }
 
 // getVersion retrieves and untars the versions archive into a file map.
