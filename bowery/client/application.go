@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Bowery/gopackages/schemas"
@@ -54,18 +55,24 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// running proceed.
 		for app != nil && app.Status != "running" {
 			application, err := GetApplication(app.ID)
-			if err != nil {
-				continue
+			if err == nil {
+				log.Println("provisioning status: " + application.Status)
+				app.Status = application.Status
+				app.Location = application.Location
+				msg := map[string]interface{}{
+					"appID":   app.ID,
+					"type":    "status",
+					"message": app,
+				}
+				ssePool.messages <- msg
+				if app.Status == "running" {
+					break
+				}
+			} else if strings.Contains(err.Error(), "Not Found") {
+				// If the application can't be found then it's been deleted.
+				return
 			}
-			log.Println("provisioning status: " + application.Status)
-			app.Status = application.Status
-			app.Location = application.Location
-			msg := map[string]interface{}{
-				"appID":   app.ID,
-				"type":    "status",
-				"message": app,
-			}
-			ssePool.messages <- msg
+
 			<-time.After(5 * time.Second)
 		}
 
@@ -73,22 +80,19 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// response is returned, update the database.
 		for app != nil && !app.IsSyncAvailable {
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
-			if err == nil {
-				app.IsSyncAvailable = true
-				app.Status = "running"
-				msg := map[string]interface{}{
-					"appID":   app.ID,
-					"type":    "status",
-					"message": app,
-				}
-				ssePool.messages <- msg
-				break
+			if err != nil {
+				<-time.After(5 * time.Second)
+				continue
 			}
-			<-time.After(5 * time.Second)
-		}
 
-		if app != nil {
-			// Update application.
+			app.IsSyncAvailable = true
+			app.Status = "running"
+			msg := map[string]interface{}{
+				"appID":   app.ID,
+				"type":    "status",
+				"message": app,
+			}
+			ssePool.messages <- msg
 			application, _ := GetApplication(app.ID)
 			app, _ = am.UpdateByID(app.ID, application)
 		}
@@ -144,6 +148,10 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 	app, ok := am.Applications[id]
 	if !ok {
 		return nil, errors.New("invalid app id")
+	}
+
+	if changes == nil {
+		return app, nil
 	}
 
 	// If everything is empty then ignore it
