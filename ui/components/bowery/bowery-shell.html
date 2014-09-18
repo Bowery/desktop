@@ -54,11 +54,19 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       margin-left: 18px;
     }
     </style>
-    <p id="message">All good in the hood.</p>
+    <h3 id="message">Your app {{app.status == 'error' ? 'has an' : 'is'}} {{app.status}}.</h3>
+    <template if="{{app.status == 'error'}}">
+      <p>{{app.error}}</p>
+    </template>
     <div class="executer">
-      <label>></label>
-      <input id="cmd" type="text" on-keyup="{{runCmdOnEnter}}">
-      <button on-click="{{runCmd}}">RUN</button>
+      <template if="{{app.status == 'provisioning'}}">
+        <p>Your application is still provisioning. When it's done you'll be able to run commands from this window and see the output.</p>
+      </template>
+      <template if="{{app.status != 'provisioning'}}">
+        <label>></label>
+        <input id="cmd" type="text" on-keyup="{{runCmdOnEnter}}">
+        <button on-click="{{runCmd}}">RUN</button>
+      </template>
     </div>
     <div id="logs" class="logs">
       <pre>{{logs}}</pre>
