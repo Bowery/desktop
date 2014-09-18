@@ -177,6 +177,7 @@ Polymer('bowery-core', {
       for (var i = 0, app; app = this.applications[i]; i++)
         if (app._id == event.appID)
           return (this.applications[i].status = event.message.status)
+        // TODO (sjkaliski) if (error) app.error = event.message.error ?
 
     if (event.type == 'log')
       if (this.app._id == event.appID)
