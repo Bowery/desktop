@@ -5,13 +5,13 @@
 	<key>BuildMachineOSBuild</key>
 	<string>12F45</string>
 	<key>CFBundleDisplayName</key>
-	<string>Atom</string>
+	<string>Bowery</string>
 	<key>CFBundleExecutable</key>
 	<string>Atom</string>
 	<key>CFBundleIconFile</key>
 	<string>bowery.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.github.atom</string>
+	<string>com.bowery.desktop</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

@@ -4,6 +4,7 @@ var fs = require('fs')
 var app = require('app')  // Module to control application life.
 var path = require('path')
 var BrowserWindow = require('browser-window')  // Module to create native browser window.
+var Menu = require('menu')
 
 // Report crashes to our server.
 require('crash-reporter').start()
@@ -55,6 +56,19 @@ for (var i = 0, e; e = exitEvents[i]; i++)
   })
 
 app.on('ready', function() {
+  var template = [{
+    label: 'Bowery',
+    submenu:[
+      {label: 'About Bowery', selector: 'orderFrontStandardAboutPanel:'},
+      {type: 'separator'},
+      {label: 'Quit', accelerator: 'Command+Q', click: function() {app.quit()}}
+    ]
+  }]
+  var menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+
+
+
   mainWindow = new BrowserWindow({
     title: 'Bowery',
     frame: true,
