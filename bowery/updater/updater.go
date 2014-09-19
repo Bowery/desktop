@@ -5,6 +5,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -53,6 +54,18 @@ func main() {
 	updateURL := os.Args[1]
 	version := os.Args[2]
 	cmdArgs := os.Args[3:]
+
+	// If version is empty try to detect it.
+	if version == "" {
+		cmd := exec.Command(cmdArgs[0], "--version")
+		out, _ := cmd.CombinedOutput()
+		version = strings.Trim(string(out), " \r\n")
+	}
+	if version == "" {
+		fmt.Fprintln(os.Stderr, "A version couldn't be detected please provide a version")
+		os.Exit(1)
+	}
+	log.Println("Current version:", version)
 
 	binDir, err := osext.ExecutableFolder()
 	if err != nil {
@@ -115,7 +128,6 @@ func main() {
 			}
 
 			version = newVersion
-
 			pid := getPid()
 			if pid > 0 {
 				log.Println("Killing process tree for pid:", pid)
@@ -225,9 +237,15 @@ func getVersion(url string) (map[os.FileInfo]io.Reader, error) {
 	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
 		return nil, errors.New("Status code not in 2xx class: " + res.Status)
 	}
-
 	contents := make(map[os.FileInfo]io.Reader)
-	archive := tar.NewReader(res.Body)
+
+	body, err := gzip.NewReader(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+	archive := tar.NewReader(body)
+
 	for {
 		hdr, err := archive.Next()
 		if err != nil && err != io.EOF {
