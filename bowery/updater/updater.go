@@ -21,7 +21,11 @@ import (
 	"time"
 
 	"bitbucket.org/kardianos/osext"
+	"github.com/Bowery/gopackages/config"
+	"github.com/Bowery/gopackages/keen"
+	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/sys"
+	goversion "github.com/hashicorp/go-version"
 )
 
 const usage = `usage: updater <update url> <current version> <command> [arguments]`
@@ -55,6 +59,13 @@ func main() {
 	version := os.Args[2]
 	cmdArgs := os.Args[3:]
 
+	keenC := &keen.Client{
+		WriteKey:  config.KeenWriteKey,
+		ProjectID: config.KeenProjectID,
+	}
+
+	rollbarC := rollbar.NewClient(config.RollbarToken, "production")
+
 	// If version is empty try to detect it.
 	if version == "" {
 		cmd := exec.Command(cmdArgs[0], "--version")
@@ -62,13 +73,18 @@ func main() {
 		version = strings.Trim(string(out), " \r\n")
 	}
 	if version == "" {
-		fmt.Fprintln(os.Stderr, "A version couldn't be detected please provide a version")
+		err := errors.New("A version couldn't be detected, please provide a version")
+		rollbarC.Report(err, nil)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	log.Println("Current version:", version)
 
 	binDir, err := osext.ExecutableFolder()
 	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version": version,
+		})
 		log.Println(err)
 		os.Exit(1)
 	}
@@ -76,16 +92,33 @@ func main() {
 	// Check for updates.
 	go func() {
 		for {
-			<-time.After(4 * time.Hour)
+			<-time.After(1 * time.Hour)
 			log.Println("Update is being checked")
 
 			newVersion, newVersionURL, err := checkUpdate(updateURL)
 			if err != nil {
+				rollbarC.Report(err, map[string]string{
+					"version": version,
+				})
 				log.Println("Update error:", err)
 				continue
 			}
 
-			if newVersion == version {
+			var newV *goversion.Version
+			oldV, err := goversion.NewVersion(version)
+			if err == nil {
+				newV, err = goversion.NewVersion(newVersion)
+			}
+			if err != nil {
+				rollbarC.Report(err, map[string]string{
+					"version":    version,
+					"newVersion": newVersion,
+				})
+				log.Println("Update error:", err)
+				continue
+			}
+
+			if oldV.Equal(newV) {
 				log.Println("Version hasn't changed")
 				continue
 			}
@@ -93,6 +126,10 @@ func main() {
 			log.Println("Getting contents for version", newVersion, "at", newVersionURL)
 			contents, err := getVersion(newVersionURL)
 			if err != nil {
+				rollbarC.Report(err, map[string]string{
+					"version":    version,
+					"newVersion": newVersion,
+				})
 				log.Println("Update error:", err)
 				continue
 			}
@@ -123,16 +160,28 @@ func main() {
 				}
 			}
 			if replaceErr != nil {
+				rollbarC.Report(err, map[string]string{
+					"version":    version,
+					"newVersion": newVersion,
+				})
 				log.Println("Update error:", replaceErr)
 				continue
 			}
 
+			keenC.AddEvent("agent update", map[string]string{
+				"oldVersion": version,
+				"newVersion": newVersion,
+			})
 			version = newVersion
+
 			pid := getPid()
 			if pid > 0 {
 				log.Println("Killing process tree for pid:", pid)
 				proc, err := sys.GetPidTree(pid)
 				if err != nil {
+					rollbarC.Report(err, map[string]string{
+						"version": version,
+					})
 					log.Println("Update error:", err)
 					continue
 				}
@@ -140,6 +189,9 @@ func main() {
 				if proc != nil {
 					err = proc.Kill()
 					if err != nil {
+						rollbarC.Report(err, map[string]string{
+							"version": version,
+						})
 						log.Println("Update error:", err)
 					}
 				}
@@ -159,6 +211,9 @@ func main() {
 
 		err := cmd.Start()
 		if err != nil {
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
 			log.Println("Command error:", err)
 			continue
 		} else {
@@ -182,6 +237,9 @@ func main() {
 				}
 			}
 
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
 			log.Println("Process with pid", oldPid, "failed to exit properly")
 		} else {
 			log.Println("Process with pid", oldPid, "has exited")
