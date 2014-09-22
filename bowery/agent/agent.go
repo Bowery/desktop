@@ -16,17 +16,25 @@ import (
 )
 
 var (
-	Env           = flag.String("env", "production", "If you want to run the agent in development mode uses different ports")
+	Env           string
+	VERSION       string // This is set when release_agent.sh is ran.
 	InDevelopment = false
 	Applications  = map[string]*Application{}
-	streamManager = NewStreamManager() // only declared here so output.go can write to its tcp connection
+	streamManager = NewStreamManager()
 )
 
 func main() {
+	ver := false
 	runtime.GOMAXPROCS(1)
+	flag.StringVar(&Env, "env", "production", "If you want to run the agent in development mode uses different ports")
+	flag.BoolVar(&ver, "version", false, "Print the version")
 	flag.Parse()
-	if *Env == "development" {
+	if Env == "development" {
 		InDevelopment = true
+	}
+	if ver {
+		fmt.Println(VERSION)
+		return
 	}
 
 	// Register routes.
