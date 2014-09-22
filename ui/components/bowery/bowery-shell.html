@@ -29,10 +29,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       left: 36px;
     }
     input {
-      width: 229px;
+      width: 247px;
       height: 18px;
       margin-right: 9px;
-      padding: 9px 18px 9px 36px;
+      padding: 9px 18px;
     }
     button {
       background: white;
@@ -63,8 +63,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <p>Your application is still provisioning. When it's done you'll be able to run commands from this window and see the output.</p>
       </template>
       <template if="{{app.status != 'provisioning'}}">
-        <label>></label>
-        <input id="cmd" type="text" on-keyup="{{runCmdOnEnter}}">
+        <input id="cmd" type="text" placeholder=">" on-keyup="{{runCmdOnEnter}}">
         <button on-click="{{runCmd}}">RUN</button>
       </template>
     </div>

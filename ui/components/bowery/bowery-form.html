@@ -50,8 +50,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </template>
       <template if="{{field.type != 'pill'}}">
         <div class="field-group">
-          <label for="{{field}}">{{field.label || field.name | makeReadable}}</label>
-          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+          <input id="{{field.name}}" placeholder="{{field.label || field.name | makeReadable}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
         </div>
       </template>
     </template>

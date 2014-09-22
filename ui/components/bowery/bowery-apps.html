@@ -8,7 +8,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="bowery-card.html">
-<link rel="import" href="bowery-modal.html">
 
 <polymer-element name="bowery-apps" attributes="applications">
   <template>
@@ -18,18 +17,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         margin: 0;
         padding: 0;
         background: inherit;
-      }
-      input {
-        width: 255px;
-        border: none;
-        background: none;
-      }
-      bowery-modal * {
-        color: white;
-        background:  none;
-      }
-      label {
-        color: rgb(245, 245, 245);
       }
       bowery-card {
         position: relative;
@@ -46,6 +33,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       }
       .unclickable {
         cursor: text;
+        padding: 0 9px 0 0;
       }
       #message {
         display: none;
