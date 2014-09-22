@@ -51,7 +51,7 @@ type Route struct {
 
 // GET /, Home page.
 func IndexHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "Bowery Agent")
+	fmt.Fprintf(rw, "Bowery Agent v"+VERSION)
 }
 
 // POST /, Upload service code running init steps.
