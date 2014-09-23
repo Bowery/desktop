@@ -171,16 +171,20 @@ Polymer('bowery-core', {
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
 
-    if (event.type == 'status')
-      for (var i = 0, app; app = this.applications[i]; i++)
-        if (app._id == event.appID)
-          return (this.applications[i].status = event.message.status)
-        // TODO (sjkaliski) if (error) app.error = event.message.error ?
+    if (event.type == 'status') {
+      for (var i in this.applications) {
+        var app = this.applications[i]
 
-    if (event.type == 'log')
-      if (this.app._id == event.appID)
-        this.app.logs += event.message
+        app.status = event.message.status
+        if (event.message.location) {
+          app.location = event.message.location
+        }
+      }
+    }
 
+    if (event.type == 'log' && this.app._id == event.appID) {
+      this.app.logs += event.message
+    }
   },
   handleCreateAppAttempt: function (e) {
     var response = e.target.response
