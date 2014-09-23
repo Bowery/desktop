@@ -62,6 +62,7 @@ app.on('ready', function() {
       submenu:[
         {label: 'About Bowery', selector: 'orderFrontStandardAboutPanel:'},
         {type: 'separator'},
+        {label: 'Hide', accelerator: 'Command+H', selector: 'hide:'},
         {label: 'Quit', accelerator: 'Command+Q', click: function() {app.quit()}}
       ]
     },
