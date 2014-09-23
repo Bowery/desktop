@@ -95,7 +95,8 @@ func main() {
 	// Check for updates.
 	go func() {
 		for {
-			<-time.After(1 * time.Hour)
+			//<-time.After(1 * time.Hour)
+			<-time.After(1 * time.Minute)
 			log.Println("Update is being checked")
 
 			newVersion, newVersionURL, err := checkUpdate(updateURL)
