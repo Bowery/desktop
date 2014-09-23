@@ -180,6 +180,7 @@ Polymer('bowery-core', {
           app.location = event.message.location
         }
       }
+      return
     }
 
     if (event.type == 'log' && this.app._id == event.appID) {

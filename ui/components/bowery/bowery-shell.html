@@ -16,6 +16,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     #message {
       margin: 9px 18px;
     }
+    .error {
+      margin: 9px 18px 18px 18px;
+    }
     .executer {
       padding: 0 18px;
       margin-bottom: 9px;
@@ -56,7 +59,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     </style>
     <h3 id="message">Your app {{app.status == 'error' ? 'has an' : 'is'}} {{app.status}}.</h3>
     <template if="{{app.status == 'error'}}">
-      <p>{{app.error}}</p>
+      <p class="error">{{mostRecentError()}}</p>
     </template>
     <div class="executer">
       <template if="{{app.status == 'provisioning'}}">
@@ -77,8 +80,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   </template>
   <script>
     Polymer('bowery-shell', {
+      created: function () {
+        this.style.display = 'none'
+      },
       ready: function () {
-
+        this.style.display = 'block'
       },
       runCmd: function (e) {
         var cmd = this.$.cmd.value
@@ -97,6 +103,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         } else if (response.error != "EOF") {
           this.$.message.innerHTML = response.error
         }
+      },
+      mostRecentError: function () {
+        if (this.app.errors && this.app.errors.length) return this.app.errors[0].body
       }
     })
   </script>
