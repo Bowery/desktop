@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +36,8 @@ var (
 )
 
 func main() {
+	// Skip certificate errors on aws wildcard domains.
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	var mutex sync.RWMutex
 	wait := false
 	pid := 0
@@ -92,7 +95,8 @@ func main() {
 	// Check for updates.
 	go func() {
 		for {
-			<-time.After(1 * time.Hour)
+			//<-time.After(1 * time.Hour)
+			<-time.After(2 * time.Minute)
 			log.Println("Update is being checked")
 
 			newVersion, newVersionURL, err := checkUpdate(updateURL)
