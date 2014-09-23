@@ -167,8 +167,7 @@ printf "Downloading agent... "
 curl -fsSo $dir/bowery-agent.tar.gz http://${bucket}.${s3url}/${VERSION}_${OS}_${ARCH}.tar.gz
 printf "Installing... "
 tar -xzf $dir/bowery-agent.tar.gz
-sudo mv agent /usr/local/bin/bowery-agent
-sudo mv updater /usr/local/bin/bowery-updater
+sudo mv * /usr/local/bin
 colecho -c "Done!"
 
 printf "Setting up daemon... "

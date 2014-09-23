@@ -48,6 +48,8 @@ for platform in $(find "pkg/${version}" -mindepth 1 -maxdepth 1 -type d); do
   fi
 
   pushd "${platform}"
+  mv agent bowery-agent
+  mv updater bowery-updater
   tar -czf "${agent}/pkg/${version}/dist/${archive}" *
   echo "${s3endpoint}/${archive}" >> "${agent}/pkg/${version}/dist/VERSION"
   popd
