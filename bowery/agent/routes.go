@@ -315,9 +315,33 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Validate body.
+	missingFields := make([]string, 0)
+	if body.AppID == "" {
+		missingFields = append(missingFields, "appID")
+	}
+	if len(body.Cmds) <= 0 {
+		missingFields = append(missingFields, "cmds")
+	}
+
+	if len(missingFields) > 0 {
+		res.Body["error"] = "Fields " + strings.Join(missingFields, ", ") + " are required."
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	app := Applications[body.AppID]
+	if app == nil {
+		res.Body["error"] = fmt.Sprintf("no app exists with id %s", body.AppID)
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
 	for _, c := range body.Cmds {
-		cmd := parseCmd(c, sys.HomeVar, nil, nil)
-		cmd.Run()
+		cmd := parseCmd(c, app.Path, app.StdoutWriter, app.StderrWriter)
+		if err := cmd.Run(); err != nil {
+			app.StderrWriter.Write([]byte(err.Error()))
+		}
 	}
 
 	res.Body["status"] = "success"
