@@ -21,6 +21,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <template>
 <bowery-analytics id="analytics"></bowery-analytics>
 <core-localstorage id="db" name="bowery-developer" value="{{developer}}"></core-localstorage>
+<core-localstorage id="keys" name="aws-keys" value="{{keys}}"></core-localstorage>
 <link rel="stylesheet" href="../../bowery/out.css">
 <style>
   span, pre {
@@ -54,7 +55,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps">
-  <bowery-apps applications="{{applications}}"></bowery-apps>
+  <bowery-apps app="{{app}}" applications="{{applications}}"></bowery-apps>
   <bowery-nav type="footer" href="/apps/new" on-click="{{navigate}}">Create App</bowery-nav>
 </bowery-screen>
 
@@ -78,7 +79,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   </bowery-form>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
-<core-ajax id="appAjax" handleAs="json" on-core-response="{{getAppById}}" auto></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
@@ -94,6 +94,12 @@ Polymer('bowery-core', {
 
     // The current user
     this.developer = {}
+
+    // AWS credentials
+    this.keys = {
+      aws_access_key: "",
+      aws_secret_key: ""
+    }
   },
   loginFields: [
     {name: 'email'},
@@ -119,7 +125,6 @@ Polymer('bowery-core', {
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
-    window.addEventListener('bowery-navigate', this.onNavigate.bind(this))
 
     // Drag & Drop Swag
     window.addEventListener('dragenter', function (e) {
@@ -133,8 +138,7 @@ Polymer('bowery-core', {
     window.addEventListener('drop', this.createAppFromDroppedImage.bind(this))
 
     this.$.db.load()
-    this.developer = this.developer || {}
-    console.log(this.developer)
+    this.$.keys.load()
 
     var sse = new EventSource('/_/sse')
     sse.addEventListener('message', this.handleSSE.bind(this))
@@ -143,8 +147,8 @@ Polymer('bowery-core', {
       return this.navigate('/login')
     }
 
-    this.newAppFields[0].value = this.developer.aws_access_key
-    this.newAppFields[1].value = this.developer.aws_access_secret
+    this.newAppFields[0].value = this.keys.aws_access_key
+    this.newAppFields[1].value = this.keys.aws_secret_key
 
     this.navigate('/apps')
   },
@@ -188,7 +192,8 @@ Polymer('bowery-core', {
       this.app.logs += event.message
     }
   },
-  handleCreateAppAttempt: function (e) {
+  handleCreateAppAttempt: function (e, detail) {
+    console.log('$$$ handle create app', arguments)
     var response = e.target.response
     if (response.status != 'success') {
       if (response.error == "EOF") return
@@ -197,17 +202,15 @@ Polymer('bowery-core', {
       e.target.feedback = response.error
       return
     }
+
     this.app = response.application
     this.applications.push(this.app)
     for (var i = 0, field; field = this.editAppFields[i]; i++)
       field.value = this.app[field.name]
 
-    var key = e.detail.fields[0].value
-    var secret = e.detail.fields[1].value
-
-    this.developer.aws_access_key = key
-    this.developer.aws_access_secret = secret
-    this.$.db.save()
+    this.keys.aws_access_key = detail.model.aws_access_key
+    this.keys.aws_secret_key = detail.model.aws_secret_key
+    this.$.keys.save()
 
     this.navigate('/apps/edit')
   },
@@ -276,8 +279,8 @@ Polymer('bowery-core', {
     e.preventDefault()
     var tokens = {
       token: this.developer.token,
-      aws_access_key: this.developer.aws_access_key,
-      aws_secret_key: this.developer.aws_access_secret
+      aws_access_key: this.keys.aws_access_key,
+      aws_secret_key: this.keys.aws_secret_key
     }
     var id = this.app._id
     this.$.deleteAppAjax.url = "/applications/" + id + "?" + this.parameterize(tokens)
@@ -313,12 +316,15 @@ Polymer('bowery-core', {
     window.open(path, "", "resizable,scrollbars,status")
   },
   navigate: function (path) {
+    var self = this
     if (typeof path != "string") {
       var e = path
       e.preventDefault()
       path = e.target.getAttribute('href')
     }
+
     this.$.analytics.track('Navigated to ' + path)
+
 
     this.fire('bowery-navigate', {path: path})
   },
@@ -327,19 +333,13 @@ Polymer('bowery-core', {
     this.$.db.save()
     this.navigate('/login')
   },
-
-  /**
-   * A hack for passing params between screens.
-   * TODO (thebyrd) replace with something that's easier to debug
-   */
-  onNavigate: function (e) {
-    if (e.detail.app)
-      this.$.appAjax.url = '/applications/' + e.detail.app
-  },
   getAppById: function (e) {
     var response = e.target.response
     if (response.status == 'found') {
       this.app = response.application
+      for (var i = 0; i < this.applications.length; i++)
+        if (this.app._id == this.applications[i]._id)
+          this.applications[i] = this.app
     }
   }
 })
