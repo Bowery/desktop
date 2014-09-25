@@ -184,6 +184,9 @@ Polymer('bowery-core', {
         if (event.appID == this.applications[i]._id) {
           this.applications[i] = event.message
         }
+        if (event.appID == this.app._id) {
+          this.app = event.message
+        }
       }
       return
     }
@@ -332,15 +335,6 @@ Polymer('bowery-core', {
     this.developer = {}
     this.$.db.save()
     this.navigate('/login')
-  },
-  getAppById: function (e) {
-    var response = e.target.response
-    if (response.status == 'found') {
-      this.app = response.application
-      for (var i = 0; i < this.applications.length; i++)
-        if (this.app._id == this.applications[i]._id)
-          this.applications[i] = this.app
-    }
   }
 })
 </script>
