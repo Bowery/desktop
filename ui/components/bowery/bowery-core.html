@@ -133,7 +133,8 @@ Polymer('bowery-core', {
     window.addEventListener('drop', this.createAppFromDroppedImage.bind(this))
 
     this.$.db.load()
-    this.developer = this.$.db.value || {}
+    this.developer = this.developer || {}
+    console.log(this.developer)
 
     var sse = new EventSource('/_/sse')
     sse.addEventListener('message', this.handleSSE.bind(this))
@@ -172,13 +173,12 @@ Polymer('bowery-core', {
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
 
+    console.log('$$$ sse', event)
+
     if (event.type == 'status') {
       for (var i in this.applications) {
-        var app = this.applications[i]
-
-        app.status = event.message.status
-        if (event.message.location) {
-          app.location = event.message.location
+        if (event.appID == this.applications[i]._id) {
+          this.applications[i] = event.message
         }
       }
       return
@@ -207,6 +207,7 @@ Polymer('bowery-core', {
 
     this.developer.aws_access_key = key
     this.developer.aws_access_secret = secret
+    this.$.db.save()
 
     this.navigate('/apps/edit')
   },
@@ -278,8 +279,10 @@ Polymer('bowery-core', {
       aws_access_key: this.developer.aws_access_key,
       aws_secret_key: this.developer.aws_access_secret
     }
-    this.$.deleteAppAjax.url = "/applications/" + this.app._id + "?" + this.parameterize(tokens)
-    this.$.appsAjax.params = {cachebuster: Date.now()}
+    var id = this.app._id
+    this.$.deleteAppAjax.url = "/applications/" + id + "?" + this.parameterize(tokens)
+    this.applications = this.applications.filter(function (a) {return a._id != id})
+    this.app = {}
   },
   getApps: function (e, detail) {
     var r = JSON.parse(detail.response)
