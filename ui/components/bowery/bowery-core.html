@@ -133,7 +133,8 @@ Polymer('bowery-core', {
     window.addEventListener('drop', this.createAppFromDroppedImage.bind(this))
 
     this.$.db.load()
-    this.developer = this.$.db.value || {}
+    this.developer = this.developer || {}
+    console.log(this.developer)
 
     var sse = new EventSource('/_/sse')
     sse.addEventListener('message', this.handleSSE.bind(this))
@@ -206,6 +207,7 @@ Polymer('bowery-core', {
 
     this.developer.aws_access_key = key
     this.developer.aws_access_secret = secret
+    this.$.db.save()
 
     this.navigate('/apps/edit')
   },
