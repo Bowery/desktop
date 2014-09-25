@@ -54,7 +54,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/apps">
-  <bowery-apps applications="{{applications}}"></bowery-apps>
+  <bowery-apps app="{{app}}" applications="{{applications}}"></bowery-apps>
   <bowery-nav type="footer" href="/apps/new" on-click="{{navigate}}">Create App</bowery-nav>
 </bowery-screen>
 
@@ -119,7 +119,6 @@ Polymer('bowery-core', {
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
-    window.addEventListener('bowery-navigate', this.onNavigate.bind(this))
 
     // Drag & Drop Swag
     window.addEventListener('dragenter', function (e) {
@@ -313,12 +312,15 @@ Polymer('bowery-core', {
     window.open(path, "", "resizable,scrollbars,status")
   },
   navigate: function (path) {
+    var self = this
     if (typeof path != "string") {
       var e = path
       e.preventDefault()
       path = e.target.getAttribute('href')
     }
+
     this.$.analytics.track('Navigated to ' + path)
+
 
     this.fire('bowery-navigate', {path: path})
   },
@@ -326,15 +328,6 @@ Polymer('bowery-core', {
     this.developer = {}
     this.$.db.save()
     this.navigate('/login')
-  },
-
-  /**
-   * A hack for passing params between screens.
-   * TODO (thebyrd) replace with something that's easier to debug
-   */
-  onNavigate: function (e) {
-    if (e.detail.app)
-      this.$.appAjax.url = '/applications/' + e.detail.app
   },
   getAppById: function (e) {
     var response = e.target.response

@@ -9,7 +9,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="bowery-card.html">
 
-<polymer-element name="bowery-apps" attributes="applications">
+<polymer-element name="bowery-apps" attributes="applications app">
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
@@ -77,7 +77,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       if (e.target.className == 'unclickable')
         return
 
-      this.fire('bowery-navigate', {path: '/apps/status', app: e.target.dataset.id || e.target.parentNode.dataset.id})
+
+      var id = e.target.dataset.id || e.target.parentNode.dataset.id
+      this.app = this.applications.filter(function (a) {return a._id == id})[0]
+
+      this.fire('bowery-navigate', {path: '/apps/status'})
     }
   })
   </script>
