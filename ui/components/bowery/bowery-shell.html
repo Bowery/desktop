@@ -16,6 +16,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     #message {
       margin: 9px 18px;
     }
+    .env {
+      margin: 9px 18px;
+    }
     .error {
       margin: 9px 18px 18px 18px;
     }
@@ -58,6 +61,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     }
     </style>
     <h3 id="message">Your app {{app.status == 'error' ? 'has an' : 'is'}} {{app.status}}.</h3>
+    <template if="{{app.status != 'error'}}">
+      <div class="env">
+        <p>Environment: {{app.envId}}</p>
+      </div>
+    </template>
     <template if="{{app.status == 'error'}}">
       <p class="error">{{mostRecentError()}}</p>
     </template>
