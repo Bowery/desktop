@@ -282,8 +282,8 @@ Polymer('bowery-core', {
     e.preventDefault()
     var tokens = {
       token: this.developer.token,
-      aws_access_key: this.keys.aws_access_key,
-      aws_secret_key: this.keys.aws_secret_key
+      aws_access_key: encodeURIComponent(this.keys.aws_access_key),
+      aws_secret_key: encodeURIComponent(this.keys.aws_secret_key)
     }
     var id = this.app._id
     this.$.deleteAppAjax.url = "/applications/" + id + "?" + this.parameterize(tokens)
