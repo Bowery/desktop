@@ -227,7 +227,7 @@ Polymer('bowery-core', {
       return
     }
 
-    this.app = detail.model
+    this.app = response.application
     for (var i = 0, app; app = this.applications[i]; i++)
       if (app._id == this.app._id)
         this.applications[i] = this.app
