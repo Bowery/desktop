@@ -459,7 +459,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	addr := fmt.Sprintf("%s/applications/%s?token=%s", config.KenmareAddr, id, token)
+	addr := fmt.Sprintf("%s/applications/%s?%s", config.KenmareAddr, id, req.URL.RawQuery)
 	req, err := http.NewRequest("DELETE", addr, nil)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
