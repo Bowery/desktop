@@ -54,6 +54,10 @@ func (sm *StreamManager) SendPluginError(pluginErr *plugin.PluginError) (int, er
 // SendLog generates a json object that indicates that it contains a log (with its acompanying message).
 // The resulting json is then written to the tcp connection
 func (sm *StreamManager) SendLog(data []byte) (int, error) {
+	if len(data) <= 0 {
+		return 0, nil
+	}
+
 	msg, err := json.Marshal(map[string]string{
 		"type":    "log",
 		"message": string(data),
