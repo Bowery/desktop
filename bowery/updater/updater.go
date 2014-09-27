@@ -33,41 +33,31 @@ const usage = `usage: updater <update url> <current version> <command> [argument
 
 var (
 	ErrNotFound = errors.New("Update version url not found for current system")
+	rollbarC    = rollbar.NewClient(config.RollbarToken, "production")
+	keenC       = &keen.Client{
+		WriteKey:  config.KeenWriteKey,
+		ProjectID: config.KeenProjectID,
+	}
+	pid       = 0
+	mutex     sync.RWMutex
+	updateURL string
+	version   string
+	binDir    string
+	err       error
 )
 
 func main() {
 	// Skip certificate errors on aws wildcard domains.
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	var mutex sync.RWMutex
 	wait := false
-	pid := 0
-	setPid := func(val int) {
-		mutex.Lock()
-		defer mutex.Unlock()
-
-		pid = val
-	}
-	getPid := func() int {
-		mutex.RLock()
-		defer mutex.RUnlock()
-
-		return pid
-	}
 
 	if len(os.Args) < 4 {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
 	}
-	updateURL := os.Args[1]
-	version := os.Args[2]
+	updateURL = os.Args[1]
+	version = os.Args[2]
 	cmdArgs := os.Args[3:]
-
-	keenC := &keen.Client{
-		WriteKey:  config.KeenWriteKey,
-		ProjectID: config.KeenProjectID,
-	}
-
-	rollbarC := rollbar.NewClient(config.RollbarToken, "production")
 
 	// If version is empty try to detect it.
 	if version == "" {
@@ -83,7 +73,7 @@ func main() {
 	}
 	log.Println("Current version:", version)
 
-	binDir, err := osext.ExecutableFolder()
+	binDir, err = osext.ExecutableFolder()
 	if err != nil {
 		rollbarC.Report(err, map[string]string{
 			"version": version,
@@ -93,112 +83,11 @@ func main() {
 	}
 
 	// Check for updates.
+	doUpdate() // Do update on start.
 	go func() {
 		for {
 			<-time.After(1 * time.Hour)
-			log.Println("Update is being checked")
-
-			newVersion, newVersionURL, err := checkUpdate(updateURL)
-			if err != nil {
-				rollbarC.Report(err, map[string]string{
-					"version": version,
-				})
-				log.Println("Update error:", err)
-				continue
-			}
-
-			var newV *goversion.Version
-			oldV, err := goversion.NewVersion(version)
-			if err == nil {
-				newV, err = goversion.NewVersion(newVersion)
-			}
-			if err != nil {
-				rollbarC.Report(err, map[string]string{
-					"version":    version,
-					"newVersion": newVersion,
-				})
-				log.Println("Update error:", err)
-				continue
-			}
-
-			if oldV.Equal(newV) {
-				log.Println("Version hasn't changed")
-				continue
-			}
-
-			log.Println("Getting contents for version", newVersion, "at", newVersionURL)
-			contents, err := getVersion(newVersionURL)
-			if err != nil {
-				rollbarC.Report(err, map[string]string{
-					"version":    version,
-					"newVersion": newVersion,
-				})
-				log.Println("Update error:", err)
-				continue
-			}
-
-			log.Println("Replacing binaries found in downloaded version")
-			var replaceErr error = nil
-			for info, body := range contents {
-				if !isExecutable(info) {
-					continue
-				}
-
-				// Find existing path.
-				path, err := exec.LookPath(info.Name())
-				if err == nil {
-					err = sys.ReplaceBinPath(path, body)
-					if err != nil {
-						replaceErr = err
-						break
-					}
-					continue
-				}
-
-				// Doesn't exist or existing isn't exec.
-				err = sys.ReplaceBinPath(filepath.Join(binDir, info.Name()), body)
-				if err != nil {
-					replaceErr = err
-					break
-				}
-			}
-			if replaceErr != nil {
-				rollbarC.Report(err, map[string]string{
-					"version":    version,
-					"newVersion": newVersion,
-				})
-				log.Println("Update error:", replaceErr)
-				continue
-			}
-
-			keenC.AddEvent("agent update", map[string]string{
-				"oldVersion": version,
-				"newVersion": newVersion,
-			})
-			version = newVersion
-
-			pid := getPid()
-			if pid > 0 {
-				log.Println("Killing process tree for pid:", pid)
-				proc, err := sys.GetPidTree(pid)
-				if err != nil {
-					rollbarC.Report(err, map[string]string{
-						"version": version,
-					})
-					log.Println("Update error:", err)
-					continue
-				}
-
-				if proc != nil {
-					err = proc.Kill()
-					if err != nil {
-						rollbarC.Report(err, map[string]string{
-							"version": version,
-						})
-						log.Println("Update error:", err)
-					}
-				}
-			}
+			doUpdate()
 		}
 	}()
 
@@ -250,8 +139,133 @@ func main() {
 	}
 }
 
-// checkUpdate gets the most recent version url from an update url
-func checkUpdate(url string) (string, string, error) {
+// setPid sets the current pid.
+func setPid(val int) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	pid = val
+}
+
+// getPid retrieves the current pid.
+func getPid() int {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	return pid
+}
+
+// doUpdate will download any new version and replace binaries from the download.
+func doUpdate() error {
+	log.Println("Update is being checked")
+
+	newVersion, newVersionURL, err := getVersion(updateURL)
+	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version": version,
+		})
+		log.Println("Update error:", err)
+		return err
+	}
+
+	var newV *goversion.Version
+	oldV, err := goversion.NewVersion(version)
+	if err == nil {
+		newV, err = goversion.NewVersion(newVersion)
+	}
+	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version":    version,
+			"newVersion": newVersion,
+		})
+		log.Println("Update error:", err)
+		return err
+	}
+
+	if oldV.Equal(newV) {
+		log.Println("Version hasn't changed")
+		return nil
+	}
+
+	log.Println("Getting contents for version", newVersion, "at", newVersionURL)
+	contents, err := getVersionDownload(newVersionURL)
+	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version":    version,
+			"newVersion": newVersion,
+		})
+		log.Println("Update error:", err)
+		return err
+	}
+
+	log.Println("Replacing binaries found in downloaded version")
+	var replaceErr error = nil
+	for info, body := range contents {
+		if !isExecutable(info) {
+			continue
+		}
+
+		// Find existing path.
+		path, err := exec.LookPath(info.Name())
+		if err == nil {
+			err = sys.ReplaceBinPath(path, body)
+			if err != nil {
+				replaceErr = err
+				break
+			}
+			continue
+		}
+
+		// Doesn't exist or existing isn't exec.
+		err = sys.ReplaceBinPath(filepath.Join(binDir, info.Name()), body)
+		if err != nil {
+			replaceErr = err
+			break
+		}
+	}
+	if replaceErr != nil {
+		rollbarC.Report(err, map[string]string{
+			"version":    version,
+			"newVersion": newVersion,
+		})
+		log.Println("Update error:", replaceErr)
+		return replaceErr
+	}
+
+	keenC.AddEvent("agent update", map[string]string{
+		"oldVersion": version,
+		"newVersion": newVersion,
+	})
+	version = newVersion
+
+	pid := getPid()
+	if pid > 0 {
+		log.Println("Killing process tree for pid:", pid)
+		proc, err := sys.GetPidTree(pid)
+		if err != nil {
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
+			log.Println("Update error:", err)
+			return err
+		}
+
+		if proc != nil {
+			err = proc.Kill()
+			if err != nil {
+				rollbarC.Report(err, map[string]string{
+					"version": version,
+				})
+				log.Println("Update error:", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// getVersion gets the most recent version url from an update url
+func getVersion(url string) (string, string, error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return "", "", err
@@ -287,8 +301,8 @@ func checkUpdate(url string) (string, string, error) {
 	return "", "", ErrNotFound
 }
 
-// getVersion retrieves and untars the versions archive into a file map.
-func getVersion(url string) (map[os.FileInfo]io.Reader, error) {
+// getVersionDownload retrieves and untars the versions archive into a file map.
+func getVersionDownload(url string) (map[os.FileInfo]io.Reader, error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, err
