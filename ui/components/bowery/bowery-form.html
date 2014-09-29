@@ -88,7 +88,7 @@ Polymer({
   },
   postForm: function (e) {
     e.preventDefault()
-    var params = {}
+    var params = {cacheBuster: Date.now()}
     params.token = this.token
 
     for (var i = 0, field; field = this.fields[i]; i++)
