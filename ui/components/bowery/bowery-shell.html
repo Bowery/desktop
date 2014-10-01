@@ -117,6 +117,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       logsChanged: function () {
         console.log('$$$$ logs changed')
         this.$.logs.innerHTML = '<pre>' + ansi_up.ansi_to_html(this.logs) + '</pre>'
+        this.$.logs.scrollTop = this.$.logs.scrollHeight
       }
     })
   </script>
