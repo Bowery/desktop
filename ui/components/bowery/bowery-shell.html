@@ -78,14 +78,13 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <button on-click="{{runCmd}}">RUN</button>
       </template>
     </div>
-    <div id="logs" class="logs">
-      <pre>{{logs}}</pre>
-    </div>
+    <div id="logs" class="logs"></div>
     <div class="extra">
       <content></content>
     </div>
     <core-ajax id="ajax" contentType="application/json" url="/commands" method="POST" handleAs="json" on-core-complete="{{handleCmdResponse}}" auto></core-ajax>
   </template>
+  <script src="ansi_up.js" type="text/javascript"></script>
   <script>
     Polymer('bowery-shell', {
       created: function () {
@@ -114,6 +113,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       },
       mostRecentError: function () {
         if (this.app.errors && this.app.errors.length) return this.app.errors[0].body
+      },
+      logsChanged: function () {
+        console.log('$$$$ logs changed')
+        this.$.logs.innerHTML = '<pre>' + ansi_up.ansi_to_html(this.logs) + '</pre>'
+        this.$.logs.scrollTop = this.$.logs.scrollHeight
       }
     })
   </script>
