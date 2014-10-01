@@ -2,7 +2,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,14 +14,16 @@ import (
 	"github.com/Bowery/gopackages/sys"
 )
 
-type runCmdReq struct {
-	AppID string `json:"appID"`
-	Cmd   string `json:"cmd"`
-}
+var AppsPath = filepath.Join(BoweryDir, "agent_apps.json")
 
-type runCmdsReq struct {
-	AppID string   `json:"appID"`
-	Cmds  []string `json:"cmds"`
+// storedApp defines the internal structure when saving/loading apps.
+type storedApp struct {
+	ID    string `json:"id"`
+	Init  string `json:"init,omitempty"`
+	Build string `json:"build,omitempty"`
+	Test  string `json:"test,omitempty"`
+	Start string `json:"start,omitempty"`
+	Path  string `json:"path,omitempty"`
 }
 
 // Application defines an application.
@@ -118,4 +123,73 @@ func NewApplication(id, init, build, test, start, path string) (*Application, er
 	}
 
 	return app, nil
+}
+
+// LoadApps reads the stored app info and creates them in memory.
+func LoadApps() error {
+	file, err := os.Open(AppsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return err
+	}
+	defer file.Close()
+
+	apps := make(map[string]*storedApp)
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&apps)
+	if err != nil {
+		return err
+	}
+
+	// Create the full applications and add to the map.
+	for _, appInfo := range apps {
+		app, err := NewApplication(appInfo.ID, appInfo.Init, appInfo.Build, appInfo.Test, appInfo.Start, appInfo.Path)
+		if err != nil {
+			return err
+		}
+
+		Applications[app.ID] = app
+	}
+
+	return nil
+}
+
+func SaveApps() error {
+	// Create the simple apps data.
+	apps := make(map[string]*storedApp)
+	if Applications != nil {
+		for id, app := range Applications {
+			apps[id] = &storedApp{
+				ID:    app.ID,
+				Init:  app.Init,
+				Build: app.Build,
+				Test:  app.Test,
+				Start: app.Start,
+				Path:  app.Path,
+			}
+		}
+	}
+
+	dat, err := json.MarshalIndent(apps, "", "  ")
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(dat)
+
+	err = os.MkdirAll(BoweryDir, os.ModePerm|os.ModeDir)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(AppsPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, buf)
+	return err
 }
