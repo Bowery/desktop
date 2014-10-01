@@ -49,6 +49,18 @@ type Route struct {
 	Handler http.HandlerFunc
 }
 
+// runCmdsReq is the request body to execute a command.
+type runCmdReq struct {
+	AppID string `json:"appID"`
+	Cmd   string `json:"cmd"`
+}
+
+// runCmdsReq is the request body to execute a number of commands.
+type runCmdsReq struct {
+	AppID string   `json:"appID"`
+	Cmds  []string `json:"cmds"`
+}
+
 // GET /, Home page.
 func IndexHandler(rw http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rw, "Bowery Agent v"+VERSION)
@@ -83,6 +95,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		Kill(oldApp, true)
 	}
 	Applications[id] = app
+	SaveApps()
 
 	plugin.EmitPluginEvent(schemas.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
 
@@ -134,6 +147,7 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	app.Build = build
 	app.Test = test
 	app.Start = start
+	SaveApps()
 
 	if path == "" || typ == "" {
 		res.Body["error"] = "Missing form fields."
@@ -251,6 +265,7 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		plugin.EmitPluginEvent(schemas.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
 	}
 
+	SaveApps()
 	res.Body["status"] = "removed"
 	res.Send(http.StatusOK)
 }

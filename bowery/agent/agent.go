@@ -65,6 +65,12 @@ func main() {
 	streamManager.pluginErr = pluginManager.Error
 	go streamManager.Stream()
 
+	// Add saved applications.
+	LoadApps()
+	for _, app := range Applications {
+		<-Restart(app, true, true)
+	}
+
 	log.Println("Agent starting!")
 	log.Fatal(server.ListenAndServe())
 }
