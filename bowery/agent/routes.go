@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -332,7 +333,8 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	for _, c := range body.Cmds {
 		cmd := parseCmd(c, sys.HomeVar, nil, nil)
-		cmd.Run()
+		err = cmd.Run()
+		log.Println(cmd, err)
 	}
 
 	res.Body["status"] = "success"
