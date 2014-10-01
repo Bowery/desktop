@@ -332,7 +332,7 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, c := range body.Cmds {
-		cmd := parseCmd(c, sys.HomeVar, nil, nil)
+		cmd := parseCmd(c, HomeDir, nil, nil)
 		err = cmd.Run()
 		log.Println(cmd, err)
 	}
