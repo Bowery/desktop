@@ -82,7 +82,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
-<script src="gifstream.js"></script>
+<!-- <script src="ansi_up.js" type="text/javascript"></script> -->
+<script src="gifstream.js" type="text/javascript"></script>
 <script>
 Polymer('bowery-core', {
   created: function () {
@@ -202,6 +203,7 @@ Polymer('bowery-core', {
 
     if (event.type == 'log' && this.app._id == event.appID && event.message) {
       this.app.logs += event.message
+      // this.app.prettyLogs = ansi_up.ansi_to_html(this.app.logs)
     }
   },
   handleCreateAppAttempt: function (e, detail) {
