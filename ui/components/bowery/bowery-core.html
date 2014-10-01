@@ -135,7 +135,7 @@ Polymer('bowery-core', {
       e.stopPropagation()
       e.preventDefault()
     })
-    window.addEventListener('drop', this.createAppFromDroppedImage.bind(this))
+    window.addEventListener('drop', this.handleDroppedFile.bind(this))
 
     this.$.db.load()
     this.$.keys.load()
@@ -152,17 +152,26 @@ Polymer('bowery-core', {
 
     this.navigate('/apps')
   },
-  createAppFromDroppedImage: function (e) {
+  handleDroppedFile: function (e) {
     e.preventDefault()
-    var file = e.dataTransfer.files[0];
-    if (file.type != "image/gif") {
-      return alert("File must be a gif, not " + file.type)
+    var file = e.dataTransfer.files[0]
+    if (!~file.path.indexOf('.')) {
+      return this.createAppFromDroppedFolder(file)
     }
+    if (file.type == "image/gif") {
+      return this.createAppFromDroppedImage(file)
+    }
+    alert('Bowery Image/App Not Found')
+  },
+  createAppFromDroppedFolder: function (file) {
+    this.defaultLocalPath = file.path
+    this.navigate('/apps/new')
+  },
+  createAppFromDroppedImage: function (file) {
     var self = this
     var reader = new FileReader();
     reader.onload = function (evt) {
       (new GifStream(evt.target.result)).parseID(self.populateNewAppScreen.bind(self))
-      // TODO (thebyrd) Navigate to Create App Page w/ the environment ID already set
     }
     reader.readAsBinaryString(file)
   },
@@ -207,6 +216,7 @@ Polymer('bowery-core', {
     }
 
     this.app = response.application
+    this.app.localPath = this.defaultLocalPath
     this.applications.push(this.app)
     for (var i = 0, field; field = this.editAppFields[i]; i++)
       field.value = this.app[field.name]
