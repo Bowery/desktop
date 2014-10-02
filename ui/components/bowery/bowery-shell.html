@@ -16,8 +16,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     #message {
       margin: 9px 18px;
     }
-    .env {
-      margin: 9px 18px;
+    .details {
+      margin: 18px;
+    }
+    .details p {
+      margin: 0;
     }
     .error {
       margin: 9px 18px 18px 18px;
@@ -62,7 +65,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     </style>
     <h3 id="message">Your app {{app.status == 'error' ? 'has an' : 'is'}} {{app.status}}.</h3>
     <template if="{{app.status != 'error'}}">
-      <div class="env">
+      <div class="details">
+        <template if="{{app.location}}">
+            <p>Address: {{app.location}}</p>
+        </template>
         <p>Environment: {{app.envId}}</p>
       </div>
     </template>
