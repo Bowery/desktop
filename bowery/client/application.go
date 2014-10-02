@@ -50,14 +50,24 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 
 	// Check the status of the application on Kenmare.
 	go func() {
+		status := app.Status
+
 		// Check the application status every 5 seconds
 		// via Kenmare. If the app status changes to
 		// running proceed.
-		for app != nil && app.Status != "running" {
+		for app != nil && status != "running" {
 			application, err := GetApplication(app.ID)
 			if err == nil {
 				log.Println("provisioning status: " + application.Status)
-				app.Status = application.Status
+				status = application.Status
+
+				// The instance is running but still display as provisioning because
+				// the app hasn't been created on the agent yet.
+				if status == "running" {
+					app.Status = "provisioning"
+				} else {
+					app.Status = status
+				}
 				app.Location = application.Location
 				msg := map[string]interface{}{
 					"appID":   app.ID,
@@ -65,7 +75,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 					"message": app,
 				}
 				ssePool.messages <- msg
-				if app.Status == "running" {
+				if status == "running" {
 					break
 				}
 			} else if strings.Contains(err.Error(), "Not Found") {
@@ -116,19 +126,10 @@ func (am *ApplicationManager) GetAll(token string) ([]*schemas.Application, erro
 		if err := am.load(token); err != nil {
 			return nil, err
 		}
+	}
 
-		for _, a := range am.Applications {
-			appsArray = append(appsArray, a)
-		}
-	} else {
-		apps, err := GetApplications(token)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, a := range apps {
-			appsArray = append(appsArray, a)
-		}
+	for _, a := range am.Applications {
+		appsArray = append(appsArray, a)
 	}
 
 	sort.Sort(sort.Reverse(byCreatedAt(appsArray)))

@@ -285,31 +285,32 @@ func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate body.
-	missingFields := make([]string, 0)
-	if body.AppID == "" {
-		missingFields = append(missingFields, "appID")
-	}
 	if body.Cmd == "" {
-		missingFields = append(missingFields, "cmd")
-	}
-
-	if len(missingFields) > 0 {
-		res.Body["error"] = "Fields " + strings.Join(missingFields, ", ") + " are required."
+		res.Body["error"] = "cmd field is required."
 		res.Send(http.StatusBadRequest)
 		return
 	}
 
+	// Get the data from the optional application.
+	path := HomeDir
+	var stdout *OutputWriter
+	var stderr *OutputWriter
 	app := Applications[body.AppID]
-	if app == nil {
-		res.Body["error"] = fmt.Sprintf("no app exists with id %s", body.AppID)
-		res.Send(http.StatusBadRequest)
-		return
+	if app != nil {
+		path = app.Path
+		stdout = app.StdoutWriter
+		stderr = app.StderrWriter
 	}
 
-	cmd := parseCmd(body.Cmd, app.Path, app.StdoutWriter, app.StderrWriter)
+	cmd := parseCmd(body.Cmd, path, stdout, stderr)
 	go func() {
-		if err := cmd.Run(); err != nil {
-			app.StderrWriter.Write([]byte(err.Error()))
+		err := cmd.Run()
+		if err != nil {
+			if stderr != nil {
+				stderr.Write([]byte(err.Error()))
+			}
+
+			log.Println(err)
 		}
 	}()
 
@@ -331,10 +332,33 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if len(body.Cmds) <= 0 {
+		res.Body["error"] = "cmds field is required."
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	// Get the data from the optional application.
+	path := HomeDir
+	var stdout *OutputWriter
+	var stderr *OutputWriter
+	app := Applications[body.AppID]
+	if app != nil {
+		path = app.Path
+		stdout = app.StdoutWriter
+		stderr = app.StderrWriter
+	}
+
 	for _, c := range body.Cmds {
-		cmd := parseCmd(c, HomeDir, nil, nil)
-		err = cmd.Run()
-		log.Println(cmd, err)
+		cmd := parseCmd(c, path, stdout, stderr)
+		err := cmd.Run()
+		if err != nil {
+			if stderr != nil {
+				stderr.Write([]byte(err.Error()))
+			}
+
+			log.Println(err)
+		}
 	}
 
 	res.Body["status"] = "success"
