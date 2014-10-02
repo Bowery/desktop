@@ -81,9 +81,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       var id = e.target.dataset.id || e.target.parentNode.dataset.id
       this.app = this.applications.filter(function (a) {return a._id == id})[0]
 
-
-      console.log('fire bowery-navigate /apps/status', this.app)
-
       this.fire('bowery-navigate', {path: '/apps/status'})
     }
   })

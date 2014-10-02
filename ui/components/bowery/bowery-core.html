@@ -328,8 +328,6 @@ Polymer('bowery-core', {
     window.open(path, "", "resizable,scrollbars,status")
   },
   navigate: function (path) {
-    console.log(path, '$$$ path/e in navigate')
-
     var self = this
     if (typeof path != "string") {
       var e = path

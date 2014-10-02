@@ -121,7 +121,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         if (this.app.errors && this.app.errors.length) return this.app.errors[0].body
       },
       logsChanged: function () {
-        console.log('$$$$ logs changed')
         if (!this.logs) return this.$.logs.innerHTML = '<pre></pre>'
 
         this.$.logs.innerHTML = '<pre>' + ansi_up.ansi_to_html(this.logs) + '</pre>'
