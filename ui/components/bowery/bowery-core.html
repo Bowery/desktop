@@ -186,9 +186,6 @@ Polymer('bowery-core', {
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
-
-    console.log('$$$ sse', event)
-
     if (event.type == 'status') {
       for (var i in this.applications) {
         if (event.appID == this.applications[i]._id) {
@@ -207,7 +204,6 @@ Polymer('bowery-core', {
     }
   },
   handleCreateAppAttempt: function (e, detail) {
-    console.log('$$$ handle create app', arguments)
     var response = e.target.response
     if (response.status != 'success') {
       if (response.error == "EOF") return
@@ -239,11 +235,12 @@ Polymer('bowery-core', {
       return
     }
 
-    this.app = response.application
     for (var i = 0, app; app = this.applications[i]; i++)
-      if (app._id == this.app._id)
-        this.applications[i] = this.app
+      if (app._id == response.application._id)
+        this.applications[i] = response.application
 
+
+    this.app = {}
     this.navigate('/apps')
   },
   handleLoginAttempt: function (e) {
