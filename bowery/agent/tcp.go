@@ -30,6 +30,9 @@ func StartTCP() {
 	for {
 		conn, _ := listener.Accept()
 		clients = append(clients, conn)
+		go logClient.Info("tcp connection accepted", map[string]interface{}{
+			"ip": AgentHost,
+		})
 	}
 }
 

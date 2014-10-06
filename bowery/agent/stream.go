@@ -48,6 +48,7 @@ func (sm *StreamManager) SendPluginError(pluginErr *plugin.PluginError) (int, er
 	if err != nil {
 		return 0, err
 	}
+
 	return sm.tcp.Write(msg)
 }
 
@@ -65,6 +66,9 @@ func (sm *StreamManager) SendLog(data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	go logClient.Info("sending log", nil)
+
 	return sm.tcp.Write(msg)
 }
 

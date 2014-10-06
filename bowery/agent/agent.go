@@ -12,15 +12,19 @@ import (
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
 	"github.com/Bowery/gopackages/config"
+	"github.com/Bowery/gopackages/util"
 	"github.com/gorilla/mux"
+	loggly "github.com/segmentio/go-loggly"
 )
 
 var (
+	AgentHost     string
 	Env           string
 	VERSION       string // This is set when release_agent.sh is ran.
 	InDevelopment = false
 	Applications  = map[string]*Application{}
 	streamManager = NewStreamManager()
+	logClient     = loggly.New(config.LogglyKey, "agent")
 )
 
 func main() {
@@ -36,6 +40,9 @@ func main() {
 		fmt.Println(VERSION)
 		return
 	}
+
+	// Get host
+	AgentHost, _ := util.GetHost()
 
 	// Register routes.
 	router := mux.NewRouter()
@@ -71,6 +78,20 @@ func main() {
 		<-Restart(app, true, true)
 	}
 
-	log.Println("Agent starting!")
-	log.Fatal(server.ListenAndServe())
+	log.Println("agent starting")
+	go logClient.Info("agent starting", map[string]interface{}{
+		"version": VERSION,
+		"arch":    runtime.GOARCH,
+		"os":      runtime.GOOS,
+		"ip":      AgentHost,
+	})
+
+	err := server.ListenAndServe()
+	if err != nil {
+		go logClient.Error(err.Error(), map[string]interface{}{
+			"ip": AgentHost,
+		})
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
