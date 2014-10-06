@@ -149,13 +149,15 @@ app.on('ready', function() {
     title: 'Bowery',
     frame: true,
     width: 400,
-    height: 460,
+    height: 485,
     resizable: false,
     center: true,
     show: true,
     frame: false,
     icon: path.join(__dirname, 'icon.png')
   })
+
+  mainWindow.setSize(400, 485)
 
   mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
 

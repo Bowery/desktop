@@ -15,32 +15,35 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="bowery-analytics.html">
 
-<polymer-element name="bowery-nav" attributes="type path">
+<polymer-element name="bowery-nav" attributes="type path background">
 <template>
   <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
   <style>
+  :host {
+    height: 54px;
+    width: 400px;
+  }
   .header, .footer {
-    background: white;
     text-align: center;
     position: fixed;
     left: 0;
     right: 0;
     z-index: 5;
+    transition: all 300ms;
   }
   .header {
     top: 0;
-    border-bottom: 1px solid rgb(220, 221, 223);
   }
   .footer {
     border-bottom: none;
-    border-top: 1px solid rgb(220, 221, 223);
-
     bottom: 0;
   }
   .header h1,
   .footer h1 {
     margin: 0 auto;
+    letter-spacing: 9px;
+    color: white;
   }
   .header a,
   .footer a {
@@ -92,9 +95,14 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     display: block;
     cursor: pointer;
     color: rgb(26, 23, 24);
+    transition: background 300ms, color 300ms;
+  }
+  .footer .title-button:hover {
+    background: #64ABCE;
+    color: white;
   }
   </style>
-  <div class="{{type}}">
+  <div class="{{type}}" style="background: {{background}};">
     <a href="" class="title-button">
       <h1><content></content></h1>
     </a>
@@ -102,7 +110,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       <div class="window-buttons">
         <button on-click="{{close}}" class="window-button close">&nbsp;</button>
         <button on-click="{{minimize}}" class="window-button minimize">&nbsp;</button>
-        <button on-click="{{maximize}}" class="window-button maximize">&nbsp;</button>
       </div>
     </template>
   </div>
@@ -116,9 +123,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     minimize: function (e) {
       this.$.analytics.track('Minimized Window')
       require('remote').getCurrentWindow().minimize()
-    },
-    maximize: function (e) {
-      this.$.analytics.track('Maximized Window')
     }
   })
 </script>

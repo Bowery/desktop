@@ -1,0 +1,39 @@
+<!doctype>
+<html>
+<head>
+  <style>
+    * {
+      background: black;
+      color: white;
+    }
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #logs {
+      height: 100%;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <pre id="logs">
+
+  </pre>
+  <script>
+    var appId = window.location.search.slice(7)
+    var logs = document.getElementById('logs')
+    var sse = new EventSource('/_/sse')
+    sse.addEventListener('message', function (e) {
+      console.log('$$$$ e', e)
+      var data = JSON.parse(e.data)
+      if (data.type == 'log' && appId == data.appID && data.message) {
+        logs.innerHTML += data.message
+        logs.scrollTop = logs.scrollHeight
+      }
+    })
+  </script>
+</body>
+</html>

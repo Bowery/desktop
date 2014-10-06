@@ -14,7 +14,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../core-ajax/core-ajax.html">
 <link rel="import" href="bowery-analytics.html">
 
-<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token model">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token model background submitBackground">
 <template>
   <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="../../bowery/out.css">
@@ -22,43 +22,28 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   form {
     padding-top: 9px;
     overflow: auto;
+    height: 377px;
   }
-  .extra {
-    margin: 9px 18px 0 18px;
-    padding: 10px;
-  }
-  .field-group {
-    background: white;
-    padding: 10px;
-    margin: 9px 18px 0 18px;
-    width: 345px;
-    float: left;
-    position: relative;
-    overflow: hidden;
-  }
-  bowery-pill {
-    float: left;
-    margin: 9px 18px 0 18px;
+  :host {
+    height: 100%;
   }
   </style>
-  <form id="form">
+  <form id="form" style="background: {{background}};">
     <template repeat="{{field in fields}}">
       <template if="{{field.type == 'hidden'}}">
         <input id="{{field.name}}" type="hidden" value="{{field.value || model[field.name]}}">
       </template>
       <template if="{{field.type != 'hidden'}}">
-        <div class="field-group">
-          <input id="{{field.name}}" placeholder="{{field.label || field.name | makeReadable}}" type="{{field.type || 'text'}}" name="{{field.name}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+        <div class="field-group" style="background: {{background}};">
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+          <label style="{{field.error && 'color: #FF6656'}}">{{field.error || field.label || field.name | makeReadable}}</label>
         </div>
       </template>
     </template>
-  </form>
-  <div class="extra">
     <content></content>
-    <p>{{feedback}}</p>
-  </div>
+  </form>
 
-  <bowery-nav type="footer" on-click="{{postForm}}">{{title}}</bowery-nav>
+  <bowery-nav type="footer" background="{{submitBackground}}" on-click="{{postForm}}">{{title}}</bowery-nav>
   <core-ajax id="ajax"
     url="{{endpoint}}"
     method="POST"
@@ -98,8 +83,12 @@ Polymer({
       this.$.ajax.body = JSON.stringify(params)
     }
 
-    this.$.ajax.params = JSON.stringify(params)
-    this.$.ajax.go()
+    if (this.endpoint) {
+      this.$.ajax.params = JSON.stringify(params)
+      this.$.ajax.go()
+    } else {
+      this.fire('bowery-form-response', {fields: this.fields, model: this.model})
+    }
 
     this.$.analytics.track('Submitted ' + this.title + ' Form', params)
   },
@@ -111,6 +100,30 @@ Polymer({
         status: 'failed',
         error: 'internal server error'
       }
+    }
+
+    if (this.response.error) {
+      this.$.analytics.track("Failed Form Post Attempt (" + this.title + ")", {error: this.response.error})
+      var affectedField
+      var error = this.response.error
+      console.log('$$$ error', error)
+
+      if (error == 'Incorrect Password') {
+        affectedField = 'password'
+      }
+
+      if (~error.indexOf('No such developer with email') || ~error.indexOf('email address must contain a single @')) {
+        affectedField = 'email'
+      }
+
+      for (var i = 0; i < this.fields.length; i++) {
+        if (this.fields[i].name == affectedField) {
+          this.fields[i].error = error
+        } else {
+          this.fields[i].error = ""
+        }
+      }
+      return
     }
 
     this.fire('bowery-form-response', {fields: this.fields, model: this.model})

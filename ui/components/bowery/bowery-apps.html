@@ -7,55 +7,28 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
-<link rel="import" href="bowery-card.html">
 
 <polymer-element name="bowery-apps" attributes="applications app">
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
-      .field-group {
-        margin: 0;
-        padding: 0;
-        background: inherit;
+      :host {
+        display: block;
+        background: #361B4B;
+        height: 377px;
+        overflow: auto;
       }
-      bowery-card {
-        position: relative;
-      }
-      .status {
-        position: absolute;
-        right: 18px;
-        top: 18px;
-        text-align: right;
-        text-transform: uppercase;
-      }
-      bowery-card:hover {
-        cursor: pointer;
-      }
-      .unclickable {
-        cursor: text;
-        padding: 0 9px 0 0;
-      }
+
       #message {
         display: none;
         padding: 18px;
       }
-      .running {
-        color: #41C524;
-      }
     </style>
     <div id="container" class="">
       <template repeat="{{app in applications}}">
-        <bowery-card data-id="{{app._id}}" on-click="{{goToStatus}}">
+        <div class="card" data-id="{{app._id}}" on-click="{{goToEditApp}}">
           <h4>{{app.name}}</h4>
-          <span class="unclickable">{{app.location || 'Waiting on AWS for ip address'}}</span>
-          <span class="status {{app.status}}">{{app.status}}</span>
-        </bowery-card>
-      </template>
-      <template if="{{applications.length == 0}}">
-        <div id="message">
-          <h3>Welcome to Bowery</h3>
-          <p>Click 'CREATE APP' or drag a folder with your app in it to get started.</p>
-          <p>For more info see bowery.io</p>
+          <span class="unclickable" class="{{app.status != 'running' ? 'error' : ''}}">{{app.status != 'running' ? app.status : (app.location || 'Your application is provisioning')}}</span>
         </div>
       </template>
     </div>
@@ -65,23 +38,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     created: function () {
       this.applications = []
     },
-    ready: function () {
-      var self = this
-      setTimeout(function () {
-        if (self.$.message)
-          self.$.message.style.display = 'block'
-      }, 1000)
-
-    },
-    goToStatus: function (e) {
+    goToEditApp: function (e) {
       if (e.target.className == 'unclickable')
         return
-
 
       var id = e.target.dataset.id || e.target.parentNode.dataset.id
       this.app = this.applications.filter(function (a) {return a._id == id})[0]
 
-      this.fire('bowery-navigate', {path: '/apps/status'})
+      this.app.image = this.app.environment.name || this.app.envId
+
+      this.fire('bowery-navigate', {path: '/apps/edit'})
     }
   })
   </script>

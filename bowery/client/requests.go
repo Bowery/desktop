@@ -44,6 +44,7 @@ var Routes = []*Route{
 	&Route{"POST", "/applications/{id}", updateApplicationHandler},
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
+	&Route{"GET", "/environments", searchEnvironmentsHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse", sseHandler},
@@ -533,6 +534,33 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 		"id":     id,
+	})
+}
+
+// searchEnvironmentsHandler is a handler that searches environments.
+// See func name for more details.
+func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
+	query := req.URL.Query().Get("query")
+	if query == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "missing query field",
+		})
+		return
+	}
+
+	envs, err := SearchEnvironments(query)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":       requests.STATUS_FOUND,
+		"environments": envs,
 	})
 }
 
