@@ -15,7 +15,7 @@ echo "Agent dir ${agent}"
 cd "${agent}"
 
 # Get the version we're building.
-version="$(cat ../VERSION)"
+version="$(cat VERSION)"
 echo "Version: ${version}"
 
 #go get -u github.com/laher/goxc

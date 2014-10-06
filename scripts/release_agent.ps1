@@ -18,7 +18,7 @@ if ($LastExitCode -gt 0) {
 cd $dir
 
 # Retrieve the version.
-$version = Get-Content ..\VERSION
+$version = Get-Content VERSION
 echo "Version: $version"
 
 # Build the agent.
