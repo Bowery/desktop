@@ -60,6 +60,7 @@ rm "${DIR}/pkg/darwin_amd64/LICENSE"
 cat "${DIR}/shell/Info.plist" > "${DIR}/pkg/darwin_amd64/Bowery.app/Contents/Info.plist"
 rm -f "${DIR}/pkg/darwin_amd64/Bowery.app/Contents/Resources/atom.icns"
 cat "${DIR}/shell/bowery.icns" > "${DIR}/pkg/darwin_amd64/Bowery.app/Contents/Resources/bowery.icns"
+codesign -f -vvv -s 'Bowery Software, LLC.' --deep "${DIR}/pkg/darwin_amd64/Bowery.app"
 
 
 # Move Client for Win32
@@ -127,8 +128,8 @@ for ARCHIVE in ./dist/${VERSION}/*; do
   contentType="application/octet-stream"
   dateValue=`date -u +"%a, %d %h %Y %T +0000"`
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-  s3Key=AKIAI6ICZKWF5DYYTETA
-  s3Secret=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
+  s3Key=${AWS_KEY}
+  s3Secret=${AWS_SECRET}
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
   curl -k\
       -T ${ARCHIVE} \
