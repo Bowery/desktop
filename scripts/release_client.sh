@@ -8,7 +8,7 @@ CGO_ENABLED=0
 # Change into that directory
 cd "$DIR/bowery/client"
 
-VERSION=$(cat ../VERSION)
+VERSION=$(cat VERSION)
 VERSIONDIR="${VERSION}"
 
 
@@ -117,6 +117,7 @@ done
 
 pushd "${DIR}/dist/${VERSION}"
 shasum -a256 * > "./${VERSION}_SHA256SUMS"
+echo "${VERSION}" > "./VERSION"
 popd
 
 echo "--> Uploading archives to s3..."
