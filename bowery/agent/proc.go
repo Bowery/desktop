@@ -24,6 +24,11 @@ var (
 // if initReset is true. Commands to run are only updated if reset is true.
 // A channel is returned and signaled if the commands start or the build fails.
 func Restart(app *Application, initReset, reset bool) chan bool {
+	go logClient.Info("restarting application", map[string]interface{}{
+		"app": app,
+		"ip":  AgentHost,
+	})
+
 	plugin.EmitPluginEvent(schemas.BEFORE_APP_RESTART, "", app.Path, app.ID, app.EnabledPlugins)
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)

@@ -83,9 +83,18 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	start := req.FormValue("start")
 	path := req.FormValue("path")
 
+	go logClient.Info("creating application", map[string]interface{}{
+		"appID": id,
+		"ip":    AgentHost,
+	})
+
 	// Create new application.
 	app, err := NewApplication(id, init, build, test, start, path)
 	if err != nil {
+		go logClient.Error(err.Error(), map[string]interface{}{
+			"app": app,
+			"ip":  AgentHost,
+		})
 		res.Body["error"] = err.Error()
 		res.Send(http.StatusInternalServerError)
 		return
@@ -135,6 +144,11 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	build := req.FormValue("build")
 	test := req.FormValue("test")
 	start := req.FormValue("start")
+
+	go logClient.Info("updating application", map[string]interface{}{
+		"appID": id,
+		"ip":    AgentHost,
+	})
 
 	app := Applications[id]
 	if app == nil {
@@ -266,6 +280,11 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		plugin.EmitPluginEvent(schemas.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
 	}
 
+	go logClient.Info("removing application", map[string]interface{}{
+		"appID": id,
+		"ip":    AgentHost,
+	})
+
 	SaveApps()
 	res.Body["status"] = "removed"
 	res.Send(http.StatusOK)
@@ -290,6 +309,11 @@ func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		res.Send(http.StatusBadRequest)
 		return
 	}
+
+	go logClient.Info("running command", map[string]interface{}{
+		"command": body.Cmd,
+		"ip":      AgentHost,
+	})
 
 	// Get the data from the optional application.
 	path := HomeDir
@@ -337,6 +361,11 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 		res.Send(http.StatusBadRequest)
 		return
 	}
+
+	go logClient.Info("running commands", map[string]interface{}{
+		"commands": body.Cmds,
+		"ip":       AgentHost,
+	})
 
 	// Get the data from the optional application.
 	path := HomeDir
