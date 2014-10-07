@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Get host
-	AgentHost, _ := util.GetHost()
+	AgentHost, _ = util.GetHost()
 
 	// Register routes.
 	router := mux.NewRouter()
