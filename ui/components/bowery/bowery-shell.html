@@ -23,9 +23,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     .card, .field-group, .card:hover {
       background: #4C70BE;
     }
-    .card h3 {
-      color: white;
-    }
     </style>
     <div class="field-group">
       <input id="cmd" type="text" placeholder=">" on-keyup="{{runCmdOnEnter}}">
@@ -34,7 +31,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <div class="scrollable">
       <template repeat="{{event in app.environment.events}}">
         <div class="card">
-          <h3>{{event.body}}</h3>
+          <h4>{{event.body}}</h4>
           <span class="unclickable">{{event.createdAt | timeSince}}</span>
         </div>
       </template>
@@ -52,6 +49,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       },
       runCmd: function (e) {
         var cmd = this.$.cmd.value
+        this.app.environment.events = this.app.environment.events || []
         this.app.environment.events.unshift({
           body: cmd,
           createdAt: Date.now()

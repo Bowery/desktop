@@ -86,8 +86,10 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <bowery-screen path="/apps/edit">
   <bowery-nav type="header" background="#200237">{{app.name}}</bowery-nav>
   <bowery-form title="Save" background="#361B4B" submitBackground="#200237" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
-    <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
-    <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
+    <template if="{{app.status != 'provisioning'}}">
+      <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
+      <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
+    </template>
   </bowery-form>
 </bowery-screen>
 
