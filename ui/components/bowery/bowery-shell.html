@@ -13,81 +13,33 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <template>
     <link rel="stylesheet" href="../../bowery/out.css">
     <style>
-    #message {
-      margin: 9px 18px;
-    }
-    .details {
-      margin: 18px;
-    }
-    .details p {
-      margin: 0;
-    }
-    .error {
-      margin: 9px 18px 18px 18px;
-    }
-    .executer {
-      padding: 0 18px;
-      margin-bottom: 9px;
-      width: 364px;
-      float: left;
-      position: relative;
-      overflow: hidden;
-    }
-    label {
-      top: 9px;
-      left: 36px;
-    }
-    input {
-      width: 247px;
-      height: 18px;
-      margin-right: 9px;
-      padding: 9px 18px;
-    }
-    button {
-      background: white;
-      width: 72px;
-      height: 36px;
-      float: right;
-      cursor: pointer;
-      padding: 9px;
-    }
-    .logs {
-      background: white;
-      width: 364px;
-      margin: 9px 18px;
-      min-height: 108px;
-      max-height: 205px;
+    .scrollable {
       overflow: auto;
+      margin: 0;
+      padding: 0;
+      height: 299px;
+      display: block;
     }
-    .extra {
-      margin-left: 18px;
+    .card, .field-group, .card:hover {
+      background: #4C70BE;
+    }
+    .card h3 {
+      color: white;
     }
     </style>
-    <h3 id="message">Your app {{app.status == 'error' ? 'has an' : 'is'}} {{app.status}}.</h3>
-    <template if="{{app.status != 'error'}}">
-      <div class="details">
-        <template if="{{app.location}}">
-            <p>Address: {{app.location}}</p>
-        </template>
-        <p>Environment: {{app.envId}}</p>
-      </div>
-    </template>
-    <template if="{{app.status == 'error'}}">
-      <p class="error">{{mostRecentError()}}</p>
-    </template>
-    <div class="executer">
-      <template if="{{app.status == 'provisioning'}}">
-        <p>Your application is still provisioning. When it's done you'll be able to run commands from this window and see the output.</p>
+    <div class="field-group">
+      <input id="cmd" type="text" placeholder=">" on-keyup="{{runCmdOnEnter}}">
+      <label>Press enter to execute command.</label>
+    </div>
+    <div class="scrollable">
+      <template repeat="{{event in app.environment.events}}">
+        <div class="card">
+          <h3>{{event.body}}</h3>
+          <span class="unclickable">{{event.createdAt | timeSince}}</span>
+        </div>
       </template>
-      <input id="cmd" type="text" placeholder=">" on-keyup="{{runCmdOnEnter}}" style="display: {{app.status == 'running' ? 'block' : 'none'}}">
-      <button on-click="{{runCmd}}" style="display: {{app.status == 'running' ? 'block' : 'none'}}">RUN</button>
-
     </div>
-    <div id="logs" class="logs"></div>
-    <div class="extra">
-      <content></content>
-    </div>
-    <core-ajax id="ajax" contentType="application/json" url="/commands" method="POST" handleAs="json" on-core-complete="{{handleCmdResponse}}" auto></core-ajax>
+    <core-ajax id="ajax" contentType="application/json" url="/commands" method="POST" handleAs="json" on-core-response="{{handleCmdResponse}}" auto></core-ajax>
   </template>
   <script src="ansi_up.js" type="text/javascript"></script>
   <script>
@@ -100,32 +52,50 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       },
       runCmd: function (e) {
         var cmd = this.$.cmd.value
+        this.app.environment.events.unshift({
+          body: cmd,
+          createdAt: Date.now()
+        })
         if (cmd) this.$.ajax.body = this.$.ajax.params = JSON.stringify({appID: this.app._id, token: this.token, cmd: cmd, cacheBuster: Date.now()})
       },
       runCmdOnEnter: function (e) {
         if (e.keyCode == 13) {
           this.runCmd()
+          this.openLogsWindow()
         }
+      },
+      timeSince: function (date) {
+        var seconds = Math.floor((new Date() - new Date(date)) / 1000)
+        var interval = Math.floor(seconds / 31536000)
+
+        if (interval > 1) {
+            return interval + " years ago"
+        }
+        interval = Math.floor(seconds / 2592000)
+        if (interval > 1) {
+            return interval + " months ago"
+        }
+        interval = Math.floor(seconds / 86400)
+        if (interval > 1) {
+            return interval + " days ago"
+        }
+        interval = Math.floor(seconds / 3600)
+        if (interval > 1) {
+            return interval + " hours ago"
+        }
+        interval = Math.floor(seconds / 60)
+        if (interval > 1) {
+            return interval + " minutes ago"
+        }
+        return Math.floor(seconds) + " seconds ago"
+      },
+      openLogsWindow: function () {
+        this.logWindow = this.logWindow || window.open("http://localhost:32055/bowery/logs.html?appId=" + this.app._id, this.app.name + " Logs", "resizable,scrollbars,status")
       },
       handleCmdResponse: function (e, detail) {
-        var response = JSON.parse(detail.xhr.responseText)
-        if (response.status == "success") {
-          this.$.cmd.value = ""
-          this.$.logs.scrollTop = this.$.logs.scrollHeight
-        } else if (response.error != "EOF") {
-          this.$.logs.innerHTML += response.error + "<br/>"
-        }
-      },
-      mostRecentError: function () {
-        if (this.app.errors && this.app.errors.length) return this.app.errors[0].body
-      },
-      logsChanged: function () {
-        if (!this.logs) return this.$.logs.innerHTML = '<pre></pre>'
-
-        this.$.logs.innerHTML = '<pre>' + ansi_up.ansi_to_html(this.logs) + '</pre>'
-        this.$.logs.scrollTop = this.$.logs.scrollHeight
+        this.$.cmd.value = ""
+        this.openLogsWindow()
       }
     })
   </script>
-
 </polymer-element>

@@ -22,6 +22,11 @@ type applicationsRes struct {
 	Applications []*schemas.Application `json:"applications"`
 }
 
+type environmentsRes struct {
+	*Res
+	Environments []*schemas.Environment `json:"environments"`
+}
+
 type createEventReq struct {
 	Type  string `json:"type"`
 	Body  string `json:"body"`
@@ -106,4 +111,26 @@ func KenmareCreateEvent(app *schemas.Application, cmd string) error {
 	}
 
 	return createRes
+}
+
+func SearchEnvironments(query string) ([]*schemas.Environment, error) {
+	addr := fmt.Sprintf("%s/environments?query=%s", config.KenmareAddr, query)
+	res, err := http.Get(addr)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	searchRes := new(environmentsRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(searchRes)
+	if err != nil {
+		return nil, err
+	}
+
+	if searchRes.Status != requests.STATUS_FOUND {
+		return nil, searchRes
+	}
+
+	return searchRes.Environments, nil
 }

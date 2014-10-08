@@ -13,6 +13,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-apps.html">
 <link rel="import" href="bowery-form.html">
 <link rel="import" href="bowery-shell.html">
+<link rel="import" href="bowery-image-select.html">
 <link rel="import" href="bowery-analytics.html">
 <link rel="import" href="../core-localstorage/core-localstorage.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
@@ -39,50 +40,66 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     margin-top: 80px;
     margin-left: 9px;
   }
+  .images {
+    background: #361B4B;
+  }
+  .btn.half {
+    width: 50%;
+    float: left;
+    text-align: center;
+  }
 </style>
-<bowery-nav type="header">Bowery</bowery-nav>
-
 <bowery-screen path="/login">
-  <bowery-form title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
-    <a href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
+  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
+  <bowery-form background="#0C2642" submitBackground="#072038" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
+    <a class="btn" href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/signup">
-  <bowery-form title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
-    <a href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
+  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
+  <bowery-form  background="#0C2642" submitBackground="#072038" title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
+    <a class="btn" href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
+  </bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/keys">
+  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
+  <bowery-form  background="#0C2642" submitBackground="#072038" title="Connect AWS" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+    <a class="btn" href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html" on-click="{{openExternalWindow}}">What are AWS Access Key?</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps">
+  <bowery-nav type="header" background="#200237">Apps</bowery-nav>
   <bowery-apps app="{{app}}" applications="{{applications}}"></bowery-apps>
-  <bowery-nav type="footer" href="/apps/new" on-click="{{navigate}}">Create App</bowery-nav>
+  <bowery-nav type="footer" background="#200237" href="/apps/new" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
 
-<bowery-screen path="/apps/status">
+<bowery-screen path="/apps/exec">
+  <bowery-nav type="header" background="#37476F">Exec</bowery-nav>
   <bowery-shell app="{{app}}" logs="{{app.logs}}" token="{{developer.token}}">
-    <a href="/apps" on-click="{{navigate}}">I'm over it. Take me home.</a>
   </bowery-shell>
-  <bowery-nav type="footer" href="/apps/edit" on-click="{{navigate}}">Edit App</bowery-nav>
+  <bowery-nav type="footer" background="#37476F" href="/apps/edit" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/edit">
-  <bowery-form title="Save" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
-    <a href="/apps/status" on-click="{{navigate}}">Nevermind. Take me back.</a> |
-    <a href="" on-click="{{deleteApp}}" class="error">Delete This App</a>
+  <bowery-nav type="header" background="#200237">{{app.name}}</bowery-nav>
+  <bowery-form title="Save" background="#361B4B" submitBackground="#200237" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+    <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
+    <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps/new">
-  <bowery-form title="Provision" endpoint="/applications" fields="{{newAppFields}}" sendAs="json" on-bowery-form-response="{{handleCreateAppAttempt}}" token="{{developer.token}}">
-    <a href="/apps" on-click="{{navigate}}">I'm lost. Take me home.</a> | <a href="https://console.aws.amazon.com/iam/#users" on-click="{{openExternalWindow}}">What are AWS Keys?</a>
-  </bowery-form>
+  <bowery-nav type="header" background="#37476F">Select Image</bowery-nav>
+  <bowery-image-select title="Provision" background="#4C70BE" submitBackground="#37476F" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
+  <bowery-nav type="footer" background="#37476F" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
-<!-- <script src="ansi_up.js" type="text/javascript"></script> -->
 <script src="gifstream.js" type="text/javascript"></script>
 <script>
 Polymer('bowery-core', {
@@ -103,26 +120,24 @@ Polymer('bowery-core', {
     }
   },
   loginFields: [
-    {name: 'email'},
-    {name: 'password', type: 'password'}
+    {name: 'email', placeholder: 'your@email.com'},
+    {name: 'password', placeholder: '**********', type: 'password'}
   ],
   signupFields: [
-    {name: 'name'},
-    {name: 'email'},
-    {name: 'password', type: 'password'}
+    {name: 'name', placeholder: 'Best Friend'},
+    {name: 'email', placeholder: 'your@email'},
+    {name: 'password', type: 'password', placeholder: '************'}
+  ],
+  keyFields: [
+    {name: 'aws_access_key', label: 'AWS Access Key', placeholder: 'AWS+ACCESS+KEY+GOES+HERE'},
+    {name: 'aws_secret_key', label: 'AWS Secret Key',  placeholder: 'AWS+SECRET+KEY+GOES+HERE'}
   ],
   editAppFields: [
-    {name: 'name'},
-    {name: 'start'},
-    {name: 'build'},
-    {name: 'remotePath', label: 'Remote Path'},
-    {name: 'localPath', label: 'Local Path'}
-  ],
-  newAppFields: [
-    {name: 'aws_access_key', label: 'AWS Key'},
-    {name: 'aws_secret_key', label: 'AWS Secret'},
-    {name: 'envID', label: 'Environment'},
-    {name: 'instance_type', label: 'Size', type: 'hidden', value: 'm3.medium'}
+    {name: 'name', placeholder: 'Your App'},
+    {name: 'image', label: 'Image Name'},
+    {name: 'start', label: 'Command that runs app', placeholder: './web-app'},
+    {name: 'remotePath', label: 'Remote Path', placeholder: '/home/ubuntu/app'},
+    {name: 'localPath', label: 'Local Path', placeholder: '~/Documents/app'}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -148,8 +163,12 @@ Polymer('bowery-core', {
       return this.navigate('/login')
     }
 
-    this.newAppFields[0].value = this.keys.aws_access_key
-    this.newAppFields[1].value = this.keys.aws_secret_key
+    if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
+      return this.navigate('/keys')
+    }
+
+    this.keyFields[0].value = this.keys.aws_access_key
+    this.keyFields[1].value = this.keys.aws_secret_key
 
     this.navigate('/apps')
   },
@@ -179,8 +198,6 @@ Polymer('bowery-core', {
   populateNewAppScreen: function (comExt) {
     var envID = comExt && comExt.comment
 
-    if (envID) this.newAppFields[2].value = envID
-
     this.app = {}
     this.navigate("/apps/new")
   },
@@ -200,7 +217,6 @@ Polymer('bowery-core', {
 
     if (event.type == 'log' && this.app._id == event.appID && event.message) {
       this.app.logs += event.message
-      // this.app.prettyLogs = ansi_up.ansi_to_html(this.app.logs)
     }
   },
   handleCreateAppAttempt: function (e, detail) {
@@ -216,12 +232,8 @@ Polymer('bowery-core', {
     this.app = response.application
     this.app.localPath = this.defaultLocalPath
     this.applications.push(this.app)
-    for (var i = 0, field; field = this.editAppFields[i]; i++)
-      field.value = this.app[field.name]
 
-    this.keys.aws_access_key = detail.model.aws_access_key
-    this.keys.aws_secret_key = detail.model.aws_secret_key
-    this.$.keys.save()
+    this.editAppFields[1].value = this.app.environment ? this.app.environment.name : this.app.envId
 
     this.navigate('/apps/edit')
   },
@@ -234,10 +246,14 @@ Polymer('bowery-core', {
       e.target.feedback = response.error
       return
     }
-
-    for (var i = 0, app; app = this.applications[i]; i++)
-      if (app._id == response.application._id)
-        this.applications[i] = response.application
+    var ids = this.applications.map(function (a) {return a._id})
+    if (~ids.indexOf(response.application._id)) {
+      for (var i = 0, app; app = this.applications[i]; i++)
+        if (app._id == response.application._id)
+          this.applications[i] = response.application
+    } else {
+      this.applications.push(response.application)
+    }
 
 
     this.app = {}
@@ -246,15 +262,15 @@ Polymer('bowery-core', {
   handleLoginAttempt: function (e) {
     var response = e.target.response
     if (response.status != "created") {
-      if (response.error == "EOF") return
-
-      this.$.analytics.track("Failed Login Attempt", {error: response.error})
-      e.target.feedback = response.error
       return
     }
     this.developer = {}
     this.developer.token = response.token
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
+
+    if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
+      return this.navigate('/keys')
+    }
 
     this.navigate('/apps')
   },
@@ -271,6 +287,9 @@ Polymer('bowery-core', {
     if (response.status == "created") {
       this.developer = response.developer
       this.$.db.save()
+      if (!this.keys.aws_access_key || !this.keys.aws_secret_key)
+        return this.navigate('/keys')
+
       return this.navigate('/apps')
     }
 
@@ -279,6 +298,12 @@ Polymer('bowery-core', {
 
     this.$.analytics.track("Failed Signup Attempt", {error: response.error})
     e.target.feedback = response.error
+  },
+  handleKeysAttempt: function (e, detail) {
+    console.log('$$$$ keys attempt', e, detail)
+    console.log('$$$$ keys from local', this.keys)
+    this.$.keys.save()
+    this.navigate('/apps/new')
   },
   parameterize: function (obj) {
     var out = ""
@@ -336,7 +361,6 @@ Polymer('bowery-core', {
     }
 
     this.$.analytics.track('Navigated to ' + path)
-
 
     this.fire('bowery-navigate', {path: path})
   },

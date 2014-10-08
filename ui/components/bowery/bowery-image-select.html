@@ -1,0 +1,98 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-image-select` allows you to select a bowery image from a search result.
+  <bowery-image-select></bowery-image-select>
+
+@group Bowery Core Elements
+@element bowery-image-select
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="bowery-analytics.html">
+
+
+<polymer-element name="bowery-image-select" attributes="images image app keys token">
+  <template>
+    <bowery-analytics id="analytics"></bowery-analytics>
+    <link rel="stylesheet" href="../../bowery/out.css">
+    <style>
+      :host {
+        height: 100%;
+      }
+      .card, .field-group, :host {
+        background: #4C70BE;
+      }
+      .scrollable {
+        height: 299px;
+        background: #4C70BE;
+        overflow: auto;
+      }
+    </style>
+    <div class="field-group">
+      <input type="text" placeholder="php" value="{{query}}">
+      <label>Search for images and click to use one.</label>
+    </div>
+    <div class="scrollable">
+      <template repeat="{{image in images}}">
+        <div class="card" on-click="{{selectImage}}" data-id="{{image.id}}">
+          <h4>{{image.name}}</h4>
+          <span class="unclickable">{{image.description}}</span>
+        </div>
+      </template>
+    </div>
+    <core-ajax url="/environments?query={{query}}" handleAs="json" on-core-response="{{updateImages}}" auto></core-ajax>
+    <core-ajax id="ajax" url="/applications" method="POST" handleAs="json" on-core-complete="{{emitResult}}"></core-ajax>
+  </template>
+  <script>
+  Polymer('bowery-image-select', {
+    ready: function (e) {
+      this.images = [
+        {name: 'php 5.3', description: 'php with nginx and some magic.'},
+        {name: 'php wordpress', description: 'php 5.6 with wordpress.'}
+      ]
+    },
+    updateImages: function (e, detail) {
+      console.log(detail.response && detail.response.environments)
+      if (detail.response.environments.length)
+        this.images = detail.response.environments
+      else
+        this.images = []
+    },
+    selectImage: function (e) {
+      // TODO (thebyrd) create app
+      console.log(e.target, e.target.dataset)
+      this.$.ajax.contentType = "application/json"
+      this.$.ajax.body = JSON.stringify({
+        token: this.token,
+        envID: e.target.dataset.id || e.target.parentNode.dataset.id,
+        aws_access_key: this.keys.aws_access_key,
+        aws_secret_key: this.keys.aws_secret_key,
+        instance_type: 'm3.medium',
+        name: 'Your App'
+      })
+      this.$.ajax.go()
+    },
+    emitResult: function (e, detail) {
+      console.log('$$$$$')
+      try {
+        this.response = JSON.parse(detail.xhr.responseText)
+      } catch (e) {
+        return
+      }
+
+      if (this.response.error == "internal server error") return
+      if (this.response.error) {
+        this.$.analytics.track("Failed Form Post Attempt (" + this.title + ")", {error: this.response.error})
+        alert('Unable to create application.\n' + this.response.error)
+        return
+      }
+      this.app = this.response.application
+      this.fire('bowery-navigate', {path: '/apps/edit'})
+    }
+  })
+  </script>
+</polymer-element>

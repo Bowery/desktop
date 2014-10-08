@@ -19,12 +19,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       display: none;
       margin: 54px 0;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: hidden;
       padding: 0;
-      height: 374px;
+      height: 377px;
     }
     ::-webkit-scrollbar {
       width: 0 !important;
+    }
+    :host {
+      height: 485px;
+      overflow: hidden;
     }
   </style>
   <div id="content" path="{{path}}">
@@ -38,8 +42,9 @@ Polymer({
   },
   ready: function () {
     self = this
-    if (this.globalPath == this.path)
+    if (this.globalPath == this.path) {
       this.$.content.style.display = 'block'
+    }
 
     window.addEventListener('bowery-navigate', this.navigate.bind(this))
   },
@@ -49,8 +54,10 @@ Polymer({
     this.globalPath = e.detail.path
     if (this.path != this.globalPath) {
       this.$.content.style.display = 'none'
+      this.$.content.style.visibility = 'hidden'
     } else {
       this.$.content.style.display = 'block'
+      this.$.content.style.visibility = 'visible'
     }
   }
 })
