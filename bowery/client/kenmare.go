@@ -22,6 +22,11 @@ type applicationsRes struct {
 	Applications []*schemas.Application `json:"applications"`
 }
 
+type environmentRes struct {
+	*Res
+	Environment *schemas.Environment `json:"environment"`
+}
+
 type environmentsRes struct {
 	*Res
 	Environments []*schemas.Environment `json:"environments"`
@@ -77,7 +82,7 @@ func GetApplication(id string) (*schemas.Application, error) {
 	return appRes.Application, nil
 }
 
-func KenmareCreateEvent(app *schemas.Application, cmd string) error {
+func CreateEvent(app *schemas.Application, cmd string) error {
 	req := &createEventReq{
 		Type:  "command",
 		EnvID: app.EnvID,
@@ -133,4 +138,73 @@ func SearchEnvironments(query string) ([]*schemas.Environment, error) {
 	}
 
 	return searchRes.Environments, nil
+}
+
+func GetEnvironment(id string) (*schemas.Environment, error) {
+	addr := fmt.Sprintf("%s/environments/%s", config.KenmareAddr, id)
+	res, err := http.Get(addr)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	envRes := new(environmentRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(envRes)
+	if err != nil {
+		return nil, err
+	}
+
+	if envRes.Status != requests.STATUS_FOUND {
+		return nil, envRes
+	}
+
+	return envRes.Environment, nil
+}
+
+type updateEnvReq struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Token       string `json:"token"`
+}
+
+func UpdateEnvironment(env *schemas.Environment, token string) (*schemas.Environment, error) {
+	req := &updateEnvReq{
+		Name:        env.Name,
+		Description: env.Description,
+		Token:       token,
+	}
+
+	var body bytes.Buffer
+	encoder := json.NewEncoder(&body)
+	err := encoder.Encode(req)
+	if err != nil {
+		return nil, err
+	}
+
+	addr := fmt.Sprintf("%s/environments/%s", config.KenmareAddr, env.ID)
+	request, err := http.NewRequest("PUT", addr, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var resBody environmentRes
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&resBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Status != requests.STATUS_SUCCESS {
+		return nil, resBody
+	}
+
+	return resBody.Environment, nil
 }

@@ -45,6 +45,8 @@ var Routes = []*Route{
 	&Route{"GET", "/applications/{id}", getApplicationHandler},
 	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
 	&Route{"GET", "/environments", searchEnvironmentsHandler},
+	&Route{"GET", "/environments/{id}", getEnvironmentHandler},
+	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse", sseHandler},
@@ -75,6 +77,11 @@ type applicationReq struct {
 	Build        string `json:"build"`
 	LocalPath    string `json:"localPath"`
 	RemotePath   string `json:"remotePath"`
+}
+
+type environmentReq struct {
+	*schemas.Environment
+	Token string `json:"token"`
 }
 
 // Res is a generic response with status and an error message.
@@ -564,6 +571,70 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func getEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	env, err := GetEnvironment(id)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":      requests.STATUS_FOUND,
+		"environment": env,
+	})
+}
+
+func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	var reqBody environmentReq
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	token := reqBody.Token
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	updateBody := &schemas.Environment{
+		ID:          id,
+		Name:        reqBody.Name,
+		Description: reqBody.Description,
+	}
+
+	updatedEnv, err := UpdateEnvironment(updateBody, token)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":      requests.STATUS_SUCCESS,
+		"environment": updatedEnv,
+	})
+}
+
 // createCommandHandler runs a command on an application agent.
 func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	var reqBody commandReq
@@ -613,7 +684,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = KenmareCreateEvent(app, reqBody.Cmd)
+	err = CreateEvent(app, reqBody.Cmd)
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
