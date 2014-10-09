@@ -2,6 +2,7 @@
 
 var fs = require('fs')
 var app = require('app')  // Module to control application life.
+var autoUpdater = require('auto-updater')
 var path = require('path')
 var BrowserWindow = require('browser-window')  // Module to create native browser window.
 var Menu = require('menu')
@@ -23,6 +24,44 @@ app.on('window-all-closed', function() {
   app.quit()
   proc.kill()
 })
+
+// Start the auto updater.
+var arch = process.arch
+if (arch == 'ia32') {
+  arch = '386'
+} else if (arch == 'x64') {
+  arch = 'amd64'
+}
+var os = process.platform
+if (os == 'win32') {
+  os = 'windows'
+}
+var query = 'version='+app.getVersion()+'&arch='+arch+'&os='+os
+autoUpdater.setFeedUrl('http://kenmare.io/client/check?'+query)
+
+autoUpdater.on('checking-for-update', function () {
+})
+
+autoUpdater.on('update-available', function () {
+})
+
+autoUpdater.on('update-not-available', function () {
+})
+
+autoUpdater.on('update-downloaded', function (ev, notes, name, date, url, install) {
+  // Display here and ask if they'd like to install the update.
+
+  install()
+})
+
+autoUpdater.on('error', function (ev, err) {
+})
+
+// Check every 15 minutes.
+autoUpdater.checkForUpdates()
+setInterval(function () {
+  autoUpdater.checkForUpdates()
+}, 900000)
 
 // Start Client and Agent
 var extension = /^win/.test(process.platform) ? ".exe" : ""

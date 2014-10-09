@@ -14,7 +14,8 @@ build/atom-shell
 build/node_modules
 build/cache
 dist/
-scripts/winutil.exe
+scripts/util.exe
+scripts/util
 bowery/agent/choco
 node_modules
 npm-debug.log

@@ -18,7 +18,7 @@ cd "${agent}"
 version="$(cat VERSION)"
 echo "Version: ${version}"
 
-#go get -u github.com/laher/goxc
+go get -u github.com/laher/goxc
 
 # Build the agent.
 goxc \

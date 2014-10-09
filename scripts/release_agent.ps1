@@ -10,7 +10,7 @@ $dir = "$root\bowery\agent"
 
 # Build utility for zip aws upload.
 cd "$root\scripts"
-go build winutil.go
+go build util.go
 if ($LastExitCode -gt 0) {
   cd $origpwd
   exit 1
@@ -43,7 +43,7 @@ ForEach ($platform in Get-ChildItem "$dir\pkg\$version") {
 
   Remove-Item "$dir\pkg\$version\$name\bowery-agent.exe" -Force -ErrorAction SilentlyContinue
   Rename-Item "$dir\pkg\$version\$name\agent.exe" "bowery-agent.exe" -Force
-  ..\..\scripts\winutil.exe zip "$dir\pkg\$version\$name" "$dir\pkg\$version\dist\$($version)_$name.zip"
+  ..\..\scripts\util.exe zip "$dir\pkg\$version\$name" "$dir\pkg\$version\dist\$($version)_$name.zip"
   if ($LastExitCode -gt 0) {
     cd $origpwd
     exit 1
@@ -85,5 +85,5 @@ if ($LastExitCode -gt 0) {
 }
 
 cd $dir
-..\..\scripts\winutil.exe aws "$dir\pkg\$version\dist"
+..\..\scripts\util.exe aws "$dir\pkg\$version\dist"
 cd $origpwd

@@ -2,10 +2,12 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +19,7 @@ import (
 	"time"
 )
 
-var cmds = map[string]func(...string) error{"zip": zips, "aws": aws}
+var cmds = map[string]func(...string) error{"zip": zips, "aws": aws, "json": jsonReplace}
 
 func init() {
 	// Let insecure ssl go through, s3 has trouble routing the certificate if bucket contains periods.
@@ -26,7 +28,7 @@ func init() {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: winutil <zip|aws> [arguments]")
+		fmt.Fprintln(os.Stderr, "Usage: winutil <zip|aws|json> [arguments]")
 		os.Exit(1)
 	}
 
@@ -148,6 +150,45 @@ func aws(args ...string) error {
 	}()
 
 	return <-done
+}
+
+// json takes a path to a json file and the key/value to set.
+func jsonReplace(args ...string) error {
+	if len(args) < 3 {
+		return errors.New("Usage: winutil json <path> <key> <value>")
+	}
+
+	file, err := os.OpenFile(args[0], os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	contents := make(map[string]interface{})
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&contents)
+	if err != nil {
+		return err
+	}
+
+	contents[args[1]] = args[2]
+	data, err := json.MarshalIndent(contents, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Seek back to the beginning of the file after truncating.
+	err = file.Truncate(0)
+	if err != nil {
+		return err
+	}
+	_, err = file.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(file, bytes.NewBuffer(data))
+	return err
 }
 
 // upload reads a file and uploads its contents to aws.
