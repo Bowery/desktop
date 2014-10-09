@@ -93,11 +93,17 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   </bowery-form>
 </bowery-screen>
 
+<bowery-screen path="/images/edit">
+  <bowery-nav type="header" background="#37476F">{{image.name || 'Edit Image'}}</bowery-nav>
+  <bowery-form title="Save" background="#4C70BE" submitBackground="#37476F" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}"></bowery-form>
+</bowery-screen>
+
 <bowery-screen path="/apps/new">
   <bowery-nav type="header" background="#37476F">Select Image</bowery-nav>
   <bowery-image-select title="Provision" background="#4C70BE" submitBackground="#37476F" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
   <bowery-nav type="footer" background="#37476F" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
+
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
@@ -108,6 +114,9 @@ Polymer('bowery-core', {
   created: function () {
     // The current app being shown
     this.app = {}
+
+    // The current image
+    this.image = {}
 
     // All of the current users application
     this.applications = []
@@ -136,10 +145,14 @@ Polymer('bowery-core', {
   ],
   editAppFields: [
     {name: 'name', placeholder: 'Your App'},
-    {name: 'image', label: 'Image Name'},
+    {name: 'image', label: 'Image Name', type: 'button', path: '/images/edit'},
     {name: 'start', label: 'Command that runs app', placeholder: './web-app'},
     {name: 'remotePath', label: 'Remote Path', placeholder: '/home/ubuntu/app'},
     {name: 'localPath', label: 'Local Path', placeholder: '~/Documents/app'}
+  ],
+  editImageFields: [
+    {name: 'name', placeholder: 'Your Image'},
+    {name: 'description', placeholder: 'A short description'}
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
@@ -261,6 +274,20 @@ Polymer('bowery-core', {
     this.app = {}
     this.navigate('/apps')
   },
+  handleEditImageAttempt: function (e, detail) {
+    var response = e.target.response
+    if (response.status != 'success') {
+      if (response.error == "EOF") return
+
+      this.$.analytics.track("Failed to Edit Image", {error: response.error})
+      e.target.feedback = response.error
+      return
+    }
+    this.app.environment.name = this.image.name
+    this.app.image = this.app.environment.name
+    this.app.environment.description = this.image.description
+    this.navigate('/apps/edit')
+  },
   handleLoginAttempt: function (e) {
     var response = e.target.response
     if (response.status != "created") {
@@ -359,12 +386,15 @@ Polymer('bowery-core', {
     if (typeof path != "string") {
       var e = path
       e.preventDefault()
-      path = e.target.getAttribute('href')
+      path = e.target.getAttribute('href') || e.target.parentNode.getAttribute('href')
     }
 
     this.$.analytics.track('Navigated to ' + path)
 
     this.fire('bowery-navigate', {path: path})
+  },
+  appChanged: function (oldApp, newApp) {
+    this.image = newApp.environment
   },
   logout: function () {
     this.developer = {}
