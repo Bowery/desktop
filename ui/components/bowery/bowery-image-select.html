@@ -33,8 +33,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       }
     </style>
     <div class="field-group">
-      <input type="text" placeholder="php" value="{{query}}">
-      <label>Search for images and click to use one.</label>
+      <input type="text" placeholder="Search for images" value="{{query}}">
+      <label>Click on image to provision app.</label>
     </div>
     <div class="scrollable">
       <template repeat="{{image in images}}">
@@ -58,7 +58,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     updateImages: function (e, detail) {
       console.log(detail.response && detail.response.environments)
       if (detail.response.environments.length)
-        this.images = detail.response.environments
+        this.images = detail.response.environments.filter(function (i) {return !!i.name})
       else
         this.images = []
     },
