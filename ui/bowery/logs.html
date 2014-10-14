@@ -2,15 +2,13 @@
 <html>
 <head>
   <style>
-    * {
-      background: black;
-      color: white;
-    }
     html, body {
       overflow: hidden;
       height: 100%;
       margin: 0;
       padding: 0;
+      background: black;
+      color: white;
     }
     #logs {
       height: 100%;
@@ -32,6 +30,8 @@
       if (data.type == 'log' && appId == data.appID && data.message) {
         logs.innerHTML += data.message
         logs.scrollTop = logs.scrollHeight
+        logs.style.marginLeft = '0px'
+        logs.style.marginLeft = '1px'
       }
     })
   </script>
