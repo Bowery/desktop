@@ -1,6 +1,6 @@
 DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
-all: deps format
+all: deps format ui
 	@bash --norc ./scripts/build_client.sh
 	@bash --norc ./scripts/build_agent.sh
 	@echo "--> Starting shell..."
@@ -20,14 +20,15 @@ test: deps
 	@go test ./...
 
 ui:
-	npm install
-	npm start > debug.log 2>&1 &
+	@npm install > debug.log 2>&1
+	@npm start > debug.log 2>&1 &
+	@npm install bower -g > debug.log 2>&1
+	@cd ui && bower install > debug.log 2>&1
 
 ui-test: ui
 	npm test
 
 ui-clean:
-	-pkill -f node_modules/.bin
 	-rm -rf node_modules
 	-rm -rf ui/diff
 
@@ -51,6 +52,7 @@ clean:
 	-rm -f goxc.log
 	-pkill -f bin/client
 	-pkill -f bin/agent
+	-pkill -f node_modules/.bin
 
 extra-clean: clean ui-clean
 	-rm -rf build/node_modules

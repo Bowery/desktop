@@ -19,6 +19,7 @@ bowery/agent/choco
 node_modules
 npm-debug.log
 ui/bowery/out.css
+ui/components
 shots
 ui/diff
 client_pid

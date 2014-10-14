@@ -15,15 +15,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-shell.html">
 <link rel="import" href="bowery-image-select.html">
 <link rel="import" href="bowery-analytics.html">
-<link rel="import" href="../core-localstorage/core-localstorage.html">
-<link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../components/core-localstorage/core-localstorage.html">
+<link rel="import" href="../components/core-ajax/core-ajax.html">
 
 <polymer-element name="bowery-core" attributes="developer">
 <template>
 <bowery-analytics id="analytics"></bowery-analytics>
 <core-localstorage id="db" name="bowery-developer" value="{{developer}}"></core-localstorage>
 <core-localstorage id="keys" name="aws-keys" value="{{keys}}"></core-localstorage>
-<link rel="stylesheet" href="../../bowery/out.css">
+<link rel="stylesheet" href="out.css">
 <style>
   span, pre {
     color: white;
