@@ -234,6 +234,11 @@ Polymer('bowery-core', {
       this.app.logs += event.message
     }
   },
+  openLogsWindow: function () {
+    if (this.logWindow) this.logWindow.close()
+    this.logWindow = window.open("http://localhost:32055/bowery/logs.html?appId=" + this.app._id, this.app.name + " Logs", "resizable,scrollbars," + this.app.name + " Logs")
+    this.logWindow.setPosition(0, 0);
+  },
   handleCreateAppAttempt: function (e, detail) {
     var response = e.target.response
     if (response.status != 'success') {
@@ -390,6 +395,10 @@ Polymer('bowery-core', {
     }
 
     this.$.analytics.track('Navigated to ' + path)
+
+    //TODO (thebyrd) make this less ghetto
+    if (path == "/apps/exec")
+      this.openLogsWindow()
 
     this.fire('bowery-navigate', {path: path})
   },
