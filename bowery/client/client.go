@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,12 +21,19 @@ var (
 	applicationManager *ApplicationManager
 	rollbarC           *rollbar.Client
 	AbsPath            string
+	VERSION            string // This is set when release_client.sh is ran.
 )
 
 func main() {
+	ver := false
 	flag.StringVar(&env, "env", "development", "Mode to run client in.")
 	flag.StringVar(&port, "port", ":32055", "Port to listen on.")
+	flag.BoolVar(&ver, "version", false, "Print the version")
 	flag.Parse()
+	if ver {
+		fmt.Println(VERSION)
+		return
+	}
 
 	rollbarC = rollbar.NewClient(config.RollbarToken, env)
 	applicationManager = NewApplicationManager()

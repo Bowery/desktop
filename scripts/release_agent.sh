@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Get the parent directory of where this script is.
+# Get the full path to the parent of this script.
 source="${BASH_SOURCE[0]}"
-while [ -h "${source}" ] ; do source="$(readlink "${source}")"; done
-root="$( cd -P "$( dirname "${source}" )/../" && pwd )"
+while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
+root="$(cd -P "$(dirname "${source}")/.." && pwd)"
 CGO_ENABLED=0
 
 agent="${root}/bowery/agent"
@@ -18,7 +18,7 @@ cd "${agent}"
 version="$(cat VERSION)"
 echo "Version: ${version}"
 
-#go get -u github.com/laher/goxc
+go get -u github.com/laher/goxc
 
 # Build the agent.
 goxc \

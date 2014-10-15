@@ -1,36 +1,14 @@
 #!/bin/bash
-#
-# This script builds the client from source.
-#
-set -e
 
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do SOURCE="$(readlink "$SOURCE")"; done
-DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
-CGO_ENABLED=0
-ROOT_DIR=$DIR
-DIR=$DIR/bowery/client
+# Get the full path to the parent of this script.
+source="${BASH_SOURCE[0]}"
+while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
+root="$(cd -P "$(dirname "${source}")/.." && pwd)"
+cd "${root}/bowery/client"
+mkdir -p "${root}/bin"
 
-# Change into that directory
-cd "$DIR"
+echo "--> Installing dependencies..."
+go get ./...
 
-# Get the git commit
-GIT_COMMIT=$(git rev-parse HEAD)
-GIT_DIRTY=$(test -n "`git status --porcelain`" && echo "+CHANGES" || true)
-
-GOPATHSINGLE=${GOPATH%%:*}
-
-# Install dependencies
-echo "--> Installing dependencies to speed up builds..."
-go get \
-  -ldflags "${CGO_LDFLAGS}" \
-  ./...
-
-# Build Client!
-echo "--> Building client..."
-cd "${DIR}"
-mkdir -p ../../bin
-
-go build \
-    -ldflags "${CGO_LDFLAGS} -X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
-    -o ../../bin/client
+echo "--> Building agent..."
+go build -o "${root}/bin/client"
