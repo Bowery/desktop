@@ -29,7 +29,7 @@ import (
 	goversion "github.com/hashicorp/go-version"
 )
 
-const usage = `usage: updater <update url> <current version> <command> [arguments]`
+const usage = `usage: updater <update url> <current version> <install dir> <command> [arguments]`
 
 var (
 	ErrNotFound = errors.New("Update version url not found for current system")
@@ -38,12 +38,12 @@ var (
 		WriteKey:  config.KeenWriteKey,
 		ProjectID: config.KeenProjectID,
 	}
-	pid       = 0
-	mutex     sync.RWMutex
-	updateURL string
-	version   string
-	binDir    string
-	err       error
+	pid        = 0
+	mutex      sync.RWMutex
+	updateURL  string
+	version    string
+	installDir string
+	err        error
 )
 
 func main() {
@@ -51,13 +51,14 @@ func main() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	wait := false
 
-	if len(os.Args) < 4 {
+	if len(os.Args) < 5 {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
 	}
 	updateURL = os.Args[1]
 	version = os.Args[2]
-	cmdArgs := os.Args[3:]
+	installDir = os.Args[3]
+	cmdArgs := os.Args[4:]
 
 	// If version is empty try to detect it.
 	if version == "" {
@@ -73,13 +74,18 @@ func main() {
 	}
 	log.Println("Current version:", version)
 
-	binDir, err = osext.ExecutableFolder()
-	if err != nil {
-		rollbarC.Report(err, map[string]string{
-			"version": version,
-		})
-		log.Println(err)
-		os.Exit(1)
+	// Parse install directory.
+	if installDir == "" || !filepath.IsAbs(installDir) {
+		binDir, err := osext.ExecutableFolder()
+		if err != nil {
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
+			log.Println(err)
+			os.Exit(1)
+		}
+
+		installDir = filepath.Join(binDir, installDir)
 	}
 
 	// Check for updates.
@@ -182,7 +188,7 @@ func doUpdate() error {
 		return err
 	}
 
-	if oldV.Equal(newV) {
+	if oldV.Equal(newV) || oldV.GreaterThan(newV) {
 		log.Println("Version hasn't changed")
 		return nil
 	}
@@ -200,15 +206,12 @@ func doUpdate() error {
 
 	log.Println("Replacing binaries found in downloaded version")
 	var replaceErr error = nil
-	for info, body := range contents {
-		if !isExecutable(info) {
-			continue
-		}
+	for header, body := range contents {
+		info := header.FileInfo()
+		path := filepath.Join(installDir, filepath.Join(strings.Split(header.Name, "/")...))
 
-		// Find existing path.
-		path, err := exec.LookPath(info.Name())
-		if err == nil {
-			err = sys.ReplaceBinPath(path, body)
+		if info.IsDir() {
+			err := os.MkdirAll(path, info.Mode())
 			if err != nil {
 				replaceErr = err
 				break
@@ -216,8 +219,7 @@ func doUpdate() error {
 			continue
 		}
 
-		// Doesn't exist or existing isn't exec.
-		err = sys.ReplaceBinPath(filepath.Join(binDir, info.Name()), body)
+		err = sys.ReplaceBinPath(path, info, body)
 		if err != nil {
 			replaceErr = err
 			break
@@ -302,7 +304,7 @@ func getVersion(url string) (string, string, error) {
 }
 
 // getVersionDownload retrieves and untars the versions archive into a file map.
-func getVersionDownload(url string) (map[os.FileInfo]io.Reader, error) {
+func getVersionDownload(url string) (map[*tar.Header]io.Reader, error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -312,7 +314,7 @@ func getVersionDownload(url string) (map[os.FileInfo]io.Reader, error) {
 	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
 		return nil, errors.New("Status code not in 2xx class: " + res.Status)
 	}
-	contents := make(map[os.FileInfo]io.Reader)
+	contents := make(map[*tar.Header]io.Reader)
 
 	body, err := gzip.NewReader(res.Body)
 	if err != nil {
@@ -336,31 +338,8 @@ func getVersionDownload(url string) (map[os.FileInfo]io.Reader, error) {
 			return nil, err
 		}
 
-		contents[hdr.FileInfo()] = buf
+		contents[hdr] = buf
 	}
 
 	return contents, nil
-}
-
-// isExecutable checks if a os.FileInfo describes an executable file.
-func isExecutable(info os.FileInfo) bool {
-	if info.IsDir() {
-		return false
-	}
-
-	// Generic mode check.
-	if info.Mode()&0111 != 0 {
-		return true
-	}
-
-	// Windows style with PATHEXT.
-	ext := strings.ToLower(filepath.Ext(info.Name()))
-	list := filepath.SplitList(os.Getenv("PATHEXT"))
-	for _, supportedExt := range list {
-		if ext == strings.ToLower(supportedExt) {
-			return true
-		}
-	}
-
-	return false
 }

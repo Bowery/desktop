@@ -1,20 +1,23 @@
 #! /usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the full path to the parent of this script.
+source="${BASH_SOURCE[0]}"
+while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
+root="$(cd -P "$(dirname "${source}")/.." && pwd)"
+build="${root}/build"
+mkdir -p "${build}"
 
-DIR="${DIR}/.."
-mkdir -p "${DIR}/build"
-pushd "${DIR}/build"
-	npm install -g grunt-cli
-	npm install
-	grunt download-atom-shell
-popd
+npm install
+cd "${build}"
+npm install -g grunt-cli
+npm install
+grunt download-atom-shell
 
-if [ ! -d "${DIR}/build/atom-shell/Bowery.app" ]; then
-	mv "${DIR}/build/atom-shell/Atom.app" "${DIR}/build/atom-shell/Bowery.app"
+if [[ ! -d atom-shell/Bowery.app ]]; then
+  mv atom-shell/Atom.app atom-shell/Bowery.app
 fi
-cat "${DIR}/shell/Info.plist" > "${DIR}/build/atom-shell/Bowery.app/Contents/Info.plist"
-cp -f "${DIR}/shell/bowery.icns" "${DIR}/build/atom-shell/Bowery.app/Contents/Resources/"
+cat "${root}/shell/Info.plist" > atom-shell/Bowery.app/Contents/Info.plist
+cp -f "${root}/shell/bowery.icns" atom-shell/Bowery.app/Contents/Resources
 
-"${DIR}/build/atom-shell/Bowery.app/Contents/MacOS/Atom" "${DIR}/shell"
+./atom-shell/Bowery.app/Contents/MacOS/Atom "${root}/shell"

@@ -21,7 +21,7 @@ case $1 in
     ENV=production
     start-stop-daemon --start --background \
       --no-close \
-      --exec "$UPDATER '$VERSIONURL' '' $AGENT" \
+      --exec "$UPDATER '$VERSIONURL' '' '' $AGENT" \
       --pidfile "$PIDFILE" \
       --make-pidfile \
       -p "$PIDFILE" >> "$LOGFILE" 2>&1
