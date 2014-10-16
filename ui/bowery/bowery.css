@@ -15,6 +15,32 @@
 
 }
 
+.images,
+.images {
+  background: var(--blue);
+}
+.images.active,
+.images.btn:hover,
+.image .card:hover {
+  background: var(--dark-blue);
+}
+.apps {
+  background: var(--purple);
+}
+.apps.active,
+.apps.btn:hover,
+.apps .card:hover {
+  background: var(--dark-purple);
+}
+.devs {
+  background: var(--navy);
+}
+.devs.active,
+.devs.btn:hover,
+.devs .card:hover {
+  background: var(--dark-navy);
+}
+
 *::selection {
   /*background-color: rgb(245, 245, 245) !important;*/
   background-color: var(--grey) !important;
@@ -136,8 +162,12 @@ button {
   cursor: pointer;
   text-decoration: none;
 }
-.btn:hover {
-  background: #64ABCE;
+
+.btn:hover,
+.card:hover,
+.footer .title-button:hover {
+  cursor: pointer;
+  color: white;
 }
 
 .btn.bad:hover {
@@ -151,10 +181,6 @@ button {
   padding: 18px 33px;
   background: #361B4B;
   transition: background 300ms;
-}
-.card:hover {
-  cursor: pointer;
-  background: #64ABCE;
 }
 .card .unclickable {
   cursor: text;
