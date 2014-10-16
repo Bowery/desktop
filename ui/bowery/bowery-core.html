@@ -404,7 +404,7 @@ Polymer('bowery-core', {
     this.fire('bowery-navigate', {path: path})
   },
   appChanged: function (oldApp, newApp) {
-    this.image = newApp.environment
+    this.image = this.app.environment
   },
   logout: function () {
     this.developer = {}
