@@ -1,0 +1,54 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-list` shows a list of clickable entites and their states.
+-->
+<link rel="import" href="../components/polymer/polymer.html">
+<link rel="import" href="../components/core-ajax/core-ajax.html">
+
+<polymer-element name="bowery-list" attributes="list item type">
+  <template>
+    <link rel="stylesheet" href="out.css">
+    <style>
+      :host {
+        display: block;
+        background: #361B4B;
+        height: 377px;
+        overflow: auto;
+      }
+
+      #message {
+        display: none;
+        padding: 18px;
+      }
+    </style>
+    <div id="container" class="{{type}}">
+      <template repeat="{{item in list}}">
+        <div class="card" data-id="{{item._id || item.id}}" on-click="{{edit}}">
+          <h4>{{item.name}}</h4>
+          <span class="unclickable" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (item.location || 'Your app is provisioning')}}</span>
+        </div>
+      </template>
+    </div>
+  </template>
+  <script>
+  Polymer('bowery-list', {
+    created: function () {
+      this.list = []
+    },
+    edit: function (e) {
+      if (e.target.className == 'unclickable')
+        return
+
+      var id = e.target.dataset.id || e.target.parentNode.dataset.id
+      this.item = this.list.filter(function (a) {return a._id == id})[0]
+
+      this.item.image = this.item.environment.name
+
+      this.fire('bowery-navigate', {path: '/' + this.type + '/edit'})
+    }
+  })
+  </script>
+</polymer-element>

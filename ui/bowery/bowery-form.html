@@ -14,7 +14,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../components/core-ajax/core-ajax.html">
 <link rel="import" href="bowery-analytics.html">
 
-<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token model background submitBackground">
+<polymer-element name="bowery-form" attributes="fields title endpoint sendAs response feedback token model color">
 <template>
   <bowery-analytics id="analytics"></bowery-analytics>
   <link rel="stylesheet" href="out.css">
@@ -27,17 +27,17 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   :host {
     height: 100%;
   }
-  .card {
+  .card .unclickable {
     cursor: pointer;
   }
   </style>
-  <form id="form" style="background: {{background}};">
+  <form id="form" class="{{color}}">
     <template repeat="{{field in fields}}">
       <template if="{{field.type == 'hidden'}}">
         <input id="{{field.name}}" type="hidden" value="{{field.value || model[field.name]}}">
       </template>
       <template if="{{field.type == 'button'}}">
-        <div class="card" on-click="{{navigate}}" href="{{field.path}}">
+        <div class="card images" on-click="{{navigate}}" href="{{field.path}}">
           <template if="{{field.value || model[field.name]}}">
             <h4>{{field.value || model[field.name]}}</h4>
           </template>
@@ -45,8 +45,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         </div>
       </template>
       <template if="{{field.type != 'hidden' && field.type != 'button'}}">
-        <div class="field-group" style="background: {{background}};">
-          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-blur="{{trackInput}}">
+        <div class="field-group" class="{{color}}">
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-focus="{{makeActive}}" on-blur="{{trackInput}}">
           <label style="{{field.error && 'color: #FF6656'}}">{{field.error || field.label || field.name | makeReadable}}</label>
         </div>
       </template>
@@ -54,7 +54,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <content></content>
   </form>
 
-  <bowery-nav type="footer" background="{{submitBackground}}" on-click="{{postForm}}">{{title}}</bowery-nav>
+  <bowery-nav type="footer" background="{{color}} active" on-click="{{postForm}}">{{title}}</bowery-nav>
   <core-ajax id="ajax"
     url="{{endpoint}}"
     method="POST"
@@ -67,9 +67,6 @@ Polymer({
   created: function () {
     this.fields = []
     this.model = {}
-  },
-  ready: function () {
-    console.log('$$$$$', this.title, this.fields, this.model)
   },
   makeReadable: function (str) {
     strs = str.replace('-', ' ').replace('_', ' ').split(' ')
@@ -155,7 +152,17 @@ Polymer({
 
     this.fire('bowery-navigate', {path: path})
   },
+  makeActive: function (e) {
+    var el = e.target.parentNode
+    console.log('add active b/c focus', el)
+    el.setAttribute('class', el.getAttribute('class') + " active " + this.color)
+  },
   trackInput: function (e) {
+
+    var el = e.target.parentNode
+    console.log('Remove active b/c blur', el)
+    el.setAttribute('class', el.getAttribute('class').replace('active ' + this.color, ''))
+
     if (!e.target.value) return // don't track if they didn't type anything
 
     this.$.analytics.track('Entered Input Text', {

@@ -10,7 +10,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 <link rel="import" href="bowery-screen.html">
 <link rel="import" href="bowery-nav.html">
-<link rel="import" href="bowery-apps.html">
+<link rel="import" href="bowery-list.html">
 <link rel="import" href="bowery-form.html">
 <link rel="import" href="bowery-shell.html">
 <link rel="import" href="bowery-image-select.html">
@@ -50,42 +50,41 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   }
 </style>
 <bowery-screen path="/login">
-  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
-  <bowery-form background="#0C2642" submitBackground="#072038" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
-    <a class="btn" href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
+  <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
+  <bowery-form color="devs" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
+    <a class="btn devs" href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/signup">
-  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
-  <bowery-form  background="#0C2642" submitBackground="#072038" title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
-    <a class="btn" href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
+  <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
+  <bowery-form color="devs" title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
+    <a class="btn devs" href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/keys">
-  <bowery-nav type="header" background="#072038">Bowery</bowery-nav>
-  <bowery-form  background="#0C2642" submitBackground="#072038" title="Connect AWS" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+  <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
+  <bowery-form  color="devs" title="Connect AWS" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
     <a class="btn" href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html" on-click="{{openExternalWindow}}">What are AWS Access Key?</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps">
-  <bowery-nav type="header" background="#200237">Apps</bowery-nav>
-  <bowery-apps app="{{app}}" applications="{{applications}}"></bowery-apps>
-  <bowery-nav type="footer" background="#200237" href="/apps/new" on-click="{{navigate}}">Add App</bowery-nav>
+  <bowery-nav type="header" background="apps active">Apps</bowery-nav>
+  <bowery-list type="apps" item="{{app}}" list="{{applications}}"></bowery-list>
+  <bowery-nav type="footer" background="apps active" href="/apps/new" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/exec">
-  <bowery-nav type="header" background="#37476F">Exec</bowery-nav>
-  <bowery-shell app="{{app}}" logs="{{app.logs}}" token="{{developer.token}}">
-  </bowery-shell>
-  <bowery-nav type="footer" background="#37476F" href="/apps/edit" on-click="{{navigate}}">Back</bowery-nav>
+  <bowery-nav type="header" background="images active">Exec</bowery-nav>
+  <bowery-shell app="{{app}}" logs="{{app.logs}}" token="{{developer.token}}"></bowery-shell>
+  <bowery-nav type="footer" background="images active" href="/apps/edit" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/edit">
-  <bowery-nav type="header" background="#200237">{{app.name}}</bowery-nav>
-  <bowery-form title="Save" background="#361B4B" submitBackground="#200237" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+  <bowery-nav type="header" background="apps active">{{app.name}}</bowery-nav>
+  <bowery-form title="Save" color="apps" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
     <template if="{{app.status != 'provisioning'}}">
       <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
       <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
@@ -94,14 +93,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <bowery-screen path="/images/edit">
-  <bowery-nav type="header" background="#37476F">{{image.name || 'Edit Image'}}</bowery-nav>
-  <bowery-form title="Save" background="#4C70BE" submitBackground="#37476F" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}"></bowery-form>
+  <bowery-nav type="header" background="images active">{{image.name || 'Edit Image'}}</bowery-nav>
+  <bowery-form title="Save" color="images" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
+    <a href="/apps/edit" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
+  </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps/new">
-  <bowery-nav type="header" background="#37476F">Select Image</bowery-nav>
-  <bowery-image-select title="Provision" background="#4C70BE" submitBackground="#37476F" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
-  <bowery-nav type="footer" background="#37476F" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
+  <bowery-nav type="header" background="images active">Select Image</bowery-nav>
+  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
+  <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
@@ -151,7 +152,7 @@ Polymer('bowery-core', {
     {name: 'localPath', label: 'Local Path', placeholder: '~/Documents/app'}
   ],
   editImageFields: [
-    {name: 'name', placeholder: 'Your Image'},
+    {name: 'name', placeholder: 'Image Name'},
     {name: 'description', placeholder: 'A short description'}
   ],
   ready: function () {
@@ -403,7 +404,7 @@ Polymer('bowery-core', {
     this.fire('bowery-navigate', {path: path})
   },
   appChanged: function (oldApp, newApp) {
-    this.image = newApp.environment
+    this.image = this.app.environment
   },
   logout: function () {
     this.developer = {}
