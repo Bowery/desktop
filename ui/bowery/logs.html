@@ -18,6 +18,17 @@
 </head>
 <body>
   <pre id="logs">
+ ____
+/\  _`\
+\ \ \L\ \    ___   __  __  __     __   _ __   __  __
+ \ \  _ <'  / __`\/\ \/\ \/\ \  /'__`\/\`'__\/\ \/\ \
+  \ \ \L\ \/\ \L\ \ \ \_/ \_/ \/\  __/\ \ \/ \ \ \_\ \
+   \ \____/\ \____/\ \___x___/'\ \____\\ \_\  \/`____ \
+    \/___/  \/___/  \/__//__/   \/____/ \/_/   `/___/> \
+                                                  /\___/
+                                                  \/__/
+Logs from your application and commands you run in the exec window will appear here.
+
 
   </pre>
   <script>
@@ -25,7 +36,6 @@
     var logs = document.getElementById('logs')
     var sse = new EventSource('/_/sse')
     sse.addEventListener('message', function (e) {
-      console.log('$$$$ e', e)
       var data = JSON.parse(e.data)
       if (data.type == 'log' && appId == data.appID && data.message) {
         logs.innerHTML += data.message

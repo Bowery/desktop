@@ -59,7 +59,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       runCmdOnEnter: function (e) {
         if (e.keyCode == 13) {
           this.runCmd()
-          this.openLogsWindow()
         }
       },
       timeSince: function (date) {
@@ -87,12 +86,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         }
         return Math.floor(seconds) + " seconds ago"
       },
-      openLogsWindow: function () {
-        this.logWindow = this.logWindow || window.open("http://localhost:32055/bowery/logs.html?appId=" + this.app._id, this.app.name + " Logs", "resizable,scrollbars,status")
-      },
       handleCmdResponse: function (e, detail) {
         this.$.cmd.value = ""
-        this.openLogsWindow()
       }
     })
   </script>
