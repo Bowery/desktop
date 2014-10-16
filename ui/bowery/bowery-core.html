@@ -94,7 +94,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/images/edit">
   <bowery-nav type="header" background="images active">{{image.name || 'Edit Image'}}</bowery-nav>
-  <bowery-form title="Save" color="images" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}"></bowery-form>
+  <bowery-form title="Save" color="images" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
+    <a href="/apps/edit" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
+  </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps/new">
@@ -150,7 +152,7 @@ Polymer('bowery-core', {
     {name: 'localPath', label: 'Local Path', placeholder: '~/Documents/app'}
   ],
   editImageFields: [
-    {name: 'name', placeholder: 'Your Image'},
+    {name: 'name', placeholder: 'Image Name'},
     {name: 'description', placeholder: 'A short description'}
   ],
   ready: function () {
