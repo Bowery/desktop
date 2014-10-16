@@ -104,7 +104,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		rollbarC.Report(err, nil)
+		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
@@ -156,6 +156,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -170,6 +171,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -186,6 +188,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -198,6 +201,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		rollbarC.Report(resBody, map[string]interface{}{
 			"reqBody": reqBody,
 			"resBody": resBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -211,6 +215,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
 			"resBody": resBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -232,7 +237,8 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 	apps, err := applicationManager.GetAll(token)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"token": token,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -259,7 +265,8 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("decoding", err)
 		rollbarC.Report(err, map[string]interface{}{
-			"id": id,
+			"id":      id,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -322,6 +329,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"id":      id,
 			"reqBody": reqBody,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -350,6 +358,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":      token,
 			"id":         id,
 			"updateBody": updateBody,
+			"VERSION":    VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -366,6 +375,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":      token,
 			"id":         id,
 			"updateBody": updateBody,
+			"VERSION":    VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -382,6 +392,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":      token,
 			"id":         id,
 			"updateBody": updateBody,
+			"VERSION":    VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -401,6 +412,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":      token,
 			"id":         id,
 			"updateBody": updateBody,
+			"VERSION":    VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -415,6 +427,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":      token,
 			"id":         id,
 			"updateBody": updateBody,
+			"VERSION":    VERSION,
 		})
 		r.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -438,7 +451,8 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	app, err := applicationManager.GetByID(id)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"id": id,
+			"id":      id,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -471,8 +485,9 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	req, err := http.NewRequest("DELETE", addr, nil)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"id":    id,
-			"token": token,
+			"id":      id,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -485,8 +500,9 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"id":    id,
-			"token": token,
+			"id":      id,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -501,8 +517,9 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	err = decoder.Decode(removeRes)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"id":    id,
-			"token": token,
+			"id":      id,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -514,8 +531,9 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// If removal failed on kepler respond with it.
 	if removeRes.Status == requests.STATUS_FAILED {
 		rollbarC.Report(removeRes, map[string]interface{}{
-			"id":    id,
-			"token": token,
+			"id":      id,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, res.StatusCode, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -528,8 +546,9 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	_, err = applicationManager.RemoveByID(id)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
-			"id":    id,
-			"token": token,
+			"id":      id,
+			"token":   token,
+			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -641,7 +660,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		rollbarC.Report(err, map[string]interface{}{})
+		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
