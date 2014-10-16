@@ -27,6 +27,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   :host {
     height: 100%;
   }
+  .card {
+    cursor: pointer;
+  }
   </style>
   <form id="form" style="background: {{background}};">
     <template repeat="{{field in fields}}">
@@ -35,7 +38,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </template>
       <template if="{{field.type == 'button'}}">
         <div class="card" on-click="{{navigate}}" href="{{field.path}}">
-          <h4>{{field.value || model[field.name]}}</h4>
+          <template if="{{field.value || model[field.name]}}">
+            <h4>{{field.value || model[field.name]}}</h4>
+          </template>
           <span class="unclickable">Click to edit image.</span>
         </div>
       </template>

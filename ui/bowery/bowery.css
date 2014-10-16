@@ -147,7 +147,7 @@ button {
 .card {
   position: relative;
   width: 100%;
-  height: 78px;
+  height: auto;
   padding: 18px 33px;
   background: #361B4B;
   transition: background 300ms;
