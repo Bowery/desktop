@@ -439,7 +439,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// Respond OK with the application.
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
-		"application": app,
+		"application": resBody.Application,
 	})
 }
 
