@@ -45,19 +45,28 @@ goxc \
   xc &> "${root}/goxc.log"
 
 echo "--> Downloading shells..."
-url="https://github.com/atom/atom-shell/releases/download/v0.17.2/atom-shell-v0.17.2"
+ver="0.17.2"
+url="https://github.com/atom/atom-shell/releases/download/v${ver}/atom-shell-v${ver}"
 
-wget -q "${url}-darwin-x64.zip" -O /tmp/atom/darwin_amd64.zip
-unzip -q /tmp/atom/darwin_amd64.zip -d "${atom}/darwin_amd64"
+if [[ ! -f "/tmp/atom/darwin_amd64.zip" ]]; then
+  wget -q "${url}-darwin-x64.zip" -O "/tmp/atom/darwin_amd64.zip"
+fi
+unzip -q "/tmp/atom/darwin_amd64.zip" -d "${atom}/darwin_amd64"
 
-wget -q "${url}-linux-ia32.zip" -O /tmp/atom/linux_386.zip
-unzip -q /tmp/atom/linux_386.zip -d "${atom}/linux_386"
+if [[ ! -f "/tmp/atom/linux_386.zip" ]]; then
+  wget -q "${url}-linux-ia32.zip" -O /tmp/atom/linux_386.zip
+fi
+unzip -q "/tmp/atom/linux_386.zip" -d "${atom}/linux_386"
 
-wget -q "${url}-linux-x64.zip" -O /tmp/atom/linux_amd64.zip
-unzip -q /tmp/atom/linux_amd64.zip -d "${atom}/linux_amd64"
+if [[ ! -f "/tmp/atom/linux_amd64.zip" ]]; then
+  wget -q "${url}-linux-x64.zip" -O /tmp/atom/linux_amd64.zip
+fi
+unzip -q "/tmp/atom/linux_amd64.zip" -d "${atom}/linux_amd64"
 
-wget -q "${url}-win32-ia32.zip" -O /tmp/atom/windows_386.zip
-unzip -q /tmp/atom/windows_386.zip -d "${atom}/windows_386"
+if [[ ! -f "/tmp/atom/windows_386.zip" ]]; then
+  wget -q "${url}-win32-ia32.zip" -O /tmp/atom/windows_386.zip
+fi
+unzip -q "/tmp/atom/windows_386.zip" -d "${atom}/windows_386"
 
 echo "--> Creating updates for ${version}..."
 
@@ -130,8 +139,11 @@ codesign -f -vvv -s "${IDENTITY}" --deep "${app}"
 
 # Setup client for other systems.
 setupAtom "linux_386" "${atom}/linux_386/resources" "{{1}}"
+mv "${atom}/linux_386/atom" "${atom}/linux_386/bowery"
 setupAtom "linux_amd64" "${atom}/linux_amd64/resources" "{{1}}"
+mv "${atom}/linux_amd64/atom" "${atom}/linux_amd64/bowery"
 setupAtom "windows_386" "${atom}/windows_386/resources" "{{1}}"
+mv "${atom}/windows_386/atom.exe" "${atom}/windows_386/bowery.exe"
 
 echo "--> Compressing shells..."
 for dir in "${atom}/"*; do
@@ -149,20 +161,20 @@ echo "--> Uploading archives to s3..."
 for file in "${distdir}/"*; do
   name="$(basename "${file}")"
   bucket=desktop.bowery.io
-  resource="/${bucket}/${file}"
+  resource="/${bucket}/${name}"
   contentType="application/octet-stream"
   dateValue="$(date -u +"%a, %d %h %Y %T +0000")"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
   s3Key=${AWS_KEY}
   s3Secret=${AWS_SECRET}
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-  curl -k \
-    -T ${file} \
-    -H "Host: ${bucket}.s3.amazonaws.com" \
-    -H "Date: ${dateValue}" \
-    -H "Content-Type: ${contentType}" \
-    -H "Authorization: AWS ${s3Key}:${signature}" \
-    https://${bucket}.s3.amazonaws.com/${file}
+  #curl -k \
+  #  -T ${name} \
+  #  -H "Host: ${bucket}.s3.amazonaws.com" \
+  #  -H "Date: ${dateValue}" \
+  #  -H "Content-Type: ${contentType}" \
+  #  -H "Authorization: AWS ${s3Key}:${signature}" \
+  #  https://${bucket}.s3.amazonaws.com/${name}
 
   echo "* http://desktop.bowery.io/${name} is available for download."
 done
