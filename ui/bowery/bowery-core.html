@@ -231,7 +231,7 @@ Polymer('bowery-core', {
       return
     }
 
-    if (event.type == 'log' && this.app._id == event.appID && event.message) {
+    if (event.type == 'log' && (!event.appID || this.app._id == event.appID) && event.message) {
       this.app.logs += event.message
     }
   },
