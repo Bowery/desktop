@@ -36,7 +36,7 @@ agent:
 	@echo "--> Releasing agent..."
 	@bash --norc ./scripts/release_agent.sh
 
-client:
+client: ui
 	@bash --norc ./scripts/release_client.sh
 
 release: agent client
