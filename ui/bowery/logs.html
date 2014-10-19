@@ -31,6 +31,7 @@ Logs from your application and commands you run in the exec window will appear h
 
 
   </pre>
+  <script src="/bowery/ansi_up.js"></script>
   <script>
     var appId = window.location.search.slice(7)
     var logs = document.getElementById('logs')
@@ -38,7 +39,7 @@ Logs from your application and commands you run in the exec window will appear h
     sse.addEventListener('message', function (e) {
       var data = JSON.parse(e.data)
       if (data.type == 'log' && appId == data.appID && data.message) {
-        logs.innerHTML += data.message
+        logs.innerHTML += ansi_up.ansi_to_html(data.message)
         logs.scrollTop = logs.scrollHeight
         logs.style.marginLeft = '0px'
         logs.style.marginLeft = '1px'
