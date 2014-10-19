@@ -11,7 +11,7 @@
 	<key>CFBundleIconFile</key>
 	<string>bowery.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.github.atom</string>
+	<string>com.bowery.desktop</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
