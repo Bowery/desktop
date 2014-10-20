@@ -78,7 +78,6 @@ function createUpdate {
   mkdir -p "${dir}/"{bin,app}
   cp -rf "${pkgdir}/${platform}/"* "${dir}/bin"
   cp -rf "${root}/ui" "${dir}"
-  echo "copying ######## ${root}/ui to ${dir}"
   cp -rf "${root}/shell/"* "${dir}/app"
 }
 
@@ -136,7 +135,8 @@ rm -rf "${contents}/Resources/atom.icns"
 if [[ "${IDENTITY}" == "" ]]; then
   IDENTITY="Bowery Software, LLC."
 fi
-codesign -f -vvv -s "${IDENTITY}" --deep "${app}"
+productbuild --sign "${IDENTITY}" --component "${app}" /Applications "${atom}/darwin_amd64/bowery.pkg"
+rm -rf "${app}"
 
 # Setup client for other systems.
 setupAtom "linux_386" "${atom}/linux_386/resources" "{{1}}"
