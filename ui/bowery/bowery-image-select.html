@@ -44,16 +44,13 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         </div>
       </template>
     </div>
-    <core-ajax url="/environments?query={{query}}" handleAs="json" on-core-response="{{updateImages}}" auto></core-ajax>
+    <core-ajax url="/environments?query={{query || 'default'}}" handleAs="json" on-core-response="{{updateImages}}" auto></core-ajax>
     <core-ajax id="ajax" url="/applications" method="POST" handleAs="json" on-core-complete="{{emitResult}}"></core-ajax>
   </template>
   <script>
   Polymer('bowery-image-select', {
     ready: function (e) {
-      this.images = [
-        {name: 'php 5.3', description: 'php with nginx and some magic.'},
-        {name: 'php wordpress', description: 'php 5.6 with wordpress.'}
-      ]
+      this.images = []
     },
     updateImages: function (e, detail) {
       console.log(detail.response && detail.response.environments)
