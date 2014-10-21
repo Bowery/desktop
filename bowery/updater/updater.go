@@ -61,7 +61,6 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 
-	fmt.Println(args, len(args))
 	if len(args) < 3 {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
