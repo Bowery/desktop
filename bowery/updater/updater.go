@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -29,7 +30,7 @@ import (
 	goversion "github.com/hashicorp/go-version"
 )
 
-const usage = `usage: updater <update url> <current version> <install dir> <command> [arguments]`
+const usage = `usage: updater [-d installDir] <update url> <current version> <command> [arguments]`
 
 var (
 	ErrNotFound = errors.New("Update version url not found for current system")
@@ -46,19 +47,28 @@ var (
 	err        error
 )
 
+func init() {
+	flag.StringVar(&installDir, "d", "", "")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, usage)
+	}
+}
+
 func main() {
 	// Skip certificate errors on aws wildcard domains.
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	wait := false
+	flag.Parse()
+	args := flag.Args()
 
-	if len(os.Args) < 5 {
+	fmt.Println(args, len(args))
+	if len(args) < 3 {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
 	}
-	updateURL = os.Args[1]
-	version = os.Args[2]
-	installDir = os.Args[3]
-	cmdArgs := os.Args[4:]
+	updateURL = args[0]
+	version = args[1]
+	cmdArgs := args[2:]
 
 	// If version is empty try to detect it.
 	if version == "" {

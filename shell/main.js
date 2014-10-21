@@ -32,7 +32,7 @@ var proc = null
 var opts = {stdio: 'inherit'}
 
 if (useUpdater) {
-  proc = spawn(updaterPath, [versionUrl, "", installDir, clientPath], opts)
+  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
 } else {
   proc = spawn(clientPath, [], opts)
 }
