@@ -34,19 +34,19 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <form id="form" class="{{color}}">
     <template repeat="{{field in fields}}">
       <template if="{{field.type == 'hidden'}}">
-        <input id="{{field.name}}" type="hidden" value="{{field.value || model[field.name]}}">
+        <input id="{{field.name}}" type="hidden" value="{{model[field.name] || field.value}}">
       </template>
       <template if="{{field.type == 'button'}}">
         <div class="card images" on-click="{{navigate}}" href="{{field.path}}">
-          <template if="{{field.value || model[field.name]}}">
-            <h4>{{field.value || model[field.name]}}</h4>
+          <template if="{{model[field.name] || field.value}}">
+            <h4>{{model[field.name] || field.value}}</h4>
           </template>
           <span class="unclickable">Click to edit image.</span>
         </div>
       </template>
       <template if="{{field.type != 'hidden' && field.type != 'button'}}">
         <div class="field-group" class="{{color}}">
-          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{field.value || model[field.name]}}" on-keyup="{{submitIfEnter}}" on-focus="{{makeActive}}" on-blur="{{trackInput}}">
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{model[field.name] || field.value}}" on-keyup="{{submitIfEnter}}" on-focus="{{makeActive}}" on-blur="{{trackInput}}">
           <label style="{{field.error && 'color: #FF6656'}}">{{field.error || field.label || field.name | makeReadable}}</label>
         </div>
       </template>
