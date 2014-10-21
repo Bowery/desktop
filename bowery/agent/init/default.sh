@@ -20,5 +20,5 @@ if [ -f bowery-agent.new ] ; then
 fi
 
 sleep 2
-/usr/local/bin/bowery-updater "${versionurl}" "" "" /usr/local/bin/bowery-agent &> bowery-agent.log &
+/usr/local/bin/bowery-updater "${versionurl}" "" /usr/local/bin/bowery-agent &> bowery-agent.log &
 echo $! > bowery-agent.pid
