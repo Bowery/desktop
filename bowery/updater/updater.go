@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/sys"
 	goversion "github.com/hashicorp/go-version"
+	"github.com/jeffchao/backoff"
 )
 
 const usage = `usage: updater [-d installDir] <update url> <current version> <command> [arguments]`
@@ -39,12 +41,13 @@ var (
 		WriteKey:  config.KeenWriteKey,
 		ProjectID: config.KeenProjectID,
 	}
-	pid        = 0
-	mutex      sync.RWMutex
-	updateURL  string
-	version    string
-	installDir string
-	err        error
+	pidSetter     = new(syncSetter)
+	updatedSetter = new(syncSetter)
+	restartSetter = &syncSetter{val: 1}
+	updateURL     string
+	version       string
+	installDir    string
+	err           error
 )
 
 func init() {
@@ -106,15 +109,48 @@ func main() {
 		}
 	}()
 
-	// Continuously restart program.
-	for {
-		if wait {
-			<-time.After(5 * time.Second)
+	// Listen for signals and forward to the process.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, os.Kill)
+	go func() {
+		<-signals
+		restartSetter.Set(0)
+		err := killPid()
+		if err != nil {
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
+			log.Println("Killing pid error:", err)
+			os.Exit(1)
 		}
-		wait = true // Wait by default after the first loop.
+
+		os.Exit(0)
+	}()
+
+	// Setup the backoff limiter for restarts.
+	exponential := backoff.Exponential()
+	exponential.MaxRetries = 100
+
+	// Continuously restart program.
+	for restartSetter.Get() == 1 {
+		if wait {
+			if !exponential.Next() {
+				err := killPid()
+				if err != nil {
+					rollbarC.Report(err, map[string]string{
+						"version": version,
+					})
+					log.Println("Killing pid error:", err)
+				}
+				return
+			}
+			<-time.After(exponential.Delay)
+		}
+		wait = true
 		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
 
 		err := cmd.Start()
 		if err != nil {
@@ -124,20 +160,20 @@ func main() {
 			log.Println("Command error:", err)
 			continue
 		} else {
-			setPid(cmd.Process.Pid)
-			log.Println("Starting process", cmdArgs, "with pid:", getPid())
+			pidSetter.Set(cmd.Process.Pid)
+			log.Println("Starting process", cmdArgs, "with pid:", pidSetter.Get())
 		}
 
 		err = cmd.Wait()
-		oldPid := getPid()
-		setPid(0)
+		oldPid := pidSetter.Get()
+		pidSetter.Set(0)
 		if err != nil {
 			log.Println("Command error:", err)
 
 			// If the process was signaled don't wait.
 			if cmd.ProcessState != nil {
 				waitStatus, ok := cmd.ProcessState.Sys().(syscall.WaitStatus)
-				if ok && waitStatus.Signaled() {
+				if ok && waitStatus.Signaled() && updatedSetter.Get() == 1 {
 					log.Println("Process with pid", oldPid, "was signaled to restart")
 					wait = false
 					continue
@@ -152,26 +188,56 @@ func main() {
 			log.Println("Process with pid", oldPid, "has exited")
 		}
 	}
+
+	// If we get here, we're killing the process from a signal.
+	select {}
 }
 
-// setPid sets the current pid.
-func setPid(val int) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	pid = val
+// syncSetter is a thread safe setter.
+type syncSetter struct {
+	val   int
+	mutex sync.RWMutex
 }
 
-// getPid retrieves the current pid.
-func getPid() int {
-	mutex.RLock()
-	defer mutex.RUnlock()
+// Get a value thread safe.
+func (ss *syncSetter) Get() int {
+	ss.mutex.RLock()
+	defer ss.mutex.RUnlock()
 
-	return pid
+	return ss.val
+}
+
+// Set a value thread safe.
+func (ss *syncSetter) Set(val int) {
+	ss.mutex.Lock()
+	defer ss.mutex.Unlock()
+
+	ss.val = val
+}
+
+func killPid() error {
+	pid := pidSetter.Get()
+	if pid > 0 {
+		log.Println("Killing process tree for pid:", pid)
+		proc, err := sys.GetPidTree(pid)
+		if err != nil {
+			return err
+		}
+
+		if proc != nil {
+			err = proc.Kill()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // doUpdate will download any new version and replace binaries from the download.
 func doUpdate() error {
+	updatedSetter.Set(0)
 	log.Println("Update is being checked")
 
 	newVersion, newVersionURL, err := getVersion(updateURL)
@@ -249,30 +315,16 @@ func doUpdate() error {
 	})
 	version = newVersion
 
-	pid := getPid()
-	if pid > 0 {
-		log.Println("Killing process tree for pid:", pid)
-		proc, err := sys.GetPidTree(pid)
-		if err != nil {
-			rollbarC.Report(err, map[string]string{
-				"version": version,
-			})
-			log.Println("Update error:", err)
-			return err
-		}
-
-		if proc != nil {
-			err = proc.Kill()
-			if err != nil {
-				rollbarC.Report(err, map[string]string{
-					"version": version,
-				})
-				log.Println("Update error:", err)
-			}
-		}
+	updatedSetter.Set(1)
+	err = killPid()
+	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version": version,
+		})
+		log.Println("Update error:", err)
 	}
 
-	return nil
+	return err
 }
 
 // getVersion gets the most recent version url from an update url

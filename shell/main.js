@@ -54,14 +54,14 @@ try {
 var exitEvents = ['SIGINT', 'SIGTERM', 'SIGHUP', 'exit', 'kill']
 for (var i = 0, e; e = exitEvents[i]; i++) {
   process.on(e, function () {
-    proc.kill()
+    proc.kill('SIGINT')
   })
 }
 
 app.on('window-all-closed', function() {
   // if (process.platform != 'darwin')
   app.quit()
-  proc.kill()
+  proc.kill('SIGINT')
 })
 
 app.on('ready', function() {
