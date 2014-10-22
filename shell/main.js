@@ -15,7 +15,7 @@ require('crash-reporter').start() // Report crashes to our server.
 // Kill any previous clients.
 try {
   var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'))
-  if (pid) process.kill(pid)
+  if (pid) process.kill(parseInt(pid, 10), 'SIGINT')
 } catch (e) {
   console.log('yolo. no pid file found.')
 }
@@ -27,16 +27,10 @@ var installDir = process.platform == 'darwin' ? '../..' : '..'
 var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
-var useUpdater = fs.existsSync(updaterPath)
 var proc = null
 var opts = {stdio: 'inherit'}
 
-if (useUpdater) {
-  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
-} else {
-  proc = spawn(clientPath, [], opts)
-}
-
+proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
@@ -54,14 +48,14 @@ try {
 var exitEvents = ['SIGINT', 'SIGTERM', 'SIGHUP', 'exit', 'kill']
 for (var i = 0, e; e = exitEvents[i]; i++) {
   process.on(e, function () {
-    proc.kill()
+    proc.kill('SIGINT')
   })
 }
 
 app.on('window-all-closed', function() {
   // if (process.platform != 'darwin')
   app.quit()
-  proc.kill()
+  proc.kill('SIGINT')
 })
 
 app.on('ready', function() {

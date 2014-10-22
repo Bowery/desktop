@@ -3,6 +3,7 @@ DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 all: deps format ui
 	@bash --norc ./scripts/build_client.sh
 	@bash --norc ./scripts/build_agent.sh
+	@bash --norc ./scripts/build_updater.sh
 	@echo "--> Starting shell..."
 	@bash --norc ./scripts/run_shell.sh > debug.log 2>&1 &
 	@echo "Done."
