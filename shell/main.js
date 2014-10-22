@@ -15,7 +15,7 @@ require('crash-reporter').start() // Report crashes to our server.
 // Kill any previous clients.
 try {
   var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'))
-  if (pid) process.kill(pid)
+  if (pid) process.kill(parseInt(pid, 10), 'SIGINT')
 } catch (e) {
   console.log('yolo. no pid file found.')
 }
