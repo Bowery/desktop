@@ -236,7 +236,6 @@ Polymer('bowery-core', {
     }
   },
   openLogsWindow: function () {
-    if (this.logWindow) this.logWindow.close()
     this.logWindow = window.open("http://localhost:32055/bowery/logs.html?appId=" + this.app._id, this.app.name + " Logs", "resizable,scrollbars," + this.app.name + " Logs")
     this.logWindow.setPosition(0, 0);
   },
