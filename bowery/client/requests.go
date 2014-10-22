@@ -49,6 +49,7 @@ var Routes = []*Route{
 	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"GET", "/logout", logoutHandler},
+	&Route{"GET", "/healthz", healthzHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
 
@@ -724,6 +725,11 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
+}
+
+// Used to check if the client is running.
+func healthzHandler(rw http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(rw, "ok")
 }
 
 func sseHandler(rw http.ResponseWriter, req *http.Request) {
