@@ -27,16 +27,10 @@ var installDir = process.platform == 'darwin' ? '../..' : '..'
 var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
-var useUpdater = fs.existsSync(updaterPath)
 var proc = null
 var opts = {stdio: 'inherit'}
 
-if (useUpdater) {
-  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
-} else {
-  proc = spawn(clientPath, [], opts)
-}
-
+proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
