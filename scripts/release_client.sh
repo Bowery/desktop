@@ -11,8 +11,6 @@ updater="${root}/bowery/updater"
 bucket=desktop.bowery.io
 s3endpoint="https://${bucket}.s3.amazonaws.com"
 
-npm install &> debug.log
-
 echo "Client dir ${client}"
 cd "${client}"
 
@@ -77,7 +75,6 @@ function createUpdate {
 
   mkdir -p "${dir}/"{bin,app}
   cp -rf "${pkgdir}/${platform}/"* "${dir}/bin"
-  cp -rf "${root}/ui" "${dir}"
   cp -rf "${root}/shell/"* "${dir}/app"
 }
 
@@ -93,7 +90,7 @@ done
 # Darwin specific update stuff.
 contents="${updates}/darwin_amd64"
 mkdir -p "${contents}/Resources"
-mv "${contents}/"{bin,app,ui} "${contents}/Resources"
+mv "${contents}/"{bin,app} "${contents}/Resources"
 cp -rf "${root}/shell/Info.plist" "${contents}"
 cp -rf "${root}/shell/bowery.icns" "${contents}/Resources"
 

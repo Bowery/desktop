@@ -63,7 +63,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   </core-ajax>
 </template>
 <script>
-Polymer({
+Polymer('bowery-form', {
   created: function () {
     this.fields = []
     this.model = {}
@@ -82,6 +82,7 @@ Polymer({
     }
   },
   postForm: function (e) {
+    console.log('$$$$ postForm', arguments)
     e.preventDefault()
     var params = {cacheBuster: Date.now()}
     params.token = this.token
@@ -99,12 +100,13 @@ Polymer({
       this.$.ajax.params = JSON.stringify(params)
       this.$.ajax.go()
     } else {
-      this.fire('bowery-form-response', {fields: this.fields, model: this.model})
+      this.fire('bowery-form-response', {fields: this.fields, model: this.model, response: this.response})
     }
 
     this.$.analytics.track('Submitted ' + this.title + ' Form', params)
   },
   emitResult: function (e, detail) {
+    console.log('$$$$ emitResult', arguments)
     try {
       this.response = JSON.parse(detail.xhr.responseText)
     } catch (e) {
@@ -124,9 +126,11 @@ Polymer({
         affectedField = 'password'
       }
 
-      if (~error.indexOf('No such developer with email') || ~error.indexOf('email address must contain a single @')) {
+      if (~error.indexOf('No such developer with email') ||
+          ~error.indexOf('email address must contain a single @') ||
+          ~error.indexOf('email already exists'))
         affectedField = 'email'
-      }
+
 
       for (var i = 0; i < this.fields.length; i++) {
         if (this.fields[i].name == affectedField) {
@@ -138,7 +142,7 @@ Polymer({
       return
     }
 
-    this.fire('bowery-form-response', {fields: this.fields, model: this.model})
+    this.fire('bowery-form-response', {fields: this.fields, model: this.model, response: this.response})
   },
   navigate: function (path) {
     var self = this
