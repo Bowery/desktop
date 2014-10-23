@@ -14,10 +14,11 @@ require('crash-reporter').start() // Report crashes to our server.
 
 // Kill any previous clients.
 try {
-  var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'))
+  var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'), 'utf8')
   if (pid) process.kill(parseInt(pid, 10), 'SIGINT')
 } catch (e) {
-  console.log('yolo. no pid file found.')
+  // ESRCH is the process not found, not an issue here.
+  if (e.code != 'ESRCH') console.log('yolo. no pid file found.')
 }
 
 // Start client, and run updater if it's included.
