@@ -294,7 +294,6 @@ Polymer('bowery-core', {
     this.navigate('/apps/edit')
   },
   handleLoginAttempt: function (e, detail) {
-    console.log('$$$$ handleLoginAttempt', arguments)
     var response = detail.response
 
     this.developer = {}
@@ -308,7 +307,6 @@ Polymer('bowery-core', {
     this.navigate('/apps')
   },
   getUserByToken: function (e, detail) {
-    console.log('$$$$$ getUserByToken', arguments)
     var response = detail.response
     if (response.status == "found") {
       this.developer = response.developer
@@ -317,7 +315,6 @@ Polymer('bowery-core', {
     }
   },
   handleSignupAttempt: function (e, detail) {
-    console.log('$$$$ handleSignupAttempt', arguments)
     var response = detail.response
     this.developer = response.developer
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
@@ -328,8 +325,6 @@ Polymer('bowery-core', {
     return this.navigate('/apps')
   },
   handleKeysAttempt: function (e, detail) {
-    console.log('$$$$ keys attempt', e, detail)
-    console.log('$$$$ keys from local', this.keys)
     this.$.keys.save()
     this.navigate('/apps/new')
   },

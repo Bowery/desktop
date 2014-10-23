@@ -74,7 +74,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       this.$.ajax.go()
     },
     emitResult: function (e, detail) {
-      console.log('$$$$$')
       try {
         this.response = JSON.parse(detail.xhr.responseText)
       } catch (e) {

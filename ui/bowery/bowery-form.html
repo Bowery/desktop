@@ -82,7 +82,6 @@ Polymer('bowery-form', {
     }
   },
   postForm: function (e) {
-    console.log('$$$$ postForm', arguments)
     e.preventDefault()
     var params = {cacheBuster: Date.now()}
     params.token = this.token
@@ -106,7 +105,6 @@ Polymer('bowery-form', {
     this.$.analytics.track('Submitted ' + this.title + ' Form', params)
   },
   emitResult: function (e, detail) {
-    console.log('$$$$ emitResult', arguments)
     try {
       this.response = JSON.parse(detail.xhr.responseText)
     } catch (e) {
@@ -120,7 +118,6 @@ Polymer('bowery-form', {
       this.$.analytics.track("Failed Form Post Attempt (" + this.title + ")", {error: this.response.error})
       var affectedField
       var error = this.response.error
-      console.log('$$$ error', error)
 
       if (error == 'Incorrect Password') {
         affectedField = 'password'
@@ -151,7 +148,6 @@ Polymer('bowery-form', {
       e.preventDefault()
       path = e.target.getAttribute('href') || e.target.parentNode.getAttribute('href')
     }
-    console.log('$$$ nav to', path)
     this.$.analytics.track('Navigated to ' + path)
 
     this.fire('bowery-navigate', {path: path})
