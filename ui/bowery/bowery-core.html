@@ -84,7 +84,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/edit">
   <bowery-nav type="header" background="apps active">{{app.name}}</bowery-nav>
-  <bowery-form title="Save" color="apps" endpoint="/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+  <bowery-form title="Save" color="apps" endpoint="http://localhost:32055/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
     <template if="{{app.status != 'provisioning'}}">
       <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
       <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
@@ -94,7 +94,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/images/edit">
   <bowery-nav type="header" background="images active">{{image.name || 'Edit Image'}}</bowery-nav>
-  <bowery-form title="Save" color="images" endpoint="/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
+  <bowery-form title="Save" color="images" endpoint="http://localhost:32055/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
     <a href="/apps/edit" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
   </bowery-form>
 </bowery-screen>
@@ -106,7 +106,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
-<core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="/applications?token={{developer.token}}" auto></core-ajax>
+<core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="http://localhost:32055/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
 <script src="gifstream.js" type="text/javascript"></script>
@@ -172,7 +172,7 @@ Polymer('bowery-core', {
     this.$.db.load()
     this.$.keys.load()
 
-    var sse = new EventSource('/_/sse')
+    var sse = new EventSource('http://localhost:32055/_/sse')
     sse.addEventListener('message', this.handleSSE.bind(this))
 
     if (!this.developer.token) {
@@ -293,11 +293,9 @@ Polymer('bowery-core', {
     this.app.environment.description = this.image.description
     this.navigate('/apps/edit')
   },
-  handleLoginAttempt: function (e) {
-    var response = e.target.response
-    if (response.status != "created") {
-      return
-    }
+  handleLoginAttempt: function (e, detail) {
+    var response = detail.response
+
     this.developer = {}
     this.developer.token = response.token
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
@@ -308,34 +306,25 @@ Polymer('bowery-core', {
 
     this.navigate('/apps')
   },
-  getUserByToken: function (e) {
-    var response = e.target.response
+  getUserByToken: function (e, detail) {
+    var response = detail.response
     if (response.status == "found") {
       this.developer = response.developer
       this.developer['$email'] = this.developer.email // bullshit => https://mixpanel.com/docs/properties-or-segments/special-or-reserved-properties
       this.$.analytics.register(this.developer)
     }
   },
-  handleSignupAttempt: function (e) {
-    var response = e.target.response
-    if (response.status == "created") {
-      this.developer = response.developer
-      this.$.db.save()
-      if (!this.keys.aws_access_key || !this.keys.aws_secret_key)
-        return this.navigate('/keys')
+  handleSignupAttempt: function (e, detail) {
+    var response = detail.response
+    this.developer = response.developer
+    this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
+    this.$.db.save()
+    if (!this.keys.aws_access_key || !this.keys.aws_secret_key)
+      return this.navigate('/keys')
 
-      return this.navigate('/apps')
-    }
-
-    if (response.error == "EOF")
-      return
-
-    this.$.analytics.track("Failed Signup Attempt", {error: response.error})
-    e.target.feedback = response.error
+    return this.navigate('/apps')
   },
   handleKeysAttempt: function (e, detail) {
-    console.log('$$$$ keys attempt', e, detail)
-    console.log('$$$$ keys from local', this.keys)
     this.$.keys.save()
     this.navigate('/apps/new')
   },

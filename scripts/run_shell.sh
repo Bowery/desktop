@@ -8,7 +8,6 @@ root="$(cd -P "$(dirname "${source}")/.." && pwd)"
 build="${root}/build"
 mkdir -p "${build}"
 
-npm install
 cd "${build}"
 npm install -g grunt-cli
 npm install

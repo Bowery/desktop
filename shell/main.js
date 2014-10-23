@@ -163,9 +163,7 @@ app.on('ready', function() {
   })
 
   mainWindow.setSize(400, 485)
-
-  mainWindow.loadUrl('http://localhost:32055/bowery/bowery.html')
-
+  mainWindow.loadUrl('file://' + path.join(__dirname, '../bin/app.html'))
   mainWindow.on('closed', function() {
     mainWindow = null
   })

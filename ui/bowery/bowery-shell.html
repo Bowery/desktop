@@ -36,7 +36,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         </div>
       </template>
     </div>
-    <core-ajax id="ajax" contentType="application/json" url="/commands" method="POST" handleAs="json" on-core-response="{{handleCmdResponse}}" auto></core-ajax>
+    <core-ajax id="ajax" contentType="application/json" url="http://localhost:32055/commands" method="POST" handleAs="json" on-core-response="{{handleCmdResponse}}" auto></core-ajax>
   </template>
   <script>
     Polymer('bowery-shell', {

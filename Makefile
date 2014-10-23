@@ -21,10 +21,10 @@ test: deps
 	@go test ./...
 
 ui:
-	@npm install > debug.log 2>&1
-	@npm start > debug.log 2>&1 &
-	@npm install bower -g > debug.log 2>&1
+	@myth -v ui/bowery/bowery.css ui/bowery/out.css > debug.log 2>&1
 	@cd ui && bower install > debug.log 2>&1
+	@mkdir -p bin
+	@vulcanize --verbose --inline ui/bowery/bowery.html -o bin/app.html > debug.log 2>&1
 
 ui-test: ui
 	npm test
