@@ -343,7 +343,7 @@ Polymer('bowery-core', {
       aws_secret_key: encodeURIComponent(this.keys.aws_secret_key)
     }
     var id = this.app._id
-    this.$.deleteAppAjax.url = "/applications/" + id + "?" + this.parameterize(tokens)
+    this.$.deleteAppAjax.url = "http://localhost:32055/applications/" + id + "?" + this.parameterize(tokens)
     this.applications = this.applications.filter(function (a) {return a._id != id})
     this.app = {}
   },
