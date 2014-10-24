@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/jeffchao/backoff"
 )
 
 type ApplicationManager struct {
@@ -55,7 +56,14 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		// Check the application status every 5 seconds
 		// via Kenmare. If the app status changes to
 		// running proceed.
+		exponential := backoff.Exponential()
+		exponential.MaxRetries = 200
+
 		for app != nil && status != "running" {
+			if !exponential.Next() {
+				return
+			}
+			<-time.After(exponential.Delay)
 			application, err := GetApplication(app.ID)
 			if err == nil {
 				log.Println("provisioning status: " + application.Status)
@@ -82,16 +90,20 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				// If the application can't be found then it's been deleted.
 				return
 			}
-
-			<-time.After(5 * time.Second)
 		}
+
+		exponential = backoff.Exponential()
+		exponential.MaxRetries = 200
 
 		// Ping the agent to verify it's healthy. Once a healthy
 		// response is returned, update the database.
 		for app != nil && !app.IsSyncAvailable {
+			if !exponential.Next() {
+				return
+			}
+			<-time.After(exponential.Delay)
 			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
 			if err != nil {
-				<-time.After(5 * time.Second)
 				continue
 			}
 
