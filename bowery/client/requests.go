@@ -148,7 +148,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			r.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
-				"error":  fmt.Sprintf("%s is not a valid path.", reqBody.LocalPath),
+				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
 			return
 		}
@@ -310,7 +310,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			log.Println("path", err)
 			r.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
-				"error":  fmt.Sprintf("%s is not a valid path.", reqBody.LocalPath),
+				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
 			return
 		}

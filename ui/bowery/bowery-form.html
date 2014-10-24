@@ -128,6 +128,10 @@ Polymer('bowery-form', {
           ~error.indexOf('email already exists'))
         affectedField = 'email'
 
+      if (~error.indexOf('not a valid path'))
+        affectedField = 'localPath'
+
+      if (!affectedField && error) alert(error)
 
       for (var i = 0; i < this.fields.length; i++) {
         if (this.fields[i].name == affectedField) {
