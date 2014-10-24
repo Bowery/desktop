@@ -83,6 +83,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       if (this.response.error == "internal server error") return
       if (this.response.error) {
         this.$.analytics.track("Failed Form Post Attempt (" + this.title + ")", {error: this.response.error})
+        if (this.response.error == "invalid keys") {
+          this.fire('bowery-navigate', {path: '/keys'})
+          return
+        }
+
         alert('Unable to create application.\n' + this.response.error)
         return
       }
