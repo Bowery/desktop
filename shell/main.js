@@ -163,7 +163,7 @@ app.on('ready', function() {
   })
 
   mainWindow.setSize(400, 485)
-  mainWindow.loadUrl('file://' + path.join(__dirname, '../bin/app.html'))
+  mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'bin', 'app.html'))
   mainWindow.on('closed', function() {
     mainWindow = null
   })

@@ -73,6 +73,7 @@ function createUpdate {
   platform="${1}"
   dir="${updates}/${platform}"
 
+  cp -f "${root}/bin/app.html" "${pkgdir}/${platform}"
   mkdir -p "${dir}/"{bin,app}
   cp -rf "${pkgdir}/${platform}/"* "${dir}/bin"
   cp -rf "${root}/shell/"* "${dir}/app"
