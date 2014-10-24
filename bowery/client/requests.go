@@ -48,6 +48,7 @@ var Routes = []*Route{
 	&Route{"GET", "/environments/{id}", getEnvironmentHandler},
 	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
+	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
 	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
@@ -82,6 +83,11 @@ type applicationReq struct {
 type environmentReq struct {
 	*schemas.Environment
 	Token string `json:"token"`
+}
+
+type keyReq struct {
+	AccessKey string `json:"aws_access_key"`
+	SecretKey string `json:"aws_secret_key"`
 }
 
 // Res is a generic response with status and an error message.
@@ -706,6 +712,45 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	err = CreateEvent(app, reqBody.Cmd)
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
+}
+
+// validateKeysHandler checks to see if the provided access and secret
+// keys are valid.
+func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
+	var reqBody keyReq
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	access := reqBody.AccessKey
+	secret := reqBody.SecretKey
+
+	if access == "" || secret == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "Access Key and Secret Key required",
+		})
+		return
+	}
+
+	err = ValidateKeys(access, secret)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
@@ -207,4 +208,33 @@ func UpdateEnvironment(env *schemas.Environment, token string) (*schemas.Environ
 	}
 
 	return resBody.Environment, nil
+}
+
+func ValidateKeys(access, secret string) error {
+	payload := make(url.Values)
+	payload.Add("aws_access_key", access)
+	payload.Add("aws_secret_key", secret)
+
+	endpoint := "auth/validate-keys"
+	queryParameters := fmt.Sprintf("?%s", payload.Encode())
+	addr := fmt.Sprintf("%s/%s%s", config.KenmareAddr, endpoint, queryParameters)
+
+	res, err := http.Get(addr)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	resBody := new(Res)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(resBody)
+	if err != nil {
+		return err
+	}
+
+	if resBody.Status != requests.STATUS_SUCCESS {
+		return resBody
+	}
+
+	return nil
 }

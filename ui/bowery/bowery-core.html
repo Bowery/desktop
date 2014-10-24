@@ -65,7 +65,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/keys">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form  color="devs" title="Connect AWS" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+  <bowery-form  color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
     <a class="btn" href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html" on-click="{{openExternalWindow}}">What are AWS Access Key?</a>
   </bowery-form>
 </bowery-screen>
@@ -325,8 +325,11 @@ Polymer('bowery-core', {
     return this.navigate('/apps')
   },
   handleKeysAttempt: function (e, detail) {
-    this.$.keys.save()
-    this.navigate('/apps/new')
+    var response = detail.response
+    if (response.status == "success") {
+      this.$.keys.save()
+      return this.navigate('/apps/new')
+    }
   },
   parameterize: function (obj) {
     var out = ""
