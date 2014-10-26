@@ -241,13 +241,6 @@ Polymer('bowery-core', {
   },
   handleCreateAppAttempt: function (e, detail) {
     var response = e.target.response
-    if (response.status != 'success') {
-      if (response.error == "EOF") return
-
-      this.$.analytics.track("Failed to Create App", {error: response.error})
-      e.target.feedback = response.error
-      return
-    }
 
     this.app = response.application
     this.app.localPath = this.defaultLocalPath
@@ -259,13 +252,6 @@ Polymer('bowery-core', {
   },
   handleEditAppAttempt: function (e, detail) {
     var response = e.target.response
-    if (response.status != 'success') {
-      if (response.error == "EOF") return
-
-      this.$.analytics.track("Failed to Edit App", {error: response.error})
-      e.target.feedback = response.error
-      return
-    }
     var ids = this.applications.map(function (a) {return a._id})
     if (~ids.indexOf(response.application._id)) {
       for (var i = 0, app; app = this.applications[i]; i++)
@@ -275,19 +261,11 @@ Polymer('bowery-core', {
       this.applications.push(response.application)
     }
 
-
     this.app = {}
     this.navigate('/apps')
   },
   handleEditImageAttempt: function (e, detail) {
     var response = e.target.response
-    if (response.status != 'success') {
-      if (response.error == "EOF") return
-
-      this.$.analytics.track("Failed to Edit Image", {error: response.error})
-      e.target.feedback = response.error
-      return
-    }
     this.app.environment.name = this.image.name
     this.app.image = this.app.environment.name
     this.app.environment.description = this.image.description
@@ -295,7 +273,6 @@ Polymer('bowery-core', {
   },
   handleLoginAttempt: function (e, detail) {
     var response = detail.response
-
     this.developer = {}
     this.developer.token = response.token
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
