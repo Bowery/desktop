@@ -38,6 +38,23 @@ func (sh *SlashHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sh.Handler.ServeHTTP(rw, req)
 }
 
+type CorsHandler struct {
+	Handler http.Handler
+}
+
+func (ch *CorsHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	rw.Header().Add("Access-Control-Allow-Origin", "*")
+	rw.Header().Add("Access-Control-Allow-Headers", req.Header.Get("Access-Control-Request-Headers"))
+	rw.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+
+	if req.Method == "OPTIONS" {
+		rw.WriteHeader(http.StatusOK)
+		return
+	}
+
+	ch.Handler.ServeHTTP(rw, req)
+}
+
 var Routes = []*Route{
 	&Route{"POST", "/applications", createApplicationHandler},
 	&Route{"GET", "/applications", getApplicationsHandler},
