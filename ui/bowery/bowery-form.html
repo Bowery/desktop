@@ -131,8 +131,11 @@ Polymer('bowery-form', {
       if (~error.indexOf('not a valid path'))
         affectedField = 'localPath'
 
-      if (!affectedField && error) alert(error)
+      if (~error.indexOf('invalid keys') ||
+          ~error.indexOf('Access Key and Secret Key required'))
+        affectedField = 'aws_secret_key'
 
+      if (!affectedField && error) alert(error)
 
       for (var i = 0; i < this.fields.length; i++) {
         if (this.fields[i].name == affectedField) {
