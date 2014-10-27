@@ -35,6 +35,8 @@ func main() {
 		return
 	}
 
+	go ssePool.run()
+
 	rollbarC = rollbar.NewClient(config.RollbarToken, env)
 	applicationManager = NewApplicationManager()
 	defer applicationManager.Close()
@@ -44,6 +46,11 @@ func main() {
 			select {
 			case ev := <-applicationManager.Syncer.Event:
 				log.Println(ev)
+				msg := map[string]interface{}{
+					"status": ev.Status,
+					"type":   "sync",
+				}
+				ssePool.messages <- msg
 			case err := <-applicationManager.Syncer.Error:
 				log.Println(err)
 			}
@@ -60,8 +67,6 @@ func main() {
 		route.Path(r.Path).Methods(r.Method)
 		route.HandlerFunc(r.Handler)
 	}
-
-	go ssePool.run()
 
 	app := negroni.Classic()
 	app.UseHandler(&SlashHandler{router})
