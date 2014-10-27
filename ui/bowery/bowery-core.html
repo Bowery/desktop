@@ -231,6 +231,9 @@ Polymer('bowery-core', {
       return
     }
 
+    if (event.type == 'sync')
+      this.$.analytics.track('Sync Event: ' + event.status)
+
     if (event.type == 'log' && (!event.appID || this.app._id == event.appID) && event.message) {
       this.app.logs += event.message
     }
