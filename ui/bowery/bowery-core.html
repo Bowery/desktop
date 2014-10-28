@@ -66,7 +66,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/forgot">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form color="devs" title="submit" endpoint="http://localhost:32055/auth/forgot" fields="{{forgotFields}}" on-bowery-form-response="{{handleForgotAttempt}}" sendAs="json">
+  <bowery-form color="devs" title="submit" endpoint="http://localhost:32055/auth/password-reset" fields="{{forgotFields}}" on-bowery-form-response="{{handleForgotAttempt}}" sendAs="json">
     <a class="btn devs" href="/login" on-click="{{navigate}}">I remember my password.</a>
   </bowery-form>
 </bowery-screen>

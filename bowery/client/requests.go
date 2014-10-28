@@ -66,7 +66,7 @@ var Routes = []*Route{
 	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
-	&Route{"POST", "/auth/forgot", forgotPassHandler},
+	&Route{"POST", "/auth/password-reset", forgotPassHandler},
 	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
@@ -808,7 +808,6 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 
 	res, err := http.Get(config.BroomeAddr + "/reset/" + email)
 	if err != nil {
-		fmt.Println(err)
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
