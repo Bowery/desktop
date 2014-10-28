@@ -1,0 +1,123 @@
+<!--
+Copyright (c) 2014 Bowery, Inc. All rights reserved.
+-->
+
+<!--
+`bowery-payment` is the payment form with stripe integration for the bowery desktop app
+
+@group Bowery Core Elements
+@element bowery-payment
+-->
+<link rel="import" href="bowery-nav.html">
+<link rel="import" href="../components/core-ajax/core-ajax.html">
+
+<polymer-element name="bowery-payment" attributes="developer">
+  <template>
+    <link rel="stylesheet" href="out.css">
+    <style>
+      form {
+        padding-top: 9px;
+        overflow: auto;
+        height: 377px;
+      }
+      .month, .year {
+        display: inline;
+      }
+      .month {
+        width: 20px;
+      }
+      .year {
+        width: 40px;
+      }
+      .white {
+        color: white;
+      }
+      .cvc {
+        width: 96px;
+      }
+      .expiration {
+        width: 290px;
+      }
+      .field-group-inline {
+        overflow: hidden;
+      }
+      .field-group-inline .field-group {
+        display: inline-block;
+        float: left;
+        position: relative;
+        height: auto;
+      }
+    </style>
+    <form action="" method="POST" id="payment" class="devs">
+      <span id="error"></span>
+      <div class="field-group">
+        <input type="text" pattern="[0-9]{13,16}" data-stripe="number" placeholder="4242 4242 4242 4242">
+        <label id="number-label">Card Number</label>
+      </div>
+      <div class="field-group-inline">
+        <div class="field-group cvc">
+          <input type="text" data-stripe="cvc" placeholder="123">
+          <label id="cvc-label">CVC</label>
+        </div>
+        <div class="field-group expiration">
+          <input class="month" type="text" placeholder="MM" data-stripe="exp-month"> <span class="white">/</span> <input class="year" type="text" placeholder="YYYY" data-stripe="exp-year">
+          <label id="exp_year-label">Expiration</label>
+        </div>
+      </div>
+      <content></content>
+    </form>
+    <bowery-nav type="footer" background="devs active" on-click="{{postForm}}">Buy Bowery</bowery-nav>
+    <core-ajax id="ajax"
+      url="http://broome.io/developers/{{developer.token}}/pay"
+      method="POST"
+      on-core-complete="{{handleBroomeResponse}}"
+      handleAs="json">
+    </core-ajax>
+  </template>
+  <script type="text/javascript" src="stripe.js"></script>
+  <script>
+    Polymer('bowery-payment', {
+      ready: function () {
+        Stripe.setPublishableKey('pk_test_m8TQEAkYWSc1jZh7czo8xhA7') // TODO (thebyrd) remember to switch this out later
+      },
+      postForm: function (e) {
+        e.preventDefault()
+        Stripe.card.createToken(this.$.payment, this.handleStripeResponse.bind(this))
+      },
+      handleStripeResponse: function (code, body) {
+        // Reset Errors
+        if (this.label) {
+          this.label.className = ""
+          this.label.innerHTML = this.oldHTML
+        }
+
+        if (code != 200) {
+          this.label = this.$[body.error.param + '-label']
+          if (!this.label)
+            return alert(body.error.message)
+
+          this.oldHTML = this.label.innerHTML
+          this.label.className = "error"
+          this.label.innerHTML = body.error.message
+          return
+        }
+
+        this.$.ajax.contentType = "application/json"
+        this.$.ajax.body = JSON.stringify({stripeToken: body.id})
+        this.$.ajax.go()
+      },
+      handleBroomeResponse: function (e, detail) {
+        try {
+          var response = JSON.parse(detail.xhr.responseText)
+        } catch (e) {
+          console.log('$$$ unable to parse broome response', e, detail)
+        }
+        if (detail.response != 200) {
+          return alert(response.error)
+        }
+        this.developer.isPaid = true
+        this.fire('bowery-navigate', {path: '/apps'})
+      }
+    })
+  </script>
+</polymer-element>

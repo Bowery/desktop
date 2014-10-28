@@ -12,6 +12,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="bowery-nav.html">
 <link rel="import" href="bowery-list.html">
 <link rel="import" href="bowery-form.html">
+<link rel="import" href="bowery-payment.html">
 <link rel="import" href="bowery-shell.html">
 <link rel="import" href="bowery-image-select.html">
 <link rel="import" href="bowery-analytics.html">
@@ -62,6 +63,13 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-form color="devs" title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
     <a class="btn devs" href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
   </bowery-form>
+</bowery-screen>
+
+<bowery-screen path="/pay">
+  <bowery-nav type="header" background="devs active">Trial Expired</bowery-nav>
+  <bowery-payment class="devs" developer="{{developer}}">
+    <a class="btn devs" href="http://bowery.io" on-click="{{openExternalWindow}}">See Pricing Info</a>
+  </bowery-payment>
 </bowery-screen>
 
 <bowery-screen path="/forgot">
@@ -193,6 +201,12 @@ Polymer('bowery-core', {
     if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
       return this.navigate('/keys')
     }
+
+    var aMonthAgo = Date.now() - (1000 * 60 * 60 * 24 * 30)
+    if (!this.developer.isPaid && this.developer.createdAt < aMonthAgo) {
+      return this.navigate('/pay')
+    }
+    console.log(this.developer)
 
     this.keyFields[0].value = this.keys.aws_access_key
     this.keyFields[1].value = this.keys.aws_secret_key
