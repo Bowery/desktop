@@ -48,7 +48,7 @@ Polymer('bowery-screen', {
 
     window.addEventListener('bowery-navigate', this.navigate.bind(this))
   },
-  navigate: function (e) {
+  navigate: function (e) {    
     // If you wanted to use this on the web, this line would enable push state
     // window.history.pushState(e.detail, e.detail.title, e.detail.path)
     this.globalPath = e.detail.path
