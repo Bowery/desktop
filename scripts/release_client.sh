@@ -183,7 +183,7 @@ fi
 setupAtom "linux_386" "${atom}/linux_386/resources" "{{1}}"
 mv "${atom}/linux_386/atom" "${atom}/linux_386/bowery"
 setupExtractor "linux_386" "install.sh" "logo.png"
-/tmp/makeself/makeself.sh "${atom}/linux_386" "/tmp/${version}_linux_386.run" "Bowery" "${atom}/linux_386/install.sh" &> "${root}/debug.log"
+/tmp/makeself/makeself.sh "${atom}/linux_386" "/tmp/${version}_linux_386.run" "Bowery" "./install.sh" &> "${root}/debug.log"
 rm -rf "${atom}/linux_386/"*
 cp -f "/tmp/${version}_linux_386.run" "${atom}/linux_386/bowery.run"
 cp -f "${datadir}/README_linux" "${atom}/linux_386/README"
@@ -191,7 +191,7 @@ cp -f "${datadir}/README_linux" "${atom}/linux_386/README"
 setupAtom "linux_amd64" "${atom}/linux_amd64/resources" "{{1}}"
 mv "${atom}/linux_amd64/atom" "${atom}/linux_amd64/bowery"
 setupExtractor "linux_amd64" "install.sh" "logo.png"
-/tmp/makeself/makeself.sh "${atom}/linux_amd64" "/tmp/${version}_linux_amd64.run" "Bowery" "${atom}/linux_amd64/install.sh" &> "${root}/debug.log"
+/tmp/makeself/makeself.sh "${atom}/linux_amd64" "/tmp/${version}_linux_amd64.run" "Bowery" "./install.sh" &> "${root}/debug.log"
 rm -rf "${atom}/linux_amd64/"*
 cp -f "/tmp/${version}_linux_amd64.run" "${atom}/linux_amd64/bowery.run"
 cp -f "${datadir}/README_linux" "${atom}/linux_amd64/README"
