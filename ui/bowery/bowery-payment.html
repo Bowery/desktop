@@ -9,10 +9,12 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 @element bowery-payment
 -->
 <link rel="import" href="bowery-nav.html">
+<link rel="import" href="bowery-analytics.html">
 <link rel="import" href="../components/core-ajax/core-ajax.html">
 
 <polymer-element name="bowery-payment" attributes="developer">
   <template>
+    <bowery-analytics id="analytics"></bowery-analytics>
     <link rel="stylesheet" href="out.css">
     <style>
       form {
@@ -92,6 +94,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         }
 
         if (code != 200) {
+          this.$.analytics.track("Unsuccessfully tried to pay for Bowery (bad info)")
           this.label = this.$[body.error.param + '-label']
           if (!this.label)
             return alert(body.error.message)
@@ -113,10 +116,12 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
           console.log('$$$ unable to parse broome response', e, detail)
         }
         if (detail.response != 200) {
+          this.$.analytics.track("Unsuccessfully tried to pay for Bowery (broome issue)")
           return alert(response.error)
         }
         this.developer.isPaid = true
         this.fire('bowery-navigate', {path: '/apps'})
+        this.$.analytics.track("Paid for Bowery")
       }
     })
   </script>

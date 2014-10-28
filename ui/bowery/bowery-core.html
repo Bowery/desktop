@@ -203,7 +203,7 @@ Polymer('bowery-core', {
     }
 
     var aMonthAgo = Date.now() - (1000 * 60 * 60 * 24 * 30)
-    if (!this.developer.isPaid && this.developer.createdAt < aMonthAgo) {
+    if (!this.developer.isPaid) { //&& this.developer.createdAt < aMonthAgo
       return this.navigate('/pay')
     }
     console.log(this.developer)
