@@ -1,0 +1,7 @@
+Installation Instructions
+
+- Open a terminal and `cd` into this directory.
+- Run `chmod +x bowery.run`.
+- Run `./bowery.run`. You will be prompted for sudo to place files in /usr/local/bowery.
+
+This will add files to /usr/local/bowery and adds a shortcut to your desktop.

@@ -11,6 +11,11 @@ updater="${root}/bowery/updater"
 bucket=desktop.bowery.io
 s3endpoint="https://${bucket}.s3.amazonaws.com"
 
+# Install 7zip for building the Windows extractor.
+if [[ ! -f "$(which 7z)" ]]; then
+  brew install p7zip
+fi
+
 echo "Client dir ${client}"
 cd "${client}"
 
@@ -19,6 +24,7 @@ version=$(cat VERSION)
 echo "Version: ${version}"
 
 # Setup the directory structure.
+datadir="${root}/scripts/data"
 pkgdir="${root}/pkg/${version}"
 distdir="${root}/dist/${version}"
 atom="${pkgdir}/atom"
@@ -137,13 +143,71 @@ fi
 productbuild --sign "${IDENTITY}" --component "${app}" /Applications "${atom}/darwin_amd64/bowery.pkg"
 rm -rf "${app}"
 
+echo "--> Creating extractors for Linux and Windows..."
+
+# Copies installer scripts and logos in the atom directory.
+function setupExtractor {
+  platform="${1}"
+  installer="${2}"
+  icon="${datadir}/${3}"
+
+  cp -rf "${datadir}/${installer}" "${icon}" "${atom}/${platform}"
+  cat "${datadir}/config.txt" | sed -e "s#{{installer}}#${installer}#g" > "${atom}/${platform}/extractor_config.txt"
+}
+
+# Grab the windows sfx for its extractor.
+if [[ ! -d /tmp/7zextra ]]; then
+  curl -L "http://downloads.sourceforge.net/sevenzip/7z920_extra.7z" > /tmp/7zextra.7z
+  7z x -o/tmp/7zextra /tmp/7zextra.7z &> "${root}/debug.log"
+fi
+
+# Grab the unix extractor.
+if [[ ! -d /tmp/makeself ]]; then
+  curl -L "http://megastep.org/makeself/makeself.run" > /tmp/makeself.run
+  chmod +x /tmp/makeself.run
+  cd /tmp
+  ./makeself.run &> "${root}/debug.log"
+  cd -
+  mv /tmp/makeself-* /tmp/makeself
+fi
+
+# Grab the rmmanifest executable for Windows.
+if [[ ! -f /tmp/rmmanifest.exe ]]; then
+  curl -L "http://desktop.bowery.io.s3.amazonaws.com/rmmanifest.zip" > /tmp/rmmanifest.zip
+  cd /tmp
+  unzip /tmp/rmmanifest.zip
+  cd -
+fi
+
 # Setup client for other systems.
 setupAtom "linux_386" "${atom}/linux_386/resources" "{{1}}"
 mv "${atom}/linux_386/atom" "${atom}/linux_386/bowery"
+setupExtractor "linux_386" "install.sh" "logo.png"
+/tmp/makeself/makeself.sh "${atom}/linux_386" "/tmp/${version}_linux_386.run" "Bowery" "${atom}/linux_386/install.sh" &> "${root}/debug.log"
+rm -rf "${atom}/linux_386/"*
+cp -f "/tmp/${version}_linux_386.run" "${atom}/linux_386/bowery.run"
+cp -f "${datadir}/README_linux" "${atom}/linux_386/README"
+
 setupAtom "linux_amd64" "${atom}/linux_amd64/resources" "{{1}}"
 mv "${atom}/linux_amd64/atom" "${atom}/linux_amd64/bowery"
+setupExtractor "linux_amd64" "install.sh" "logo.png"
+/tmp/makeself/makeself.sh "${atom}/linux_amd64" "/tmp/${version}_linux_amd64.run" "Bowery" "${atom}/linux_amd64/install.sh" &> "${root}/debug.log"
+rm -rf "${atom}/linux_amd64/"*
+cp -f "/tmp/${version}_linux_amd64.run" "${atom}/linux_amd64/bowery.run"
+cp -f "${datadir}/README_linux" "${atom}/linux_amd64/README"
+
 setupAtom "windows_386" "${atom}/windows_386/resources" "{{1}}"
 mv "${atom}/windows_386/atom.exe" "${atom}/windows_386/bowery.exe"
+setupExtractor "windows_386" "install.bat" "logo.ico"
+rm -rf "/tmp/${version}_windows_386.7z"
+cp -f "${datadir}/bowery.exe.manifest" /tmp/rmmanifest.exe "${atom}/windows_386"
+cd "${atom}/windows_386"
+7z a "/tmp/${version}_windows_386.7z" * &> "${root}/debug.log"
+cd -
+cat /tmp/7zextra/7zS.sfx "${atom}/windows_386/extractor_config.txt" "/tmp/${version}_windows_386.7z" > "/tmp/${version}_windows_386.exe"
+rm -rf "${atom}/windows_386/"*
+cp -f "/tmp/${version}_windows_386.exe" "${atom}/windows_386/bowery.exe"
+cp -f "${datadir}/README_windows" "${atom}/windows_386/README"
 
 echo "--> Compressing shells..."
 for dir in "${atom}/"*; do
@@ -169,12 +233,12 @@ for file in "${distdir}/"*; do
   s3Secret=${AWS_SECRET}
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
   curl -k \
-   -T ${name} \
-   -H "Host: ${bucket}.s3.amazonaws.com" \
-   -H "Date: ${dateValue}" \
-   -H "Content-Type: ${contentType}" \
-   -H "Authorization: AWS ${s3Key}:${signature}" \
-   https://${bucket}.s3.amazonaws.com/${name}
+    -T ${name} \
+    -H "Host: ${bucket}.s3.amazonaws.com" \
+    -H "Date: ${dateValue}" \
+    -H "Content-Type: ${contentType}" \
+    -H "Authorization: AWS ${s3Key}:${signature}" \
+    https://${bucket}.s3.amazonaws.com/${name}
 
   echo "* http://desktop.bowery.io/${name} is available for download."
 done
