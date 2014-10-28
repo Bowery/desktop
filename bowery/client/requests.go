@@ -66,7 +66,6 @@ var Routes = []*Route{
 	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
-	&Route{"POST", "/auth/forgot", forgotPassHandler},
 	&Route{"GET", "/logout", logoutHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
@@ -101,10 +100,6 @@ type applicationReq struct {
 type environmentReq struct {
 	*schemas.Environment
 	Token string `json:"token"`
-}
-
-type emailReq struct {
-	Email string `json:"email"`
 }
 
 type keyReq struct {
@@ -773,58 +768,6 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 	err = ValidateKeys(access, secret)
 	if err != nil {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
-
-	r.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
-	})
-}
-
-// forgotPassHandler parses a json request and forwards it to broome.
-func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
-	var reqBody emailReq
-	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
-
-	email := reqBody.Email
-	if email == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  "Email required",
-		})
-		return
-	}
-
-	res, err := http.Get(config.BroomeAddr + "/reset/" + email)
-	if err != nil {
-		fmt.Println(err)
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
-	defer res.Body.Close()
-
-	resBody := new(Res)
-	decoder = json.NewDecoder(res.Body)
-	err = decoder.Decode(&resBody)
-	if err == nil && resBody.Status == requests.STATUS_FAILED {
-		err = resBody
-	}
-	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})

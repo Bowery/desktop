@@ -53,7 +53,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
   <bowery-form color="devs" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
     <a class="btn devs" href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
-    <a class="btn devs" href="/forgot" on-click="{{navigate}}">I forgot my password.</a>
   </bowery-form>
 </bowery-screen>
 
@@ -61,13 +60,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
   <bowery-form color="devs" title="signup" endpoint="http://broome.io/developers" fields="{{signupFields}}" on-bowery-form-response="{{handleSignupAttempt}}" sendAs="json">
     <a class="btn devs" href="/login" on-click="{{navigate}}">I already have a bowery account.</a>
-  </bowery-form>
-</bowery-screen>
-
-<bowery-screen path="/forgot">
-  <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form color="devs" title="submit" endpoint="http://localhost:32055/auth/forgot" fields="{{forgotFields}}" on-bowery-form-response="{{handleForgotAttempt}}" sendAs="json">
-    <a class="btn devs" href="/login" on-click="{{navigate}}">I remember my password.</a>
   </bowery-form>
 </bowery-screen>
 
@@ -147,9 +139,6 @@ Polymer('bowery-core', {
     {name: 'name', placeholder: 'Best Friend'},
     {name: 'email', placeholder: 'your@email'},
     {name: 'password', type: 'password', placeholder: '************'}
-  ],
-  forgotFields: [
-    {name: 'email', placeholder: 'your@email.com'}
   ],
   keyFields: [
     {name: 'aws_access_key', label: 'AWS Access Key', placeholder: 'AWS+ACCESS+KEY+GOES+HERE'},
@@ -297,9 +286,6 @@ Polymer('bowery-core', {
     }
 
     this.navigate('/apps')
-  },
-  handleForgotAttempt: function (e, detail) {
-    this.navigate('/login')
   },
   getUserByToken: function (e, detail) {
     var response = detail.response
