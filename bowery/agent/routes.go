@@ -38,6 +38,7 @@ var Routes = []*Route{
 	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
 	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
 	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
+	&Route{"/network", []string{"GET"}, NetworkHandler},
 	&Route{"/healthz", []string{"GET"}, HealthzHandler},
 	&Route{"/_/state/apps", []string{"GET"}, AppStateHandler},
 	&Route{"/_/state/plugins", []string{"GET"}, PluginStateHandler},
@@ -541,6 +542,45 @@ func RemovePluginHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	res.Body["status"] = "success"
+	res.Send(http.StatusOK)
+}
+
+// GET /network, returns network information for an app.
+func NetworkHandler(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponder(rw, req)
+	id := req.FormValue("id")
+
+	app := Applications[id]
+	if app == nil {
+		res.Body["error"] = "invalid app id"
+		res.Send(http.StatusBadRequest)
+		return
+	}
+
+	appNetwork, generic, err := GetNetwork(app)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	appNJ, err := json.Marshal(appNetwork)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	genericJ, err := json.Marshal(generic)
+	if err != nil {
+		res.Body["error"] = err.Error()
+		res.Send(http.StatusInternalServerError)
+		return
+	}
+
+	res.Body["app"] = string(appNJ)
+	res.Body["generic"] = string(genericJ)
 	res.Body["status"] = "success"
 	res.Send(http.StatusOK)
 }
