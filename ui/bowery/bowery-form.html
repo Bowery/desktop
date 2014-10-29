@@ -87,9 +87,10 @@ Polymer('bowery-form', {
     var params = {cacheBuster: Date.now()}
     params.token = this.token
 
-    for (var i = 0, field; field = this.fields[i]; i++)
+    for (var i = 0, field; field = this.fields[i]; i++) {
       if (this.$[field.name])
         params[field.name] = this.model[field.name] = this.$[field.name].value
+    }
 
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"
@@ -177,13 +178,10 @@ Polymer('bowery-form', {
   },
   makeActive: function (e) {
     var el = e.target.parentNode
-    console.log('add active b/c focus', el)
     el.setAttribute('class', el.getAttribute('class') + " active " + this.color)
   },
   trackInput: function (e) {
-
     var el = e.target.parentNode
-    console.log('Remove active b/c blur', el)
     el.setAttribute('class', el.getAttribute('class').replace('active ' + this.color, ''))
 
     if (!e.target.value) return // don't track if they didn't type anything

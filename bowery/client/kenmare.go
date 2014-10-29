@@ -4,8 +4,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"net/mail"
 	"net/url"
 
 	"github.com/Bowery/gopackages/config"
@@ -119,8 +122,9 @@ func CreateEvent(app *schemas.Application, cmd string) error {
 	return createRes
 }
 
-func SearchEnvironments(query string) ([]*schemas.Environment, error) {
-	addr := fmt.Sprintf("%s/environments?query=%s", config.KenmareAddr, query)
+func SearchEnvironments(query, token string) ([]*schemas.Environment, error) {
+	addr := fmt.Sprintf("%s/environments?query=%s&token=%s", config.KenmareAddr, query, token)
+	log.Println(addr)
 	res, err := http.Get(addr)
 	if err != nil {
 		return nil, err
@@ -164,15 +168,19 @@ func GetEnvironment(id string) (*schemas.Environment, error) {
 }
 
 type updateEnvReq struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Token       string `json:"token"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	IsPrivate   bool     `json:"isPrivate"`
+	AccessList  []string `json:"accessList"`
+	Token       string   `json:"token"`
 }
 
 func UpdateEnvironment(env *schemas.Environment, token string) (*schemas.Environment, error) {
 	req := &updateEnvReq{
 		Name:        env.Name,
 		Description: env.Description,
+		IsPrivate:   env.IsPrivate,
+		AccessList:  env.AccessList,
 		Token:       token,
 	}
 
@@ -184,6 +192,55 @@ func UpdateEnvironment(env *schemas.Environment, token string) (*schemas.Environ
 	}
 
 	addr := fmt.Sprintf("%s/environments/%s", config.KenmareAddr, env.ID)
+	request, err := http.NewRequest("PUT", addr, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var resBody environmentRes
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&resBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Status != requests.STATUS_SUCCESS {
+		return nil, resBody
+	}
+
+	return resBody.Environment, nil
+}
+
+func ShareEnvironment(envID, token, email string) (*schemas.Environment, error) {
+	if envID == "" || token == "" || email == "" {
+		return nil, errors.New("envID, token, and email required.")
+	}
+
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return nil, errors.New("invalid email")
+	}
+
+	req := &shareEnvReq{
+		Token: token,
+		Email: email,
+	}
+
+	var body bytes.Buffer
+	encoder := json.NewEncoder(&body)
+	err = encoder.Encode(req)
+	if err != nil {
+		return nil, err
+	}
+
+	addr := fmt.Sprintf("%s/environments/%s/share", config.KenmareAddr, envID)
 	request, err := http.NewRequest("PUT", addr, &body)
 	if err != nil {
 		return nil, err

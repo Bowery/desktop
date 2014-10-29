@@ -69,6 +69,7 @@ var Routes = []*Route{
 	&Route{"GET", "/environments", searchEnvironmentsHandler},
 	&Route{"GET", "/environments/{id}", getEnvironmentHandler},
 	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
+	&Route{"POST", "/environments/{id}/share", shareEnvironmentHandler},
 	&Route{"POST", "/commands", createCommandHandler},
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
 	&Route{"POST", "/auth/password-reset", forgotPassHandler},
@@ -106,8 +107,12 @@ type applicationReq struct {
 }
 
 type environmentReq struct {
-	*schemas.Environment
-	Token string `json:"token"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsPrivate   string `json:"isPrivate"`
+	AccessList  string `json:"accessList"`
+	Token       string `json:"token"`
 }
 
 type emailReq struct {
@@ -117,6 +122,11 @@ type emailReq struct {
 type keyReq struct {
 	AccessKey string `json:"aws_access_key"`
 	SecretKey string `json:"aws_secret_key"`
+}
+
+type shareEnvReq struct {
+	Token string `json:"token"`
+	Email string `json:"email"`
 }
 
 // Res is a generic response with status and an error message.
@@ -630,7 +640,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 // searchEnvironmentsHandler is a handler that searches environments.
 // See func name for more details.
 func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
-	query := req.URL.Query().Get("query")
+	query := req.FormValue("query")
 	if query == "" {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -638,8 +648,8 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-
-	envs, err := SearchEnvironments(query)
+	token := req.FormValue("token")
+	envs, err := SearchEnvironments(query, token)
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
@@ -683,7 +693,7 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
-			"error":  "token required",
+			"error":  err.Error(),
 		})
 		return
 	}
@@ -697,10 +707,23 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	isPrivate, err := strconv.ParseBool(reqBody.IsPrivate)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	accessList := strings.Fields(strings.Replace(reqBody.AccessList, ",", " ", -1))
+
 	updateBody := &schemas.Environment{
 		ID:          id,
 		Name:        reqBody.Name,
 		Description: reqBody.Description,
+		AccessList:  accessList,
+		IsPrivate:   isPrivate,
 	}
 
 	updatedEnv, err := UpdateEnvironment(updateBody, token)
@@ -712,9 +735,63 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	apps, err := applicationManager.GetAll(token)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+	for _, app := range apps {
+		if app.EnvID == id {
+			app.Environment = *updatedEnv
+		}
+	}
+
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"environment": updatedEnv,
+	})
+}
+
+// shareEnvironmentHandler shares an environment with a user.
+func shareEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	var reqBody shareEnvReq
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	token := reqBody.Token
+	if token == "" {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "token required",
+		})
+		return
+	}
+
+	env, err := ShareEnvironment(id, token, reqBody.Email)
+	if err != nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":      requests.STATUS_SUCCESS,
+		"environment": env,
 	})
 }
 
