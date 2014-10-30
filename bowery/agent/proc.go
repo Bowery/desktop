@@ -191,6 +191,134 @@ func Kill(app *Application, init bool) error {
 	return killByCmd(app.StartCmd)
 }
 
+// GetNetwork gets the listeners specific to the app, and listeners that aren't
+// connected to any app.
+func GetNetwork(app *Application) ([]*sys.Listener, []*sys.Listener, error) {
+	appNetwork := make([]*sys.Listener, 0)
+	generic := make([]*sys.Listener, 0)
+
+	// getProc retrieves the pid tree for a exec command.
+	getProc := func(cmd *exec.Cmd) (*sys.Proc, error) {
+		if cmd != nil && cmd.Process != nil {
+			return sys.GetPidTree(cmd.Process.Pid)
+		}
+
+		return nil, nil
+	}
+
+	// appPids gets a slice of pids from the cmds in an app.
+	appPids := func(a *Application) ([]int, error) {
+		list := make([]int, 0)
+
+		tree, err := getProc(a.InitCmd)
+		if err != nil {
+			return nil, err
+		}
+		if tree != nil {
+			list = append(list, pidList(tree)...)
+		}
+
+		tree, err = getProc(a.BuildCmd)
+		if err != nil {
+			return nil, err
+		}
+		if tree != nil {
+			list = append(list, pidList(tree)...)
+		}
+
+		tree, err = getProc(a.TestCmd)
+		if err != nil {
+			return nil, err
+		}
+		if tree != nil {
+			list = append(list, pidList(tree)...)
+		}
+
+		tree, err = getProc(a.StartCmd)
+		if err != nil {
+			return nil, err
+		}
+		if tree != nil {
+			list = append(list, pidList(tree)...)
+		}
+
+		return list, nil
+	}
+
+	currPids, err := appPids(app)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	listeners, err := sys.Listeners()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Find the current apps listeners, and remove them after adding to list.
+	for i, listener := range listeners {
+		for _, pid := range currPids {
+			if pid == listener.Pid {
+				appNetwork = append(appNetwork, listener)
+				listeners[i] = nil
+				break
+			}
+		}
+	}
+
+	// Get list of pids from other applications.
+	otherPids := make([]int, 0)
+	for _, a := range Applications {
+		if a.ID == app.ID {
+			continue
+		}
+
+		pids, err := appPids(a)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		otherPids = append(otherPids, pids...)
+	}
+
+	// Filter out other app listeners from the general list.
+	for i, listener := range listeners {
+		if listener == nil {
+			continue
+		}
+
+		for _, pid := range otherPids {
+			if pid == listener.Pid {
+				listeners[i] = nil
+				break
+			}
+		}
+	}
+
+	// Add left over listeners to the generic list.
+	for _, listener := range listeners {
+		if listener == nil {
+			continue
+		}
+
+		generic = append(generic, listener)
+	}
+
+	return appNetwork, generic, nil
+}
+
+// pidList recusively gets a list of the pids for a process tree.
+func pidList(proc *sys.Proc) []int {
+	list := []int{proc.Pid}
+	if proc.Children != nil {
+		for _, p := range proc.Children {
+			list = append(list, pidList(p)...)
+		}
+	}
+
+	return list
+}
+
 // waitProc waits for a process to end and writes errors to tcp.
 func waitProc(cmd *exec.Cmd, stdoutWriter, stderrWriter *OutputWriter) {
 	err := cmd.Wait()
