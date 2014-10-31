@@ -59,5 +59,6 @@ clean:
 extra-clean: clean ui-clean
 	-rm -rf build/node_modules
 	-rm -rf build/atom-shell
+	-rm -rf /tmp/atom
 
 .PHONY: all deps test format clean release agent client ui ui-test ui-clean
