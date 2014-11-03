@@ -15,7 +15,9 @@ import (
 	"strings"
 
 	"github.com/Bowery/gopackages/config"
+	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/sys"
 )
 
 // DelanceyUpload sends an upload request including the given file.
@@ -215,6 +217,7 @@ func DelanceyRemove(app *schemas.Application) error {
 	return removeRes
 }
 
+// DelanceyExec executes a comand for a given delancey app.
 func DelanceyExec(app *schemas.Application, cmd string) error {
 	req := &commandReq{
 		AppID: app.ID,
@@ -249,4 +252,34 @@ func DelanceyExec(app *schemas.Application, cmd string) error {
 	}
 
 	return execRes
+}
+
+type networkRes struct {
+	*Res
+	App     []*sys.Listener `json:"app"`
+	Generic []*sys.Listener `json:"generic"`
+}
+
+// DelanceyNetwork retrieves the network infomation for an application.
+func DelanceyNetwork(app *schemas.Application) ([]*sys.Listener, []*sys.Listener, error) {
+	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	res, err := http.Get("http://" + url + "/network?id=" + app.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer res.Body.Close()
+
+	// Decode json response.
+	netRes := new(networkRes)
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(netRes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if netRes.Status == requests.STATUS_SUCCESS {
+		return netRes.App, netRes.Generic, nil
+	}
+
+	return nil, nil, netRes
 }
