@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Bowery/gopackages/config"
@@ -262,7 +264,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 // with the provided token.
 func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 	token := req.FormValue("token")
-	apps, err := applicationManager.GetAll(token)
+	appPtrs, err := applicationManager.GetAll(token)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"token":   token,
@@ -273,6 +275,82 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 			"error":  err.Error(),
 		})
 		return
+	}
+
+	// Create copy of apps so that setting the custom location doesn't stay.
+	apps := make([]schemas.Application, len(appPtrs))
+	for i, app := range appPtrs {
+		apps[i] = *app
+	}
+
+	// Remove 22 from priority list and then generate listeners map.
+	// NOTE: Lower index is higher priority, order matters here.
+	portsPriority := config.SuggestedPorts[:len(config.SuggestedPorts)-1]
+	listeners := make(map[int]*sys.Listener, len(portsPriority))
+	for _, port := range portsPriority {
+		listeners[port] = nil
+	}
+
+	for _, app := range apps {
+		if app.Status != "running" || app.Location == "" {
+			continue
+		}
+
+		appSpecific, generic, err := DelanceyNetwork(&app)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"token":   token,
+				"VERSION": VERSION,
+			})
+			continue // Not important enough to stop completely.
+		}
+
+		// Clear listeners.
+		for _, port := range portsPriority {
+			listeners[port] = nil
+		}
+
+		// Get generic listeners that are in priority list.
+		for _, listener := range generic {
+			_, ok := listeners[listener.Port]
+
+			if ok {
+				listeners[listener.Port] = listener
+			}
+		}
+
+		// Get apps listeners that are in priority list.
+		for _, listener := range appSpecific {
+			_, ok := listeners[listener.Port]
+
+			if ok {
+				listeners[listener.Port] = listener
+			}
+		}
+
+		// Get the listener with the greatest priority, prefer lower index ports.
+		var listener *sys.Listener
+		for _, port := range portsPriority {
+			list := listeners[port]
+
+			if list != nil {
+				listener = list
+				break
+			}
+		}
+
+		// Fallback to first item found.
+		if listener == nil {
+			if len(appSpecific) > 0 {
+				listener = appSpecific[0]
+			} else if len(generic) > 0 {
+				listener = generic[0]
+			}
+		}
+
+		if listener != nil {
+			app.Location = net.JoinHostPort(app.Location, strconv.Itoa(listener.Port))
+		}
 	}
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
