@@ -52,9 +52,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </style>
 <bowery-screen path="/login">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form color="devs" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
-    <a class="btn devs" href="/signup" on-click="{{navigate}}">I don't have a bowery account.</a>
-    <a class="btn devs" href="/forgot" on-click="{{navigate}}">I forgot my password.</a>
+  <bowery-form id="loginForm" color="devs" title="login" on-bowery-form-response="{{handleLoginAttempt}}" endpoint="http://broome.io/developers/token" fields="{{loginFields}}" sendAs="json">
+    <a id="resetButton" class="btn devs" href="" on-click="{{resetPassword}}">I forgot my password.</a>
   </bowery-form>
 </bowery-screen>
 
@@ -72,13 +71,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   </bowery-payment>
 </bowery-screen>
 
-<bowery-screen path="/forgot">
-  <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form color="devs" title="submit" endpoint="http://localhost:32055/auth/password-reset" fields="{{forgotFields}}" on-bowery-form-response="{{handleForgotAttempt}}" sendAs="json">
-    <a class="btn devs" href="/login" on-click="{{navigate}}">I remember my password.</a>
-  </bowery-form>
-</bowery-screen>
-
 <bowery-screen path="/keys">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
   <bowery-form  color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
@@ -88,30 +80,25 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps">
   <bowery-nav type="header" background="apps active">Apps</bowery-nav>
-  <bowery-list type="apps" item="{{app}}" list="{{applications}}"></bowery-list>
+  <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}"></bowery-list>
   <bowery-nav type="footer" background="apps active" href="/apps/new" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/exec">
   <bowery-nav type="header" background="images active">Exec</bowery-nav>
   <bowery-shell app="{{app}}" logs="{{app.logs}}" token="{{developer.token}}"></bowery-shell>
-  <bowery-nav type="footer" background="images active" href="/apps/edit" on-click="{{navigate}}">Back</bowery-nav>
+  <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/edit">
   <bowery-nav type="header" background="apps active">{{app.name}}</bowery-nav>
-  <bowery-form title="Save" color="apps" endpoint="http://localhost:32055/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
-    <template if="{{app.status != 'provisioning'}}">
-      <a href="/apps/exec" on-click="{{navigate}}" class="btn images half">Run Commands</a>
-      <a class="btn bad half" on-click="{{deleteApp}}">Delete App</a>
-    </template>
-  </bowery-form>
+  <bowery-form title="Save" color="apps" endpoint="http://localhost:32055/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}"></bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/images/edit">
-  <bowery-nav type="header" background="images active">{{image.name || 'Edit Image'}}</bowery-nav>
-  <bowery-form title="Save" color="images" endpoint="http://localhost:32055/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
-    <a href="/apps/edit" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
+  <bowery-nav type="header" background="images active">{{image.name || 'Publish Image'}}</bowery-nav>
+  <bowery-form title="Publish" color="images" endpoint="http://localhost:32055/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
+    <a href="/apps" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
   </bowery-form>
 </bowery-screen>
 
@@ -122,8 +109,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
+<core-ajax id="resetAjax" method="POST" handleAs="json" on-core-response="{{handleResetAttempt}}" url="http://localhost:32055/auth/password-reset"></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="http://localhost:32055/applications?token={{developer.token}}" auto></core-ajax>
-<core-ajax id="deleteAppAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAppAttempt}}" auto></core-ajax>
 </template>
 <script src="gifstream.js" type="text/javascript"></script>
 <script>
@@ -164,11 +151,10 @@ Polymer('bowery-core', {
     {name: 'aws_secret_key', label: 'AWS Secret Key',  placeholder: 'AWS+SECRET+KEY+GOES+HERE'}
   ],
   editAppFields: [
-    {name: 'name', placeholder: 'Your App'},
-    {name: 'image', label: 'Image Name', type: 'button', path: '/images/edit'},
-    {name: 'start', label: 'Command that runs app', value: './web-app'},
-    {name: 'remotePath', label: 'Remote Path', value: '/home/ubuntu/app'},
-    {name: 'localPath', label: 'Local Path', value: '~/Documents/app'}
+    {name: 'name', label: 'What do we call this app?', placeholder: 'Your App'},
+    {name: 'start', label: 'How do we run the app?', value: './web-app'},
+    {name: 'remotePath', label: 'Where on the VM should we sync your code?', value: '/home/ubuntu/app'},
+    {name: 'localPath', label: 'Where is the code on your computer?', value: '~/Documents/app'}
   ],
   editImageFields: [
     {name: 'name', placeholder: 'Image Name'},
@@ -195,7 +181,7 @@ Polymer('bowery-core', {
     sse.addEventListener('message', this.handleSSE.bind(this))
 
     if (!this.developer.token) {
-      return this.navigate('/login')
+      return this.navigate('/signup')
     }
 
     if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
@@ -262,11 +248,6 @@ Polymer('bowery-core', {
       this.app.logs += event.message
     }
   },
-  openLogsWindow: function () {
-    console.log("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.app._id)
-    this.logWindow = window.open("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.app._id, this.app.name + " Logs", "resizable,scrollbars," + this.app.name + " Logs")
-    this.logWindow.setPosition(0, 0);
-  },
   handleCreateAppAttempt: function (e, detail) {
     var response = e.target.response
 
@@ -276,7 +257,7 @@ Polymer('bowery-core', {
 
     this.editAppFields[1].value = this.app.environment ? this.app.environment.name : this.app.envId
 
-    this.navigate('/apps/edit')
+    this.navigate('/apps')
   },
   handleEditAppAttempt: function (e, detail) {
     var response = e.target.response
@@ -297,7 +278,7 @@ Polymer('bowery-core', {
     this.app.environment.name = this.image.name
     this.app.image = this.app.environment.name
     this.app.environment.description = this.image.description
-    this.navigate('/apps/edit')
+    this.navigate('/apps')
   },
   handleLoginAttempt: function (e, detail) {
     var response = detail.response
@@ -310,9 +291,6 @@ Polymer('bowery-core', {
     }
 
     this.navigate('/apps')
-  },
-  handleForgotAttempt: function (e, detail) {
-    this.navigate('/login')
   },
   getUserByToken: function (e, detail) {
     var response = detail.response
@@ -339,43 +317,12 @@ Polymer('bowery-core', {
       return this.navigate('/apps/new')
     }
   },
-  parameterize: function (obj) {
-    var out = ""
-    for (var key in obj) {
-      out += key + "=" + obj[key] + "&"
-    }
-    return out
-  },
-  deleteApp: function (e) {
-    e.preventDefault()
-    var tokens = {
-      token: this.developer.token,
-      aws_access_key: encodeURIComponent(this.keys.aws_access_key),
-      aws_secret_key: encodeURIComponent(this.keys.aws_secret_key)
-    }
-    var id = this.app._id
-    this.$.deleteAppAjax.url = "http://localhost:32055/applications/" + id + "?" + this.parameterize(tokens)
-    this.applications = this.applications.filter(function (a) {return a._id != id})
-    this.app = {}
-  },
   getApps: function (e, detail) {
     var r = JSON.parse(detail.response)
     if (r.status == "found")
       this.applications = r.applications
     else
       this.logout()
-  },
-  handleDeleteAppAttempt: function (e) {
-    var response = e.target.response
-    if (response.status == 'success') {
-
-      this.applications = this.applications.filter(function (app) {
-        return app._id != response.id
-      })
-
-      return this.navigate('/apps')
-    }
-    alert('unable to delete ')
   },
   openExternalWindow: function (path) {
     if (typeof path != "string") {
@@ -395,15 +342,25 @@ Polymer('bowery-core', {
     }
 
     this.$.analytics.track('Navigated to ' + path)
-
-    //TODO (thebyrd) make this less ghetto
-    if (path == "/apps/exec")
-      this.openLogsWindow()
-
     this.fire('bowery-navigate', {path: path})
   },
   appChanged: function (oldApp, newApp) {
     this.image = this.app.environment
+  },
+  resetPassword: function (e) {
+    e.preventDefault()
+    var email = this.$.loginForm.fieldValue('email')
+    if (!email) return this.$.loginForm.showError('email', 'Email required to reset password')
+    this.$.resetAjax.body = JSON.stringify({email: email})
+    this.$.resetAjax.go()
+  },
+  handleResetAttempt: function (e, detail) {
+    var r = e.detail.response
+    console.log('$$$$', r, r.status)
+    if (r.status == "success")
+      this.$.resetButton.innerHTML = "Help is on the way! Check your email."
+    else
+      alert(r.error)
   },
   logout: function () {
     this.developer = {}
