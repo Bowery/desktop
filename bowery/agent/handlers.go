@@ -8,13 +8,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Bowery/gopackages/requests"
 )
 
 // NotFoundHandler just responds with a 404 and a message.
 var NotFoundHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
-	res.Body["error"] = http.StatusText(http.StatusNotFound)
-	res.Send(http.StatusNotFound)
+	r.JSON(rw, http.StatusNotFound, map[string]string{
+		"status": requests.STATUS_FAILED,
+		"error":  http.StatusText(http.StatusNotFound),
+	})
 })
 
 // SlashHandler is a http.Handler that removes trailing slashes.
