@@ -14,9 +14,11 @@ import (
 	"strings"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
+	"github.com/unrolled/render"
 )
 
 // 32 MB, same as http.
@@ -26,6 +28,11 @@ var (
 	HomeDir   = os.Getenv(sys.HomeVar)
 	BoweryDir = filepath.Join(HomeDir, ".bowery")
 )
+
+var r = render.New(render.Options{
+	IndentJSON:    true,
+	IsDevelopment: true,
+})
 
 // List of named routes.
 var Routes = []*Route{
@@ -70,11 +77,12 @@ func IndexHandler(rw http.ResponseWriter, req *http.Request) {
 
 // POST /, Upload service code running init steps.
 func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	attach, _, err := req.FormFile("file")
 	if err != nil && err != http.ErrMissingFile {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 	id := req.FormValue("id")
@@ -96,8 +104,10 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 			"app": app,
 			"ip":  AgentHost,
 		})
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
@@ -115,25 +125,29 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 
 		err = tar.Untar(attach, app.Path)
 		if err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
 			return
 		}
 	}
 
 	plugin.EmitPluginEvent(schemas.AFTER_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
 	<-Restart(app, true, true)
-	res.Body["status"] = "created"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_CREATED,
+	})
 }
 
 // PUT /, Update service.
 func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	err := req.ParseMultipartForm(httpMaxMem)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 	id := req.FormValue("id")
@@ -153,8 +167,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 
 	app := Applications[id]
 	if app == nil {
-		res.Body["error"] = "invalid app id"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "invalid app id",
+		})
 		return
 	}
 
@@ -166,8 +182,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	SaveApps()
 
 	if path == "" || typ == "" {
-		res.Body["error"] = "Missing form fields."
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "Missing form fields.",
+		})
 		return
 	}
 	switch typ {
@@ -184,8 +202,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		// Delete path from the service.
 		err = os.RemoveAll(path)
 		if err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
 			return
 		}
 	} else {
@@ -195,8 +215,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		if pathType == "dir" {
 			err = os.MkdirAll(path, os.ModePerm|os.ModeDir)
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
+				r.JSON(rw, http.StatusInternalServerError, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 		} else {
@@ -206,8 +228,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 					err = errors.New("Missing form fields.")
 				}
 
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusBadRequest)
+				r.JSON(rw, http.StatusBadRequest, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 			defer attach.Close()
@@ -215,15 +239,19 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 			// Ensure parents exist.
 			err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
+				r.JSON(rw, http.StatusInternalServerError, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 
 			dest, err = os.Create(path)
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
+				r.JSON(rw, http.StatusInternalServerError, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 			defer dest.Close()
@@ -231,8 +259,10 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 			// Copy updated contents to destination.
 			_, err = io.Copy(dest, attach)
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
+				r.JSON(rw, http.StatusInternalServerError, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 		}
@@ -241,15 +271,19 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		if modeStr != "" {
 			mode, err := strconv.ParseUint(modeStr, 10, 32)
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusBadRequest)
+				r.JSON(rw, http.StatusBadRequest, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 
 			err = os.Chmod(path, os.FileMode(mode))
 			if err != nil {
-				res.Body["error"] = err.Error()
-				res.Send(http.StatusInternalServerError)
+				r.JSON(rw, http.StatusInternalServerError, map[string]string{
+					"status": requests.STATUS_FAILED,
+					"error":  err.Error(),
+				})
 				return
 			}
 		}
@@ -265,13 +299,13 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	<-Restart(app, false, true)
-	res.Body["status"] = "updated"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_UPDATED,
+	})
 }
 
 // DELETE /, Remove service.
 func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	id := req.FormValue("id")
 	app := Applications[id]
 	if app != nil {
@@ -287,27 +321,30 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	})
 
 	SaveApps()
-	res.Body["status"] = "removed"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_REMOVED,
+	})
 }
 
 // POST /command, Run a command.
 func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
-
 	body := new(runCmdReq)
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(body)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
 	// Validate body.
 	if body.Cmd == "" {
-		res.Body["error"] = "cmd field is required."
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "cmd field is required.",
+		})
 		return
 	}
 
@@ -339,27 +376,30 @@ func RunCommandHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
 }
 
 // POST /commands, Run multiple commands. Do not respond successfully
 // until all commands have finished running.
 func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
-
 	body := new(runCmdsReq)
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(body)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
 	if len(body.Cmds) <= 0 {
-		res.Body["error"] = "cmds field is required."
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "cmds field is required.",
+		})
 		return
 	}
 
@@ -391,38 +431,46 @@ func RunCommandsHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
 }
 
 // POST /plugins, Upload a plugin
 func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	attach, _, err := req.FormFile("file")
 	if err != nil && err != http.ErrMissingFile {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
 	appID := req.FormValue("appID")
 	if appID == "" {
-		res.Body["error"] = "appID required"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "appID required",
+		})
 		return
 	}
 
 	app := Applications[appID]
 	if app == nil {
-		res.Body["error"] = fmt.Sprintf("no app exists with id %s", appID)
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  fmt.Sprintf("no app exists with id %s", appID),
+		})
 		return
 	}
 
 	name := req.FormValue("name")
 	if name == "" {
-		res.Body["error"] = "plugin name required"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "plugin name required",
+		})
 		return
 	}
 
@@ -431,8 +479,10 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	requirements := req.FormValue("requirements")
 	p, err := plugin.NewPlugin(name, hooks, requirements)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
@@ -441,8 +491,10 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	if attach != nil {
 		defer attach.Close()
 		if err = tar.Untar(attach, pluginPath); err != nil {
-			res.Body["error"] = err.Error()
-			res.Send(http.StatusInternalServerError)
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
 			return
 		}
 	}
@@ -456,43 +508,50 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	go plugin.EmitPluginEvent(schemas.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
 	go plugin.EmitPluginEvent(schemas.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
 
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
 }
 
 // PUT /plugins, Updates a plugin
 func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 	// TODO (sjkaliski or rm): edit hooks
-	res := NewResponder(rw, req)
-
 	appID := req.FormValue("appID")
 	name := req.FormValue("name")
 	isEnabledStr := req.FormValue("isEnabled")
 	if appID == "" || name == "" || isEnabledStr == "" {
-		res.Body["error"] = "missing fields"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "missing fields",
+		})
 		return
 	}
 
 	app := Applications[appID]
 	if app == nil {
-		res.Body["error"] = fmt.Sprintf("no app exists with id %s", appID)
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  fmt.Sprintf("no app exists with id %s", appID),
+		})
 		return
 	}
 
 	isEnabled, err := strconv.ParseBool(isEnabledStr)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
 	// Verify the plugin exists.
 	p := plugin.GetPlugin(name)
 	if p == nil {
-		res.Body["error"] = "invalid plugin name"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "invalid plugin name",
+		})
 		return
 	}
 
@@ -513,85 +572,83 @@ func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
 }
 
 // DELETE /plugins?name=PLUGIN_NAME, Removes a plugin
 func RemovePluginHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	query := req.URL.Query()
 
 	if len(query["name"]) < 1 {
-		res.Body["error"] = "valid plugin name required"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "valid plugin name required",
+		})
 		return
 	}
 
 	pluginName := query["name"][0]
 
 	if err := plugin.RemovePlugin(pluginName); err != nil {
-		res.Body["error"] = "unable to remove plugin"
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "unable to remove plugin",
+		})
 		return
 	}
 
 	if err := os.RemoveAll(filepath.Join(plugin.PluginDir, pluginName)); err != nil {
-		res.Body["error"] = "unable to remove plugin code"
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "unable to remove plugin code",
+		})
 		return
 	}
 
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_SUCCESS,
+	})
 }
 
 // GET /network, returns network information for an app.
 func NetworkHandler(rw http.ResponseWriter, req *http.Request) {
-	res := NewResponder(rw, req)
 	id := req.FormValue("id")
 
 	app := Applications[id]
 	if app == nil {
-		res.Body["error"] = "invalid app id"
-		res.Send(http.StatusBadRequest)
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "invalid app id",
+		})
 		return
 	}
 
 	appNetwork, generic, err := GetNetwork(app)
 	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
-	appNJ, err := json.Marshal(appNetwork)
-	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
-		return
-	}
-
-	genericJ, err := json.Marshal(generic)
-	if err != nil {
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
-		return
-	}
-
-	res.Body["app"] = string(appNJ)
-	res.Body["generic"] = string(genericJ)
-	res.Body["status"] = "success"
-	res.Send(http.StatusOK)
+	r.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":  requests.STATUS_SUCCESS,
+		"app":     appNetwork,
+		"generic": generic,
+	})
 }
 
 // GET /state, Return the current application data.
 func AppStateHandler(rw http.ResponseWriter, req *http.Request) {
 	data, err := json.Marshal(Applications)
 	if err != nil {
-		res := NewResponder(rw, req)
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
@@ -602,9 +659,10 @@ func AppStateHandler(rw http.ResponseWriter, req *http.Request) {
 func PluginStateHandler(rw http.ResponseWriter, req *http.Request) {
 	data, err := json.Marshal(plugin.GetPlugins())
 	if err != nil {
-		res := NewResponder(rw, req)
-		res.Body["error"] = err.Error()
-		res.Send(http.StatusInternalServerError)
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
 		return
 	}
 
