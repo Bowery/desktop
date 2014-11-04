@@ -98,7 +98,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <bowery-screen path="/images/edit">
   <bowery-nav type="header" background="images active">{{image.name || 'Publish Image'}}</bowery-nav>
   <bowery-form title="Publish" color="images" endpoint="http://localhost:32055/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
-    <a href="/apps" class="btn apps" on-click="{{navigate}}">Nevermind. Take me back.</a>
+    <a href="/apps" class="btn images" on-click="{{navigate}}">Nevermind. Take me back.</a>
   </bowery-form>
 </bowery-screen>
 

@@ -16,7 +16,7 @@
 }
 
 .images,
-.images {
+.btn.images {
   background: var(--blue);
 }
 .images.active,
