@@ -42,6 +42,7 @@ func LogProcessor(s *Stream, data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	output := &syncWriter{File: file}
 	buf := bytes.NewBuffer(data)

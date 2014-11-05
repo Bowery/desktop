@@ -5,18 +5,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
+	"github.com/Bowery/gopackages/update"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
@@ -70,6 +74,8 @@ var Routes = []*Route{
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
 	&Route{"POST", "/auth/password-reset", forgotPassHandler},
 	&Route{"GET", "/logout", logoutHandler},
+	&Route{"GET", "/update/{verison}", doUpdateHandler},
+	&Route{"GET", "/update/check", checkUpdateHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
 
@@ -291,7 +297,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 		listeners[port] = nil
 	}
 
-	for _, app := range apps {
+	for i, app := range apps {
 		if app.Status != "running" || app.Location == "" {
 			continue
 		}
@@ -350,6 +356,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 
 		if listener != nil {
 			app.Location = net.JoinHostPort(app.Location, strconv.Itoa(listener.Port))
+			apps[i] = app
 		}
 	}
 
@@ -920,6 +927,109 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	r.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
+}
+
+func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	ver := vars["version"]
+	addr := fmt.Sprintf("%s/%s_%s_%s.zip", config.ClientS3Addr, ver, runtime.GOOS, runtime.GOARCH)
+	tmp := filepath.Join(os.TempDir(), "bowery_"+strconv.FormatInt(time.Now().Unix(), 10))
+
+	// This is only needed for darwin.
+	if runtime.GOOS != "darwin" {
+		r.JSON(rw, http.StatusOK, map[string]string{
+			"status": requests.STATUS_UPDATED,
+		})
+		return
+	}
+
+	contents, err := update.DownloadVersion(addr)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	for info, body := range contents {
+		path := filepath.Join(tmp, info.Name())
+		if info.IsDir() {
+			continue
+		}
+
+		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+
+		file, err := os.Create(path)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+		defer file.Close()
+
+		_, err = io.Copy(file, body)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+	}
+
+	go func() {
+		cmd := sys.NewCommand("open "+filepath.Join(tmp, "bowery.pkg"), nil)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+		}
+	}()
+
+	r.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.STATUS_UPDATED,
+	})
+}
+
+func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
+	newVer, _, err := update.GetLatest(config.ClientS3Addr + "/VERSION")
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	changed, err := update.OutOfDate(VERSION, newVer)
+	if err != nil {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	body := map[string]string{
+		"status": requests.STATUS_NO_UPDATE,
+	}
+	if changed {
+		body["status"] = requests.STATUS_NEW_UPDATE
+		body["version"] = newVer
+	}
+
+	r.JSON(rw, http.StatusOK, body)
 }
 
 func sseHandler(rw http.ResponseWriter, req *http.Request) {
