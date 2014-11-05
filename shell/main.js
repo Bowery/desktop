@@ -21,17 +21,21 @@ try {
   if (e.code != 'ESRCH') console.log('yolo. no pid file found.')
 }
 
-// Start client, and run updater if it's included.
+// Start client, and run updater if not on darwin.
 var versionUrl = 'http://desktop.bowery.io.s3.amazonaws.com/VERSION'
 var ext = /^win/.test(process.platform) ? '.exe' : ''
-var installDir = process.platform == 'darwin' ? '../..' : '..'
+var installDir = '..'
 var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
 var opts = {stdio: 'inherit'}
 
-proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
+if (process.platform == 'darwin') {
+  proc = spawn(clientPath, [], opts)
+} else {
+  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
+}
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)

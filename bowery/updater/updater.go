@@ -2,22 +2,16 @@
 package main
 
 import (
-	"archive/tar"
-	"bufio"
-	"bytes"
-	"compress/gzip"
 	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -28,16 +22,15 @@ import (
 	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/sys"
-	goversion "github.com/hashicorp/go-version"
+	"github.com/Bowery/gopackages/update"
 	"github.com/jeffchao/backoff"
 )
 
 const usage = `usage: updater [-d installDir] <update url> <current version> <command> [arguments]`
 
 var (
-	ErrNotFound = errors.New("Update version url not found for current system")
-	rollbarC    = rollbar.NewClient(config.RollbarToken, "production")
-	keenC       = &keen.Client{
+	rollbarC = rollbar.NewClient(config.RollbarToken, "production")
+	keenC    = &keen.Client{
 		WriteKey:  config.KeenWriteKey,
 		ProjectID: config.KeenProjectID,
 	}
@@ -240,7 +233,7 @@ func doUpdate() error {
 	updatedSetter.Set(0)
 	log.Println("Update is being checked")
 
-	newVersion, newVersionURL, err := getVersion(updateURL)
+	newVersion, newVersionURL, err := update.GetLatest(updateURL)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{
 			"version": version,
@@ -249,11 +242,7 @@ func doUpdate() error {
 		return err
 	}
 
-	var newV *goversion.Version
-	oldV, err := goversion.NewVersion(version)
-	if err == nil {
-		newV, err = goversion.NewVersion(newVersion)
-	}
+	changed, err := update.OutOfDate(version, newVersion)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{
 			"version":    version,
@@ -263,13 +252,13 @@ func doUpdate() error {
 		return err
 	}
 
-	if oldV.Equal(newV) || oldV.GreaterThan(newV) {
+	if !changed {
 		log.Println("Version hasn't changed")
 		return nil
 	}
 
 	log.Println("Getting contents for version", newVersion, "at", newVersionURL)
-	contents, err := getVersionDownload(newVersionURL)
+	contents, err := update.DownloadVersion(newVersionURL)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{
 			"version":    version,
@@ -281,9 +270,8 @@ func doUpdate() error {
 
 	log.Println("Replacing binaries found in downloaded version")
 	var replaceErr error = nil
-	for header, body := range contents {
-		info := header.FileInfo()
-		path := filepath.Join(installDir, filepath.Join(strings.Split(header.Name, "/")...))
+	for info, body := range contents {
+		path := filepath.Join(installDir, info.Name())
 
 		if info.IsDir() {
 			err := os.MkdirAll(path, info.Mode())
@@ -325,82 +313,4 @@ func doUpdate() error {
 	}
 
 	return err
-}
-
-// getVersion gets the most recent version url from an update url
-func getVersion(url string) (string, string, error) {
-	res, err := http.Get(url)
-	if err != nil {
-		return "", "", err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
-		return "", "", errors.New("Status code not in 2xx class: " + res.Status)
-	}
-
-	// Scan each line looking for the version url for the current system.
-	version := ""
-	line := 0
-	scanner := bufio.NewScanner(res.Body)
-	for scanner.Scan() {
-		text := scanner.Text()
-		line++
-		if line <= 1 {
-			version = text
-			continue
-		}
-
-		if strings.Contains(text, runtime.GOOS) && strings.Contains(text, runtime.GOARCH) {
-			return version, text, nil
-		}
-	}
-
-	err = scanner.Err()
-	if err != nil {
-		return "", "", err
-	}
-
-	return "", "", ErrNotFound
-}
-
-// getVersionDownload retrieves and untars the versions archive into a file map.
-func getVersionDownload(url string) (map[*tar.Header]io.Reader, error) {
-	res, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
-		return nil, errors.New("Status code not in 2xx class: " + res.Status)
-	}
-	contents := make(map[*tar.Header]io.Reader)
-
-	body, err := gzip.NewReader(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer body.Close()
-	archive := tar.NewReader(body)
-
-	for {
-		hdr, err := archive.Next()
-		if err != nil && err != io.EOF {
-			return nil, err
-		}
-		if hdr == nil || err == io.EOF {
-			break
-		}
-
-		buf := new(bytes.Buffer)
-		_, err = io.Copy(buf, archive)
-		if err != nil {
-			return nil, err
-		}
-
-		contents[hdr] = buf
-	}
-
-	return contents, nil
 }

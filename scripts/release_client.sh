@@ -49,28 +49,28 @@ goxc \
   xc &> "${root}/goxc.log"
 
 echo "--> Downloading shells..."
-ver="0.17.2"
+ver="0.19.1"
 url="https://github.com/atom/atom-shell/releases/download/v${ver}/atom-shell-v${ver}"
 
-if [[ ! -f "/tmp/atom/darwin_amd64.zip" ]]; then
-  wget -q "${url}-darwin-x64.zip" -O "/tmp/atom/darwin_amd64.zip"
+if [[ ! -f "/tmp/atom/${ver}_darwin_amd64.zip" ]]; then
+  wget -q "${url}-darwin-x64.zip" -O "/tmp/atom/${ver}_darwin_amd64.zip"
 fi
-unzip -q "/tmp/atom/darwin_amd64.zip" -d "${atom}/darwin_amd64"
+unzip -q "/tmp/atom/${ver}_darwin_amd64.zip" -d "${atom}/darwin_amd64"
 
-if [[ ! -f "/tmp/atom/linux_386.zip" ]]; then
-  wget -q "${url}-linux-ia32.zip" -O /tmp/atom/linux_386.zip
+if [[ ! -f "/tmp/atom/${ver}_linux_386.zip" ]]; then
+  wget -q "${url}-linux-ia32.zip" -O "/tmp/atom/${ver}_linux_386.zip"
 fi
-unzip -q "/tmp/atom/linux_386.zip" -d "${atom}/linux_386"
+unzip -q "/tmp/atom/${ver}_linux_386.zip" -d "${atom}/linux_386"
 
-if [[ ! -f "/tmp/atom/linux_amd64.zip" ]]; then
-  wget -q "${url}-linux-x64.zip" -O /tmp/atom/linux_amd64.zip
+if [[ ! -f "/tmp/atom/${ver}_linux_amd64.zip" ]]; then
+  wget -q "${url}-linux-x64.zip" -O "/tmp/atom/${ver}_linux_amd64.zip"
 fi
-unzip -q "/tmp/atom/linux_amd64.zip" -d "${atom}/linux_amd64"
+unzip -q "/tmp/atom/${ver}_linux_amd64.zip" -d "${atom}/linux_amd64"
 
-if [[ ! -f "/tmp/atom/windows_386.zip" ]]; then
-  wget -q "${url}-win32-ia32.zip" -O /tmp/atom/windows_386.zip
+if [[ ! -f "/tmp/atom/${ver}_windows_386.zip" ]]; then
+  wget -q "${url}-win32-ia32.zip" -O "/tmp/atom/${ver}_windows_386.zip"
 fi
-unzip -q "/tmp/atom/windows_386.zip" -d "${atom}/windows_386"
+unzip -q "/tmp/atom/${ver}_windows_386.zip" -d "${atom}/windows_386"
 
 echo "--> Creating updates for ${version}..."
 
@@ -232,13 +232,13 @@ for file in "${distdir}/"*; do
   s3Key=${AWS_KEY}
   s3Secret=${AWS_SECRET}
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-  curl -k \
-    -T ${name} \
-    -H "Host: ${bucket}.s3.amazonaws.com" \
-    -H "Date: ${dateValue}" \
-    -H "Content-Type: ${contentType}" \
-    -H "Authorization: AWS ${s3Key}:${signature}" \
-    https://${bucket}.s3.amazonaws.com/${name}
+  #curl -k \
+  #  -T ${name} \
+  #  -H "Host: ${bucket}.s3.amazonaws.com" \
+  #  -H "Date: ${dateValue}" \
+  #  -H "Content-Type: ${contentType}" \
+  #  -H "Authorization: AWS ${s3Key}:${signature}" \
+  #  https://${bucket}.s3.amazonaws.com/${name}
 
   echo "* http://desktop.bowery.io/${name} is available for download."
 done
