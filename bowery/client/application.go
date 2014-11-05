@@ -85,6 +85,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 					app.Status = status
 				}
 				app.Location = application.Location
+				app.Errors = application.Errors
 				msg := map[string]interface{}{
 					"appID":   app.ID,
 					"type":    "status",
