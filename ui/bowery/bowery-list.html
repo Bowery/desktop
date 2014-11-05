@@ -60,11 +60,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <div class="card {{item.expanded ? 'expanded' : 'closed'}}" data-id="{{item._id || item.id}}" on-click="{{expand}}">
           <h4 class="{{item.status}}">{{item.name}}</h4>
           <template if="{{!item.expanded}}">
-            <span class="unclickable {{item.status}}">{{item.status != 'running' ? item.status : (item.location || 'Your app is provisioning')}}</span>
+            <span class="unclickable {{item.status}}">{{item.status != 'running' ? item.status : (item.location + getPort(item) || 'Your app is provisioning')}}</span>
           </template>
           <template if="{{item.expanded}}">
             <template if="{{item.location}}">
-              <a class="sub nocollapse" href="{{item.location}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (('Copy ' + item.location + ' to clipboard') || 'Your app is provisioning')}}</a>
+              <a class="sub nocollapse" href="{{item.location + getPort(item)}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (('Copy ' + item.location + getPort(item) + ' to clipboard') || 'Your app is provisioning')}}</a>
             </template>
             <a class="sub" href="" on-click="{{edit}}">Edit Information</a>
             <a class="sub" href="/apps/exec" on-click="{{navigate}}">Exec Commands</a>
@@ -106,7 +106,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       this.fire('bowery-navigate', {path: '/' + this.type + '/edit'})
     },
     copy: function (e) {
-      require('clipboard').writeText(this.item.location)
+      require('clipboard').writeText(this.item.location + getPort(this.item))
       e.target.innerHTML = 'Copied!'
     },
     openLogsWindow: function () {
@@ -156,6 +156,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         delete this.item
       }
     },
+    getPort: function (item) {
+      return item.portInUse ? (':' + item.portInUse) : ''
+    }
   })
   </script>
 </polymer-element>
