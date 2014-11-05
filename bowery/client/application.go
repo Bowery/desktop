@@ -10,9 +10,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/sys"
 	"github.com/jeffchao/backoff"
 )
+
+// Note: Order is lower the index the higher the priority.
+var (
+	portsPriority = config.SuggestedPorts[:len(config.SuggestedPorts)-1]
+	listeners     = make(map[int]*sys.Listener, len(portsPriority))
+)
+
+func init() {
+	for _, port := range portsPriority {
+		listeners[port] = nil
+	}
+}
 
 type ApplicationManager struct {
 	Applications  map[string]*schemas.Application
@@ -245,4 +259,65 @@ func (am *ApplicationManager) Empty() {
 	}
 
 	am.Applications = make(map[string]*schemas.Application)
+}
+
+// SetAppPort will detect the port in use and set it for the app.
+func SetAppPort(app *schemas.Application) error {
+	if app.Status != "running" || app.Location == "" {
+		return nil
+	}
+
+	appSpecific, generic, err := DelanceyNetwork(app)
+	if err != nil {
+		return err
+	}
+
+	// Clear listeners.
+	for _, port := range portsPriority {
+		listeners[port] = nil
+	}
+
+	// Get generic listeners that are in priority list.
+	for _, listener := range generic {
+		_, ok := listeners[listener.Port]
+
+		if ok {
+			listeners[listener.Port] = listener
+		}
+	}
+
+	// Get apps listeners that are in priority list.
+	for _, listener := range appSpecific {
+		_, ok := listeners[listener.Port]
+
+		if ok {
+			listeners[listener.Port] = listener
+		}
+	}
+
+	// Get the listener with the greatest priority, prefer lower index ports.
+	var listener *sys.Listener
+	for _, port := range portsPriority {
+		list := listeners[port]
+
+		if list != nil {
+			listener = list
+			break
+		}
+	}
+
+	// Fallback to first item found.
+	if listener == nil {
+		if len(appSpecific) > 0 {
+			listener = appSpecific[0]
+		} else if len(generic) > 0 {
+			listener = generic[0]
+		}
+	}
+
+	if listener != nil {
+		app.PortInUse = listener.Port
+	}
+
+	return nil
 }
