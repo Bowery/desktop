@@ -123,6 +123,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 
 			app.IsSyncAvailable = true
 			app.Status = "running"
+			SetAppPort(app)
 			msg := map[string]interface{}{
 				"appID":   app.ID,
 				"type":    "status",

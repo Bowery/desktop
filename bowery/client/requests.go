@@ -282,6 +282,17 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Get the ports for the apps.
+	for _, app := range apps {
+		err := SetAppPort(app)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"token":   token,
+				"VERSION": VERSION,
+			})
+		}
+	}
+
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":       requests.STATUS_FOUND,
 		"applications": apps,
@@ -471,6 +482,16 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	err = SetAppPort(resBody.Application)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"token":      token,
+			"id":         id,
+			"updateBody": updateBody,
+			"VERSION":    VERSION,
+		})
+	}
+
 	// Respond OK with the application.
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
@@ -494,6 +515,14 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"error":  err.Error(),
 		})
 		return
+	}
+
+	err = SetAppPort(app)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"id":      id,
+			"VERSION": VERSION,
+		})
 	}
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
