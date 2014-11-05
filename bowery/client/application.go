@@ -22,12 +22,6 @@ var (
 	listeners     = make(map[int]*sys.Listener, len(portsPriority))
 )
 
-func init() {
-	for _, port := range portsPriority {
-		listeners[port] = nil
-	}
-}
-
 type ApplicationManager struct {
 	Applications  map[string]*schemas.Application
 	Syncer        *Syncer
