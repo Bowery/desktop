@@ -92,6 +92,10 @@ Polymer('bowery-form', {
         params[field.name] = this.model[field.name] = this.$[field.name].value
     }
 
+    Object.keys(this.model).forEach(function(key) {
+      params[key] = this.model[key]
+    }, this)
+
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"
       this.$.ajax.body = JSON.stringify(params)

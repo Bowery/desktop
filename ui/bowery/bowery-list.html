@@ -9,7 +9,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <link rel="import" href="../components/core-ajax/core-ajax.html">
 <link rel="import" href="bowery-analytics.html">
 
-<polymer-element name="bowery-list" attributes="list item type keys token">
+<polymer-element name="bowery-list" attributes="list item type keys token editable">
   <template>
     <bowery-analytics id="analytics"></bowery-analytics>
     <link rel="stylesheet" href="out.css">
@@ -58,6 +58,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     <div id="container" class="{{type}}">
       <template repeat="{{item in list}}">
         <div class="card {{item.expanded ? 'expanded' : 'closed'}}" data-id="{{item._id || item.id}}" on-click="{{expand}}">
+          
           <h4 class="{{item.status}}">{{item.name}}</h4>
           <template if="{{!item.expanded}}">
             <span class="unclickable {{item.status}}">{{(item.errors && item.errors[0].body) || item.location + getPort(item) || item.status}}</span>

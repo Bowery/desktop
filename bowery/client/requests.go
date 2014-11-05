@@ -107,12 +107,12 @@ type applicationReq struct {
 }
 
 type environmentReq struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsPrivate   string `json:"isPrivate"`
-	AccessList  string `json:"accessList"`
-	Token       string `json:"token"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	IsPrivate   bool     `json:"isPrivate"`
+	AccessList  []string `json:"accessList"`
+	Token       string   `json:"token"`
 }
 
 type emailReq struct {
@@ -707,23 +707,12 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	isPrivate, err := strconv.ParseBool(reqBody.IsPrivate)
-	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
-
-	accessList := strings.Fields(strings.Replace(reqBody.AccessList, ",", " ", -1))
-
 	updateBody := &schemas.Environment{
 		ID:          id,
 		Name:        reqBody.Name,
 		Description: reqBody.Description,
-		AccessList:  accessList,
-		IsPrivate:   isPrivate,
+		AccessList:  reqBody.AccessList,
+		IsPrivate:   reqBody.IsPrivate,
 	}
 
 	updatedEnv, err := UpdateEnvironment(updateBody, token)
