@@ -229,6 +229,7 @@ Polymer('bowery-core', {
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
+    console.log('$$$ event', event)
     if (event.type == 'status') {
       for (var i in this.applications) {
         if (event.appID == this.applications[i]._id) {
