@@ -74,7 +74,7 @@ var Routes = []*Route{
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
 	&Route{"POST", "/auth/password-reset", forgotPassHandler},
 	&Route{"GET", "/logout", logoutHandler},
-	&Route{"GET", "/update", doUpdateHandler},
+	&Route{"GET", "/update/{verison}", doUpdateHandler},
 	&Route{"GET", "/update/check", checkUpdateHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
@@ -930,7 +930,8 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
-	ver := req.FormValue("version")
+	vars := mux.Vars(req)
+	ver := vars["version"]
 	addr := fmt.Sprintf("%s/%s_%s_%s.zip", config.ClientS3Addr, ver, runtime.GOOS, runtime.GOARCH)
 	tmp := filepath.Join(os.TempDir(), "bowery_"+strconv.FormatInt(time.Now().Unix(), 10))
 
