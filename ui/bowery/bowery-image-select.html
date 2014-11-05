@@ -26,10 +26,16 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       .card, .field-group, :host {
         background: #4C70BE;
       }
+      .card:hover {
+        background: #37476F;
+      }
       .scrollable {
         height: 299px;
         background: #4C70BE;
         overflow: auto;
+      }
+      .unclickable {
+        cursor: pointer;
       }
     </style>
     <div class="field-group">
@@ -60,8 +66,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         this.images = []
     },
     selectImage: function (e) {
-      // TODO (thebyrd) create app
-      console.log(e.target, e.target.dataset)
       this.$.ajax.contentType = "application/json"
       this.$.ajax.body = JSON.stringify({
         token: this.token,

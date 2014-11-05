@@ -7,9 +7,11 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 -->
 <link rel="import" href="../components/polymer/polymer.html">
 <link rel="import" href="../components/core-ajax/core-ajax.html">
+<link rel="import" href="bowery-analytics.html">
 
-<polymer-element name="bowery-list" attributes="list item type">
+<polymer-element name="bowery-list" attributes="list item type keys token">
   <template>
+    <bowery-analytics id="analytics"></bowery-analytics>
     <link rel="stylesheet" href="out.css">
     <style>
       :host {
@@ -18,37 +20,143 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         height: 377px;
         overflow: auto;
       }
-
+      * {
+        -webkit-user-select: none;
+      }
+      #container {
+        height: 100%;
+      }
       #message {
         display: none;
         padding: 18px;
       }
+      .expanded {
+        background: #200237;
+      }
+      .sub {
+        display: block;
+        padding: 5px 0;
+        font-size: 12px;
+        line-height: 14px;
+        color: #DCDDDF;
+        width: auto;
+        text-decoration: none;
+      }
+      .sub:hover {
+        color: white;
+      }
+      .unclickable.provisioning,
+      h4.provisioning {
+        color: #F5AC4E;
+      }
+      .unclickable.error,
+      h4.error,
+      .sub.bad:hover {
+        color: #F46556;
+      }
     </style>
     <div id="container" class="{{type}}">
       <template repeat="{{item in list}}">
-        <div class="card" data-id="{{item._id || item.id}}" on-click="{{edit}}">
-          <h4>{{item.name}}</h4>
-          <span class="unclickable" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (item.location || 'Your app is provisioning')}}</span>
+        <div class="card {{item.expanded ? 'expanded' : 'closed'}}" data-id="{{item._id || item.id}}" on-click="{{expand}}">
+          <h4 class="{{item.status}}">{{item.name}}</h4>
+          <template if="{{!item.expanded}}">
+            <span class="unclickable {{item.status}}">{{item.status != 'running' ? item.status : (item.location || 'Your app is provisioning')}}</span>
+          </template>
+          <template if="{{item.expanded}}">
+            <template if="{{item.location}}">
+              <a class="sub nocollapse" href="{{item.location}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (('Copy ' + item.location + ' to clipboard') || 'Your app is provisioning')}}</a>
+            </template>
+            <a class="sub" href="" on-click="{{edit}}">Edit Information</a>
+            <a class="sub" href="/apps/exec" on-click="{{navigate}}">Exec Commands</a>
+            <a class="sub" href="/images/edit" on-click="{{navigate}}">Publish Image</a>
+            <a class="sub bad" href="" on-click="{{delete}}">Delete App</a>
+          </template>
         </div>
       </template>
     </div>
+    <core-ajax id="deleteAjax" method="DELETE" handleAs="json" on-core-response="{{handleDeleteAttempt}}"></core-ajax>
   </template>
   <script>
   Polymer('bowery-list', {
     created: function () {
       this.list = []
     },
-    edit: function (e) {
-      if (e.target.className == 'unclickable')
-        return
-
+    ready: function () {
+      var self = this
+      this.$.container.addEventListener('click', function (e) {
+        if (e.target.id == "container")
+          self.list.forEach(function (i) {i.expanded = false})
+      })
+    },
+    expand: function (e) {
+      e && e.preventDefault()
+      // Set Item
       var id = e.target.dataset.id || e.target.parentNode.dataset.id
-      this.item = this.list.filter(function (a) {return a._id == id})[0]
-
+      this.item = this.list.filter(function (i) {return i._id == id})[0]
       this.item.image = this.item.environment.name
 
+      var isExpanded = this.item.expanded
+      if (!~e.target.className.indexOf('nocollapse')) {
+        this.list.forEach(function (i) {i.expanded = false})
+        this.item.expanded = !isExpanded
+      }
+    },
+    edit: function (e) {
+      e.preventDefault()
       this.fire('bowery-navigate', {path: '/' + this.type + '/edit'})
-    }
+    },
+    copy: function (e) {
+      require('clipboard').writeText(this.item.location)
+      e.target.innerHTML = 'Copied!'
+    },
+    openLogsWindow: function () {
+      var w = window.open("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.item._id, this.item.name + " Logs", "resizable,scrollbars," + this.item.name + " Logs")
+      w.setPosition(0, 0)
+    },
+    navigate: function (path) {
+      var self = this
+      if (typeof path != "string") {
+        var e = path
+        e.preventDefault()
+        path = e.target.getAttribute('href') || e.target.parentNode.getAttribute('href')
+      }
+
+      this.$.analytics.track('Navigated to ' + path)
+
+      //TODO (thebyrd) make this less ghetto
+      if (path == "/apps/exec")
+        this.openLogsWindow()
+
+      this.fire('bowery-navigate', {path: path})
+    },
+    parameterize: function (obj) {
+      var out = ""
+      for (var key in obj) {
+        out += key + "=" + obj[key] + "&"
+      }
+      return out
+    },
+    delete: function (e) {
+      e.preventDefault()
+      var tokens = {
+        token: this.token,
+        aws_access_key: encodeURIComponent(this.keys.aws_access_key),
+        aws_secret_key: encodeURIComponent(this.keys.aws_secret_key)
+      }
+      var id = this.item._id
+      this.$.deleteAjax.url = "http://localhost:32055/applications/" + id + "?" + this.parameterize(tokens) // TODO (thebyrd) make /applications /apps so this can be general
+      this.$.deleteAjax.go()
+    },
+    handleDeleteAttempt: function (e) {
+      var response = e.target.response
+      if (response.status != 'success') {
+        alert('unable to delete app\n' + response.error)
+      } else {
+        var id = this.item._id
+        this.list = this.list.filter(function (i) {return i._id != id})
+        delete this.item
+      }
+    },
   })
   </script>
 </polymer-element>

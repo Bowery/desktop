@@ -153,6 +153,17 @@ Polymer('bowery-form', {
 
     this.fire('bowery-form-response', {fields: this.fields, model: this.model, response: this.response})
   },
+  fieldValue: function (field) {
+    return this.$[field].value
+  },
+  showError: function (field, error) {
+    for (var i = 0; i < this.fields.length; i++) {
+      if (this.fields[i].name == field) {
+        this.fields[i].error = error
+        return
+      }
+    }
+  },
   navigate: function (path) {
     var self = this
     if (typeof path != "string") {
