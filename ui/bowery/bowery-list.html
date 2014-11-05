@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <div class="card {{item.expanded ? 'expanded' : 'closed'}}" data-id="{{item._id || item.id}}" on-click="{{expand}}">
           <h4 class="{{item.status}}">{{item.name}}</h4>
           <template if="{{!item.expanded}}">
-            <span class="unclickable {{item.status}}">{{(item.errors && item.errors[0].body) || item.location || item.status}}</span>
+            <span class="unclickable {{item.status}}">{{(item.errors && item.errors[0].body) || item.location + getPort(item) || item.status}}</span>
           </template>
           <template if="{{item.expanded}}">
             <template if="{{item.location}}">
