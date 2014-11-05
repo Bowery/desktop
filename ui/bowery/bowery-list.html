@@ -20,7 +20,12 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         height: 377px;
         overflow: auto;
       }
-
+      * {
+        -webkit-user-select: none;
+      }
+      #container {
+        height: 100%;
+      }
       #message {
         display: none;
         padding: 18px;
@@ -59,7 +64,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
           </template>
           <template if="{{item.expanded}}">
             <template if="{{item.location}}">
-              <a class="sub" href="{{item.location}}" on-click="{{openExternalWindow}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (('Open ' + item.location) || 'Your app is provisioning')}}</a>
+              <a class="sub nocollapse" href="{{item.location}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.status : (('Copy ' + item.location + ' to clipboard') || 'Your app is provisioning')}}</a>
             </template>
             <a class="sub" href="" on-click="{{edit}}">Edit Information</a>
             <a class="sub" href="/apps/exec" on-click="{{navigate}}">Exec Commands</a>
@@ -76,28 +81,33 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     created: function () {
       this.list = []
     },
+    ready: function () {
+      var self = this
+      this.$.container.addEventListener('click', function (e) {
+        if (e.target.id == "container")
+          self.list.forEach(function (i) {i.expanded = false})
+      })
+    },
     expand: function (e) {
+      e && e.preventDefault()
       // Set Item
       var id = e.target.dataset.id || e.target.parentNode.dataset.id
       this.item = this.list.filter(function (i) {return i._id == id})[0]
       this.item.image = this.item.environment.name
 
       var isExpanded = this.item.expanded
-      this.list.forEach(function (i) {i.expanded = false})
-      this.item.expanded = !isExpanded
+      if (!~e.target.className.indexOf('nocollapse')) {
+        this.list.forEach(function (i) {i.expanded = false})
+        this.item.expanded = !isExpanded
+      }
     },
     edit: function (e) {
       e.preventDefault()
       this.fire('bowery-navigate', {path: '/' + this.type + '/edit'})
     },
-    openExternalWindow: function (path) {
-      if (typeof path != "string") {
-        var e = path
-        e.preventDefault()
-        path = e.target.getAttribute('href')
-      }
-      this.$.analytics.track('Opened external window ' + path)
-      window.open("http://" + path, "", "resizable,scrollbars,_blank," + path)
+    copy: function (e) {
+      require('clipboard').writeText(this.item.location)
+      e.target.innerHTML = 'Copied!'
     },
     openLogsWindow: function () {
       var w = window.open("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.item._id, this.item.name + " Logs", "resizable,scrollbars," + this.item.name + " Logs")
