@@ -72,7 +72,40 @@ type runCmdsReq struct {
 
 // GET /, Home page.
 func IndexHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "Bowery Agent v"+VERSION)
+	id := req.FormValue("id")
+	if id == "" {
+		fmt.Fprintf(rw, "Bowery Agent v"+VERSION)
+		return
+	}
+
+	app := Applications[id]
+	if app == nil {
+		r.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "invalid app id",
+		})
+		return
+	}
+
+	contents, err := tar.Tar(app.Path, []string{})
+	if err != nil && !os.IsNotExist(err) {
+		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// If the path didn't exist, just provide an empty targz stream.
+	if err != nil {
+		empty, gzipWriter, tarWriter := tar.NewTarGZ()
+		tarWriter.Close()
+		gzipWriter.Close()
+		contents = empty
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	io.Copy(rw, contents)
 }
 
 // POST /, Upload service code running init steps.
