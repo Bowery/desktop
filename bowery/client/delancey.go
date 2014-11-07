@@ -283,3 +283,28 @@ func DelanceyNetwork(app *schemas.Application) ([]*sys.Listener, []*sys.Listener
 
 	return nil, nil, netRes
 }
+
+func DelanceyDownload(app *schemas.Application) (io.Reader, error) {
+	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	res, err := http.Get("http://" + url + "/?id=" + app.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// Decode failure response.
+	if res.StatusCode != http.StatusOK {
+		resData := new(Res)
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(resData)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, resData
+	}
+
+	body := new(bytes.Buffer)
+	_, err = io.Copy(body, res.Body)
+	return body, err
+}

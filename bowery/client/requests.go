@@ -19,6 +19,7 @@ import (
 	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
+	"github.com/Bowery/gopackages/tar"
 	"github.com/Bowery/gopackages/update"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
@@ -90,6 +91,7 @@ type commandReq struct {
 }
 
 type applicationReq struct {
+	SourceAppID  string `json:"sourceAppID"`
 	AMI          string `json:"ami"`
 	EnvID        string `json:"envID"`
 	Token        string `json:"token"`
@@ -135,9 +137,9 @@ func (res *Res) Error() string {
 // file watching.
 func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// Parse request.
-	var reqBody applicationReq
+	reqBody := new(applicationReq)
 	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&reqBody)
+	err := decoder.Decode(reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
@@ -184,10 +186,8 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	reqBody.LocalPath = localPath
 
-	// Encode request.
-	var data bytes.Buffer
-	encoder := json.NewEncoder(&data)
-	err = encoder.Encode(reqBody)
+	// Create app on Kenmare.
+	app, err := CreateApplication(reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
@@ -200,56 +200,68 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Send request.
-	addr := fmt.Sprintf("%s/applications", config.KenmareAddr)
-	res, err := http.Post(addr, "application/json", &data)
-	if err != nil {
-		rollbarC.Report(err, map[string]interface{}{
-			"reqBody": reqBody,
-			"VERSION": VERSION,
-		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
-	defer res.Body.Close()
+	// If a source app id was given get it's contents and write to the local path.
+	if reqBody.SourceAppID != "" {
+		sourceApp, err := GetApplication(reqBody.SourceAppID)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"reqBody": reqBody,
+				"VERSION": VERSION,
+			})
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
 
-	// Parse response.
-	var resBody applicationRes
-	decoder = json.NewDecoder(res.Body)
-	err = decoder.Decode(&resBody)
-	if err != nil {
-		rollbarC.Report(err, map[string]interface{}{
-			"reqBody": reqBody,
-			"VERSION": VERSION,
-		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  err.Error(),
-		})
-		return
-	}
+		contents, err := DelanceyDownload(sourceApp)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"reqBody":   reqBody,
+				"sourceApp": sourceApp,
+				"VERSION":   VERSION,
+			})
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
 
-	if resBody.Status == requests.STATUS_FAILED {
-		rollbarC.Report(resBody, map[string]interface{}{
-			"reqBody": reqBody,
-			"resBody": resBody,
-			"VERSION": VERSION,
-		})
-		r.JSON(rw, http.StatusOK, map[string]string{
-			"status": requests.STATUS_FAILED,
-			"error":  resBody.Error(),
-		})
-		return
+		err = os.MkdirAll(app.LocalPath, os.ModePerm|os.ModeDir)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"reqBody":   reqBody,
+				"sourceApp": sourceApp,
+				"VERSION":   VERSION,
+			})
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+
+		err = tar.Untar(contents, app.LocalPath)
+		if err != nil {
+			rollbarC.Report(err, map[string]interface{}{
+				"reqBody":   reqBody,
+				"sourceApp": sourceApp,
+				"VERSION":   VERSION,
+			})
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
 	}
 
 	// Add application.
-	if err = applicationManager.Add(resBody.Application); err != nil {
+	if err = applicationManager.Add(app); err != nil {
 		rollbarC.Report(err, map[string]interface{}{
 			"reqBody": reqBody,
-			"resBody": resBody,
 			"VERSION": VERSION,
 		})
 		r.JSON(rw, http.StatusOK, map[string]string{
@@ -261,7 +273,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	r.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
-		"application": resBody.Application,
+		"application": app,
 	})
 }
 

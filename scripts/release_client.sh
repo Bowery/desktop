@@ -232,13 +232,13 @@ for file in "${distdir}/"*; do
   s3Key=${AWS_KEY}
   s3Secret=${AWS_SECRET}
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-  #curl -k \
-  #  -T ${name} \
-  #  -H "Host: ${bucket}.s3.amazonaws.com" \
-  #  -H "Date: ${dateValue}" \
-  #  -H "Content-Type: ${contentType}" \
-  #  -H "Authorization: AWS ${s3Key}:${signature}" \
-  #  https://${bucket}.s3.amazonaws.com/${name}
+  curl -k \
+    -T ${name} \
+    -H "Host: ${bucket}.s3.amazonaws.com" \
+    -H "Date: ${dateValue}" \
+    -H "Content-Type: ${contentType}" \
+    -H "Authorization: AWS ${s3Key}:${signature}" \
+    https://${bucket}.s3.amazonaws.com/${name}
 
   echo "* http://desktop.bowery.io/${name} is available for download."
 done
