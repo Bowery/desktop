@@ -39,6 +39,36 @@ type createEventReq struct {
 	EnvID string `json:"envID"`
 }
 
+func CreateApplication(reqBody *applicationReq) (*schemas.Application, error) {
+	var data bytes.Buffer
+	encoder := json.NewEncoder(&data)
+	err := encoder.Encode(reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	addr := fmt.Sprintf("%s/applications", config.KenmareAddr)
+	res, err := http.Post(addr, "application/json", &data)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// Parse response.
+	var resBody applicationRes
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&resBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Status == requests.STATUS_FAILED {
+		return nil, resBody
+	}
+
+	return resBody.Application, nil
+}
+
 func GetApplications(token string) ([]*schemas.Application, error) {
 	addr := fmt.Sprintf("%s/applications?token=%s", config.KenmareAddr, token)
 	res, err := http.Get(addr)
