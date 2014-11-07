@@ -86,6 +86,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				}
 				app.Location = application.Location
 				app.Errors = application.Errors
+				app.StatusMsg = application.StatusMsg
 				msg := map[string]interface{}{
 					"appID":   app.ID,
 					"type":    "status",
@@ -93,6 +94,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				}
 				ssePool.messages <- msg
 				if status == "running" {
+					app.StatusMsg = "Doing health checks"
 					break
 				}
 			} else if strings.Contains(err.Error(), "Not Found") {
@@ -118,6 +120,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 
 			app.IsSyncAvailable = true
 			app.Status = "running"
+			app.StatusMsg = ""
 			SetAppPort(app)
 			msg := map[string]interface{}{
 				"appID":   app.ID,
