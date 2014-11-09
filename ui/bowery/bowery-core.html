@@ -41,9 +41,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
     margin-top: 80px;
     margin-left: 9px;
   }
-  .images {
-    background: #361B4B;
-  }
   .btn.half {
     width: 50%;
     float: left;
@@ -73,8 +70,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/keys">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form  color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+  <bowery-form color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
     <a class="btn" href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html" on-click="{{openExternalWindow}}">What are AWS Access Key?</a>
+    <bowery-list list="{{image.accessList}}" editable></bowery-list>
   </bowery-form>
 </bowery-screen>
 
@@ -92,13 +90,26 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/edit">
   <bowery-nav type="header" background="apps active">{{app.name}}</bowery-nav>
-  <bowery-form title="Save" color="apps" endpoint="http://localhost:32055/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}"></bowery-form>
+  <bowery-form title="Save" color="apps" endpoint="http://localhost:32055/applications/{{app._id}}" model="{{app}}" fields="{{editAppFields}}" sendAs="json" on-bowery-form-response="{{handleEditAppAttempt}}" token="{{developer.token}}">
+  </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/images/edit">
   <bowery-nav type="header" background="images active">{{image.name || 'Publish Image'}}</bowery-nav>
   <bowery-form title="Publish" color="images" endpoint="http://localhost:32055/environments/{{image.id}}" model="{{image}}" fields="{{editImageFields}}" sendAs="json" on-bowery-form-response="{{handleEditImageAttempt}}" token="{{developer.token}}">
-    <a href="/apps" class="btn images" on-click="{{navigate}}">Nevermind. Take me back.</a>
+    <div class="field-group images" style="display: {{image.isPrivate ? 'block' : 'none'}}">
+      <input type="text" placeholder="your@bestfriend.com" on-keyup="{{addEmailToAccessList}}">
+      <label>Press enter to give user access.</label>
+    </div>
+    <ul class="access-list images" style="display: {{image.isPrivate ? 'block' : 'none'}}">
+      <template repeat="{{email in image.accessList}}">
+      <li class="access-list-item images">
+        <span class="unclickable">{{email}}</span>
+        <a href="#" class="remove" on-click="{{removeEmailFromAccessList}}"></a>
+      </li>
+      </template>
+    </ul>
+    <a href="" class="btn images" on-click="{{toggleImagePrivacy}}">{{image.isPrivate ? 'Click to make public' : 'Click to make private'}}</a>
   </bowery-form>
 </bowery-screen>
 
@@ -226,6 +237,28 @@ Polymer('bowery-core', {
 
     this.app = {}
     this.navigate("/apps/new")
+  },
+  toggleImagePrivacy: function (e) {
+    e && e.preventDefault()
+    this.image && (this.image.isPrivate = !this.image.isPrivate)
+  },
+  addEmailToAccessList: function (e) {
+    if (e.keyCode == 13) {
+      if (!this.image.accessList) this.image.accessList = []
+      this.image.accessList.push(e.target.value)
+      e.target.value = ""
+    }
+  },
+  removeEmailFromAccessList: function (e) {
+    e && e.preventDefault()
+    var parentEl = e.target.parentNode
+    var emailEl = parentEl.children[0].innerHTML
+    var email = emailEl.innerHTML
+
+    var index = this.image.accessList.indexOf(email)
+    this.image.accessList.splice(index, 1)
+
+    parentEl.remove()
   },
   handleSSE: function (e) {
     var event = JSON.parse(e.data)
