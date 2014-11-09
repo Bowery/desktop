@@ -73,15 +73,15 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/keys">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form  color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
-    <a class="btn" href="http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html" on-click="{{openExternalWindow}}">What are AWS Access Key?</a>
+  <bowery-form color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys[app._id]}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+    <a class="btn devs" href="/apps/new" on-click="{{navigate}}">Have Bowery host it instead.</a>
   </bowery-form>
 </bowery-screen>
 
 <bowery-screen path="/apps">
   <bowery-nav type="header" background="apps active">Apps</bowery-nav>
   <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}"></bowery-list>
-  <bowery-nav type="footer" background="apps active" href="/apps/new" on-click="{{navigate}}">Add App</bowery-nav>
+  <bowery-nav type="footer" background="apps active" href="/keys" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/exec">
@@ -104,7 +104,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header" background="images active">Select Image</bowery-nav>
-  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
+  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{useTheirKeys ? keys: {}}}"></bowery-image-select>
   <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
@@ -128,11 +128,8 @@ Polymer('bowery-core', {
     // The current user
     this.developer = {}
 
-    // AWS credentials
-    this.keys = {
-      aws_access_key: "",
-      aws_secret_key: ""
-    }
+    // Map<app id, AWS credentials>
+    this.keys = {}
   },
   loginFields: [
     {name: 'email', placeholder: 'your@email.com'},
@@ -182,10 +179,6 @@ Polymer('bowery-core', {
 
     if (!this.developer.token) {
       return this.navigate('/signup')
-    }
-
-    if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
-      return this.navigate('/keys')
     }
 
     var aMonthAgo = Date.now() - (1000 * 60 * 60 * 24 * 30)
@@ -286,11 +279,6 @@ Polymer('bowery-core', {
     this.developer = {}
     this.developer.token = response.token
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
-
-    if (!this.keys.aws_access_key || !this.keys.aws_secret_key) {
-      return this.navigate('/keys')
-    }
-
     this.navigate('/apps')
   },
   getUserByToken: function (e, detail) {
@@ -306,14 +294,13 @@ Polymer('bowery-core', {
     this.developer = response.developer
     this.$.ajax.url = "http://broome.io/developers/me?token=" + this.developer.token
     this.$.db.save()
-    if (!this.keys.aws_access_key || !this.keys.aws_secret_key)
-      return this.navigate('/keys')
 
     return this.navigate('/apps')
   },
   handleKeysAttempt: function (e, detail) {
     var response = detail.response
     if (response.status == "success") {
+      this.useTheirKeys = true
       this.$.keys.save()
       return this.navigate('/apps/new')
     }
@@ -342,11 +329,16 @@ Polymer('bowery-core', {
       path = e.target.getAttribute('href') || e.target.parentNode.getAttribute('href')
     }
 
+    // reset everytime they go to the '/keys' screen
+    if (path == '/keys')
+      this.useTheirKeys = false
+
     this.$.analytics.track('Navigated to ' + path)
     this.fire('bowery-navigate', {path: path})
   },
   appChanged: function (oldApp, newApp) {
     this.image = this.app.environment
+    this.keys[this.app._id] = this.keys[this.app._id] || {}
   },
   resetPassword: function (e) {
     e.preventDefault()
