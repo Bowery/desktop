@@ -139,8 +139,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       e.preventDefault()
       var tokens = {
         token: this.token,
-        aws_access_key: encodeURIComponent(this.keys.aws_access_key),
-        aws_secret_key: encodeURIComponent(this.keys.aws_secret_key)
+        aws_access_key: encodeURIComponent(this.keys[this.item._id].aws_access_key),
+        aws_secret_key: encodeURIComponent(this.keys[this.item._id].aws_secret_key)
       }
       var id = this.item._id
       this.$.deleteAjax.url = "http://localhost:32055/applications/" + id + "?" + this.parameterize(tokens) // TODO (thebyrd) make /applications /apps so this can be general
