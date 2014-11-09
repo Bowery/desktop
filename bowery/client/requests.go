@@ -158,12 +158,6 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if reqBody.InstanceType == "" {
 		missingFields = append(missingFields, "Instance Type")
 	}
-	if reqBody.AWSAccessKey == "" {
-		missingFields = append(missingFields, "AWS Key")
-	}
-	if reqBody.AWSSecretKey == "" {
-		missingFields = append(missingFields, "AWS Secret")
-	}
 
 	if len(missingFields) > 0 {
 		r.JSON(rw, http.StatusBadRequest, map[string]string{
@@ -572,7 +566,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Remove the app on kepler.
+	// Remove the app on kenmare.
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		rollbarC.Report(err, map[string]interface{}{
@@ -604,7 +598,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// If removal failed on kepler respond with it.
+	// If removal failed on kenmare respond with it.
 	if removeRes.Status == requests.STATUS_FAILED {
 		rollbarC.Report(removeRes, map[string]interface{}{
 			"id":      id,
