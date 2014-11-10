@@ -80,7 +80,9 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps">
   <bowery-nav type="header" background="apps active">Apps</bowery-nav>
-  <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}"></bowery-list>
+  <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}">
+    <a class="btn images" href="#" style="display: {{newVersion != '0.0.0' ? 'block': 'none'}}" on-click="{{downloadUpdate}}">Version {{newVersion}} available. Click to upgrade.</a>
+  </bowery-list>
   <bowery-nav type="footer" background="apps active" href="/keys" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
 
@@ -193,7 +195,8 @@ Polymer('bowery-core', {
     this.keyFields[0].value = this.keys.aws_access_key
     this.keyFields[1].value = this.keys.aws_secret_key
 
-    this.$.updateAjax.go()
+    if (process.platform == 'darwin')
+      this.$.updateAjax.go()
 
     this.navigate('/apps')
   },
@@ -354,6 +357,10 @@ Polymer('bowery-core', {
 
     if (detail.response.status == 'new-update')
       this.newVersion = detail.response.version
+  },
+  downloadUpdate: function(e) {
+    e.preventDefault()
+    window.location = 'http://localhost:32055/update/' + this.newVersion
   },
   resetPassword: function (e) {
     e.preventDefault()
