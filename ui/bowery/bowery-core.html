@@ -339,6 +339,9 @@ Polymer('bowery-core', {
   appChanged: function (oldApp, newApp) {
     this.image = this.app.environment
     this.keys[this.app._id] = this.keys[this.app._id] || {}
+
+    this.keys.aws_access_key = this.keys.aws_access_key || this.keys[this.app._id].aws_access_key
+    this.keys.aws_secret_key = this.keys.aws_secret_key || this.keys[this.app._id].aws_secret_key
   },
   resetPassword: function (e) {
     e.preventDefault()
@@ -349,7 +352,6 @@ Polymer('bowery-core', {
   },
   handleResetAttempt: function (e, detail) {
     var r = e.detail.response
-    console.log('$$$$', r, r.status)
     if (r.status == "success")
       this.$.resetButton.innerHTML = "Help is on the way! Check your email."
     else
