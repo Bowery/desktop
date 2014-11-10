@@ -11,7 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
@@ -887,6 +889,8 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	ver := vars["version"]
+	addr := fmt.Sprintf("%s/%s_%s_%s.zip", config.ClientS3Addr, ver, runtime.GOOS, runtime.GOARCH)
+	tmp := filepath.Join(os.TempDir(), "bowery_"+strconv.FormatInt(time.Now().Unix(), 10))
 
 	// This is only needed for darwin.
 	if runtime.GOOS != "darwin" {
@@ -896,17 +900,52 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	downloadDir, err := downloadVersion(ver)
+	contents, err := update.DownloadVersion(addr)
 	if err != nil {
 		r.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"error":  err.Error(),
 			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
 		})
 		return
 	}
 
+	for info, body := range contents {
+		path := filepath.Join(tmp, info.Name())
+		if info.IsDir() {
+			continue
+		}
+
+		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+
+		file, err := os.Create(path)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+		defer file.Close()
+
+		_, err = io.Copy(file, body)
+		if err != nil {
+			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.STATUS_FAILED,
+				"error":  err.Error(),
+			})
+			return
+		}
+	}
+
 	go func() {
-		cmd := sys.NewCommand("open "+filepath.Join(downloadDir, "bowery.pkg"), nil)
+		cmd := sys.NewCommand("open "+filepath.Join(tmp, "bowery.pkg"), nil)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err := cmd.Run()
@@ -943,16 +982,6 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		"status": requests.STATUS_NO_UPDATE,
 	}
 	if changed {
-		// Download the version ahead of time.
-		_, err := downloadVersion(newVer)
-		if err != nil {
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
-				"error":  err.Error(),
-			})
-			return
-		}
-
 		body["status"] = requests.STATUS_NEW_UPDATE
 		body["version"] = newVer
 	}
@@ -1011,46 +1040,4 @@ func formatLocalDir(localDir string) (string, error) {
 	}
 
 	return localDir, nil
-}
-
-// downloadVersion downloads a version if not already downloaded.
-func downloadVersion(ver string) (string, error) {
-	addr := fmt.Sprintf("%s/%s_%s_%s.zip", config.ClientS3Addr, ver, runtime.GOOS, runtime.GOARCH)
-	tmp := filepath.Join(os.TempDir(), fmt.Sprintf("bowery_%s_%_%s"), ver, runtime.GOOS, runtime.GOARCH)
-
-	// Check if the download already exists.
-	_, err := os.Stat(tmp)
-	if err == nil {
-		return tmp, nil
-	}
-
-	contents, err := update.DownloadVersion(addr)
-	if err != nil {
-		return tmp, err
-	}
-
-	for info, body := range contents {
-		path := filepath.Join(tmp, info.Name())
-		if info.IsDir() {
-			continue
-		}
-
-		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
-		if err != nil {
-			return tmp, err
-		}
-
-		file, err := os.Create(path)
-		if err != nil {
-			return tmp, err
-		}
-		defer file.Close()
-
-		_, err = io.Copy(file, body)
-		if err != nil {
-			return tmp, err
-		}
-	}
-
-	return tmp, nil
 }
