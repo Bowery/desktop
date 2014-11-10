@@ -74,8 +74,8 @@ var Routes = []*Route{
 	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
 	&Route{"POST", "/auth/password-reset", forgotPassHandler},
 	&Route{"GET", "/logout", logoutHandler},
-	&Route{"GET", "/update/{verison}", doUpdateHandler},
 	&Route{"GET", "/update/check", checkUpdateHandler},
+	&Route{"GET", "/update/{version}", doUpdateHandler},
 	&Route{"GET", "/_/sse", sseHandler},
 }
 
