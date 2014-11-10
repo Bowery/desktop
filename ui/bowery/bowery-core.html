@@ -111,7 +111,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
-<core-ajax id="downloadAjax" handleAs="json" one-core-response="{{handleDownloadUpdateAttempt}}" auto></core-ajax>
+<core-ajax id="downloadAjax" handleAs="json" on-core-response="{{handleDownloadUpdateAttempt}}" auto></core-ajax>
 <core-ajax id="resetAjax" method="POST" handleAs="json" on-core-response="{{handleResetAttempt}}" url="http://localhost:32055/auth/password-reset"></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="http://localhost:32055/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="updateAjax" handleAs="json" on-core-response="{{checkUpdate}}" url="http://localhost:32055/update/check" auto></core-ajax>
@@ -363,12 +363,13 @@ Polymer('bowery-core', {
     e.preventDefault()
     if (!this.updateInProgress && this.newVersion != '0.0.0') {
       this.$.downloadAjax.url = 'http://localhost:32055/update/' + this.newVersion
-      this.$.updateBtn = 'Downloading update. This may take a minute.'
+      this.$.updateBtn.innerHTML = 'Downloading update. This may take a minute.'
       this.updateInProgress = true
     }
   },
   handleDownloadUpdateAttempt: function (e) {
-    this.$.updateBtn = 'Walk through the installer and restart the app to apply update.'
+    console.log('$$$ here')
+    this.$.updateBtn.innerHTML = 'Walk through the installer and restart the app to apply update.'
   },
   resetPassword: function (e) {
     e.preventDefault()
