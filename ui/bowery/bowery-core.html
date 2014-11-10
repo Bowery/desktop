@@ -104,7 +104,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header" background="images active">Select Image</bowery-nav>
-  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{useTheirKeys ? keys: {}}}"></bowery-image-select>
+  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys[app._id]}}"></bowery-image-select>
   <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
