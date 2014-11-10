@@ -179,7 +179,6 @@ button {
   transition: background 300ms;
 }
 .card .unclickable {
-  cursor: text;
   font-size: 12px;
   line-height: 14px;
   color: #DCDDDF;
