@@ -60,7 +60,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         <div class="card {{item.expanded ? 'expanded' : 'closed'}}" data-id="{{item._id || item.id}}" on-click="{{expand}}">
           <h4 class="{{item.status}}">{{item.name}}</h4>
           <template if="{{!item.expanded}}">
-            <span class="unclickable {{item.status}}">{{(item.errors && item.errors[0].body) ||  item.location + getPort(item) + " is " + item.status || item.statusMsg}}</span>
+            <span class="unclickable {{item.status}}">{{(item.errors && item.errors[0].body) || item.statusMsg || item.location + getPort(item) + " is " + item.status }}</span>
           </template>
           <template if="{{item.expanded}}">
             <template if="{{item.location}}">
@@ -140,8 +140,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       e.preventDefault()
       var tokens = {
         token: this.token,
-        aws_access_key: encodeURIComponent(this.keys[this.item._id].aws_access_key),
-        aws_secret_key: encodeURIComponent(this.keys[this.item._id].aws_secret_key)
+        aws_access_key: encodeURIComponent(this.keys[this.item._id] && this.keys[this.item._id].aws_access_key),
+        aws_secret_key: encodeURIComponent(this.keys[this.item._id] && this.keys[this.item._id].aws_secret_key)
       }
       var id = this.item._id
       this.$.deleteAjax.url = "http://localhost:32055/applications/" + id + "?" + this.parameterize(tokens) // TODO (thebyrd) make /applications /apps so this can be general

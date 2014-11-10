@@ -88,8 +88,12 @@ Polymer('bowery-form', {
     params.token = this.token
 
     for (var i = 0, field; field = this.fields[i]; i++)
-      if (this.$[field.name])
+      if (this.$[field.name]) {
+        console.log(params[field.name])
+        console.log(this.model)
+        console.log(this.$[field.name].value)
         params[field.name] = this.model[field.name] = this.$[field.name].value
+      }
 
     if (this.sendAs == "json") {
       this.$.ajax.contentType = "application/json"

@@ -73,8 +73,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/keys">
   <bowery-nav type="header" background="devs active">Bowery</bowery-nav>
-  <bowery-form color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys[app._id]}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
-    <a class="btn devs" href="/apps/new" on-click="{{navigate}}">Have Bowery host it instead.</a>
+  <bowery-form color="devs" title="Connect AWS" endpoint="http://localhost:32055/auth/validate-keys" fields="{{keyFields}}" model="{{keys}}" on-bowery-form-response="{{handleKeysAttempt}}" sendAs="json">
+    <a class="btn devs" href="/apps/new" on-click="{{clearKeysAndNavigate}}">Have Bowery host it instead.</a>
   </bowery-form>
 </bowery-screen>
 
@@ -104,7 +104,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header" background="images active">Select Image</bowery-nav>
-  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys[app._id]}}"></bowery-image-select>
+  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys}}"></bowery-image-select>
   <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
@@ -129,8 +129,8 @@ Polymer('bowery-core', {
     // The current user
     this.developer = {}
 
-    // Map<app id, AWS credentials>
-    this.keys = {}
+    // Map of aws keys
+    this.keys = {aws_access_key: '', aws_secret_key: ''}
 
     // The new version of Bowery Desktop
     this.newVersion = '0.0.0'
@@ -306,7 +306,6 @@ Polymer('bowery-core', {
   handleKeysAttempt: function (e, detail) {
     var response = detail.response
     if (response.status == "success") {
-      this.useTheirKeys = true
       this.$.keys.save()
       return this.navigate('/apps/new')
     }
@@ -327,6 +326,11 @@ Polymer('bowery-core', {
     this.$.analytics.track('Opened external window ' + path)
     window.open(path, "", "resizable,scrollbars,status")
   },
+  clearKeysAndNavigate: function (e) {
+    this.$.analytics.track('Created Bowery Hosted Instance')
+    this.keys = {aws_access_key: '', aws_secret_key: ''}
+    this.navigate(e)
+  },
   navigate: function (path) {
     var self = this
     if (typeof path != "string") {
@@ -344,14 +348,10 @@ Polymer('bowery-core', {
   },
   appChanged: function (oldApp, newApp) {
     this.image = this.app.environment
-    this.keys[this.app._id] = this.keys[this.app._id] || {}
-
-    this.keys.aws_access_key = this.keys.aws_access_key || this.keys[this.app._id].aws_access_key
-    this.keys.aws_secret_key = this.keys.aws_secret_key || this.keys[this.app._id].aws_secret_key
   },
   checkUpdate: function(e, detail) {
     e.preventDefault()
-    
+
     if (detail.response.status == 'new-update')
       this.newVersion = detail.response.version
   },
