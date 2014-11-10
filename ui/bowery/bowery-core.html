@@ -81,7 +81,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <bowery-screen path="/apps">
   <bowery-nav type="header" background="apps active">Apps</bowery-nav>
   <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}">
-    <a class="btn images" href="#" style="display: {{newVersion != '0.0.0' ? 'block': 'none'}}" on-click="{{downloadUpdate}}">Version {{newVersion}} available. Click to upgrade.</a>
+    <a class="btn images" id="updateBtn" href="#" style="display: {{newVersion != '0.0.0' ? 'block': 'none'}}" on-click="{{downloadUpdate}}">Version {{newVersion}} available. Click to upgrade.</a>
   </bowery-list>
   <bowery-nav type="footer" background="apps active" href="/keys" on-click="{{navigate}}">Add App</bowery-nav>
 </bowery-screen>
@@ -111,6 +111,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 </bowery-screen>
 
 <core-ajax id="ajax" handleAs="json" on-core-response="{{getUserByToken}}" auto></core-ajax>
+<core-ajax id="downloadAjax" handleAs="json" one-core-response="{{handleDownloadUpdateAttempt}}" auto></core-ajax>
 <core-ajax id="resetAjax" method="POST" handleAs="json" on-core-response="{{handleResetAttempt}}" url="http://localhost:32055/auth/password-reset"></core-ajax>
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="http://localhost:32055/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="updateAjax" handleAs="json" on-core-response="{{checkUpdate}}" url="http://localhost:32055/update/check" auto></core-ajax>
@@ -360,7 +361,14 @@ Polymer('bowery-core', {
   },
   downloadUpdate: function(e) {
     e.preventDefault()
-    window.location = 'http://localhost:32055/update/' + this.newVersion
+    if (!this.updateInProgress && this.newVersion != '0.0.0') {
+      this.$.downloadAjax.url = 'http://localhost:32055/update/' + this.newVersion
+      this.$.updateBtn = 'Downloading update. This may take a minute.'
+      this.updateInProgress = true
+    }
+  },
+  handleDownloadUpdateAttempt: function (e) {
+    this.$.updateBtn = 'Walk through the installer and restart the app to apply update.'
   },
   resetPassword: function (e) {
     e.preventDefault()
