@@ -70,8 +70,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       this.$.ajax.body = JSON.stringify({
         token: this.token,
         envID: e.target.dataset.id || e.target.parentNode.dataset.id,
-        aws_access_key: this.keys.aws_access_key,
-        aws_secret_key: this.keys.aws_secret_key,
+        aws_access_key: this.keys && this.keys.aws_access_key,
+        aws_secret_key: this.keys && this.keys.aws_secret_key,
         instance_type: 'm3.medium',
         name: 'Your App'
       })
