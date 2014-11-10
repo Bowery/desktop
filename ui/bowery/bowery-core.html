@@ -104,7 +104,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 
 <bowery-screen path="/apps/new">
   <bowery-nav type="header" background="images active">Select Image</bowery-nav>
-  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{useTheirKeys ? keys: {}}}"></bowery-image-select>
+  <bowery-image-select title="Provision" color="apps" on-bowery-app-create-response="{{handleCreateAppAttempt}}" token="{{developer.token}}" app="{{app}}" keys="{{keys[app._id]}}"></bowery-image-select>
   <bowery-nav type="footer" background="images active" href="/apps" on-click="{{navigate}}">Back</bowery-nav>
 </bowery-screen>
 
@@ -300,7 +300,6 @@ Polymer('bowery-core', {
   handleKeysAttempt: function (e, detail) {
     var response = detail.response
     if (response.status == "success") {
-      this.useTheirKeys = true
       this.$.keys.save()
       return this.navigate('/apps/new')
     }
@@ -328,10 +327,6 @@ Polymer('bowery-core', {
       e.preventDefault()
       path = e.target.getAttribute('href') || e.target.parentNode.getAttribute('href')
     }
-
-    // reset everytime they go to the '/keys' screen
-    if (path == '/keys')
-      this.useTheirKeys = false
 
     this.$.analytics.track('Navigated to ' + path)
     this.fire('bowery-navigate', {path: path})
