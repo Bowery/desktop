@@ -7,30 +7,26 @@
   --dark-navy: #072038;
   --navy: #0C2642;
 
-  --dark-purple: #200237;
-  --purple: #361B4B;
-
-  --dark-blue: #37476F;
-  --blue: #4C70BE;
+  --red: #FF6656;
 
 }
 
 .images,
 .btn.images {
-  background: var(--blue);
+  background: var(--navy);
 }
 .images.active,
 .images.btn:hover,
 .image .card:hover {
-  background: var(--dark-blue);
+  background: var(--dark-navy);
 }
 .apps {
-  background: var(--purple);
+  background: var(--navy);
 }
 .apps.active,
 .apps.btn:hover,
 .apps .card:hover {
-  background: var(--dark-purple);
+  background: var(--dark-navy);
 }
 .devs {
   background: var(--navy);
@@ -171,7 +167,7 @@ button {
 }
 
 .btn.bad:hover {
-  background: #FF6656;
+  background: var(--red);
 }
 
 .card {
@@ -179,7 +175,7 @@ button {
   width: 100%;
   height: auto;
   padding: 18px 33px;
-  background: #361B4B;
+  background: var(--navy);
   transition: background 300ms;
 }
 .card .unclickable {
