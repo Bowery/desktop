@@ -47,7 +47,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       </template>
       <template if="{{field.type != 'hidden' && field.type != 'button'}}">
         <div class="field-group" class="{{color}}">
-          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{model[field.name] || field.value}}" on-keyup="{{submitIfEnter}}" on-focus="{{makeActive}}" on-blur="{{trackInput}}">
+          <input id="{{field.name}}" type="{{field.type || 'text'}}" name="{{field.name}}" placeholder="{{field.placeholder}}" value="{{model[field.name] || field.value}}" data-dialog="{{field.dialog}}" on-keyup="{{submitIfEnter}}" on-focus="{{makeActive}}" on-blur="{{trackInput}}">
           <label style="{{field.error && 'color: #FF6656'}}">{{field.error || field.label || field.name | makeReadable}}</label>
         </div>
       </template>
@@ -179,7 +179,17 @@ Polymer('bowery-form', {
 
     this.fire('bowery-navigate', {path: path})
   },
+  capitalize: function (s) {
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  },
   makeActive: function (e) {
+    if (e.target.dataset && e.target.dataset.dialog) {
+      var paths = require('remote').require('dialog').showOpenDialog({
+        title: 'Where is your code?',
+        properties: ['open' + this.capitalize(e.target.dataset.dialog)]
+      })
+      paths.length && (e.target.value = paths[0])
+    }
     var el = e.target.parentNode
     console.log('add active b/c focus', el)
     el.setAttribute('class', el.getAttribute('class') + " active " + this.color)
