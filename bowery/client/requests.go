@@ -21,62 +21,27 @@ import (
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 	"github.com/Bowery/gopackages/update"
+	"github.com/Bowery/gopackages/web"
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
 
-type Route struct {
-	Method  string
-	Path    string
-	Handler http.HandlerFunc
-}
-
-type SlashHandler struct {
-	Handler http.Handler
-}
-
-func (sh *SlashHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/" {
-		req.URL.Path = strings.TrimRight(req.URL.Path, "/")
-		req.RequestURI = req.URL.RequestURI()
-	}
-
-	sh.Handler.ServeHTTP(rw, req)
-}
-
-type CorsHandler struct {
-	Handler http.Handler
-}
-
-func (ch *CorsHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	rw.Header().Add("Access-Control-Allow-Origin", "*")
-	rw.Header().Add("Access-Control-Allow-Headers", req.Header.Get("Access-Control-Request-Headers"))
-	rw.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-
-	if req.Method == "OPTIONS" {
-		rw.WriteHeader(http.StatusOK)
-		return
-	}
-
-	ch.Handler.ServeHTTP(rw, req)
-}
-
-var Routes = []*Route{
-	&Route{"POST", "/applications", createApplicationHandler},
-	&Route{"GET", "/applications", getApplicationsHandler},
-	&Route{"POST", "/applications/{id}", updateApplicationHandler},
-	&Route{"GET", "/applications/{id}", getApplicationHandler},
-	&Route{"DELETE", "/applications/{id}", removeApplicationHandler},
-	&Route{"GET", "/environments", searchEnvironmentsHandler},
-	&Route{"GET", "/environments/{id}", getEnvironmentHandler},
-	&Route{"POST", "/environments/{id}", updateEnvironmentHandler},
-	&Route{"POST", "/commands", createCommandHandler},
-	&Route{"POST", "/auth/validate-keys", validateKeysHandler},
-	&Route{"POST", "/auth/password-reset", forgotPassHandler},
-	&Route{"GET", "/logout", logoutHandler},
-	&Route{"GET", "/update/check", checkUpdateHandler},
-	&Route{"GET", "/update/{version}", doUpdateHandler},
-	&Route{"GET", "/_/sse", sseHandler},
+var Routes = []web.Route{
+	{"POST", "/applications", createApplicationHandler},
+	{"GET", "/applications", getApplicationsHandler},
+	{"POST", "/applications/{id}", updateApplicationHandler},
+	{"GET", "/applications/{id}", getApplicationHandler},
+	{"DELETE", "/applications/{id}", removeApplicationHandler},
+	{"GET", "/environments", searchEnvironmentsHandler},
+	{"GET", "/environments/{id}", getEnvironmentHandler},
+	{"POST", "/environments/{id}", updateEnvironmentHandler},
+	{"POST", "/commands", createCommandHandler},
+	{"POST", "/auth/validate-keys", validateKeysHandler},
+	{"POST", "/auth/password-reset", forgotPassHandler},
+	{"GET", "/logout", logoutHandler},
+	{"GET", "/update/check", checkUpdateHandler},
+	{"GET", "/update/{version}", doUpdateHandler},
+	{"GET", "/_/sse", sseHandler},
 }
 
 var r = render.New(render.Options{

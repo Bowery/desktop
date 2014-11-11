@@ -18,6 +18,7 @@ import (
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
+	"github.com/Bowery/gopackages/web"
 	"github.com/unrolled/render"
 )
 
@@ -35,27 +36,20 @@ var r = render.New(render.Options{
 })
 
 // List of named routes.
-var Routes = []*Route{
-	&Route{"/", []string{"GET"}, IndexHandler},
-	&Route{"/", []string{"POST"}, UploadServiceHandler},
-	&Route{"/", []string{"PUT"}, UpdateServiceHandler},
-	&Route{"/", []string{"DELETE"}, RemoveServiceHandler},
-	&Route{"/command", []string{"POST"}, RunCommandHandler},
-	&Route{"/commands", []string{"POST"}, RunCommandsHandler},
-	&Route{"/plugins", []string{"POST"}, UploadPluginHandler},
-	&Route{"/plugins", []string{"PUT"}, UpdatePluginHandler},
-	&Route{"/plugins", []string{"DELETE"}, RemovePluginHandler},
-	&Route{"/network", []string{"GET"}, NetworkHandler},
-	&Route{"/healthz", []string{"GET"}, HealthzHandler},
-	&Route{"/_/state/apps", []string{"GET"}, AppStateHandler},
-	&Route{"/_/state/plugins", []string{"GET"}, PluginStateHandler},
-}
-
-// Route is a single named route with a http.HandlerFunc.
-type Route struct {
-	Path    string
-	Methods []string
-	Handler http.HandlerFunc
+var Routes = []web.Route{
+	{"GET", "/", IndexHandler},
+	{"POST", "/", UploadServiceHandler},
+	{"PUT", "/", UpdateServiceHandler},
+	{"DELETE", "/", RemoveServiceHandler},
+	{"POST", "/command", RunCommandHandler},
+	{"POST", "/commands", RunCommandsHandler},
+	{"POST", "/plugins", UploadPluginHandler},
+	{"PUT", "/plugins", UpdatePluginHandler},
+	{"DELETE", "/plugins", RemovePluginHandler},
+	{"GET", "/network", NetworkHandler},
+	{"GET", "/healthz", HealthzHandler},
+	{"GET", "/_/state/apps", AppStateHandler},
+	{"GET", "/_/state/plugins", PluginStateHandler},
 }
 
 // runCmdsReq is the request body to execute a command.

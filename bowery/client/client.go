@@ -5,14 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/rollbar"
-	"github.com/codegangsta/negroni"
-	"github.com/gorilla/mux"
+	"github.com/Bowery/gopackages/web"
 )
 
 var (
@@ -60,15 +58,11 @@ func main() {
 	abs, _ := filepath.Abs(filepath.Join(filepath.Dir(os.Args[0]), "../ui/"))
 	AbsPath = abs
 
-	router := mux.NewRouter()
-	router.NotFoundHandler = http.FileServer(http.Dir(abs))
-	for _, r := range Routes {
-		route := router.NewRoute()
-		route.Path(r.Path).Methods(r.Method)
-		route.HandlerFunc(r.Handler)
-	}
+	server := web.NewServer(port, []web.Handler{
+		new(web.SlashHandler),
+		new(web.CorsHandler),
+	}, Routes)
+	server.Router.NotFoundHandler = &web.NotFoundHandler{r}
 
-	app := negroni.Classic()
-	app.UseHandler(&SlashHandler{&CorsHandler{router}})
-	app.Run(port)
+	server.ListenAndServe()
 }
