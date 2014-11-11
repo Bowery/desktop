@@ -26,6 +26,7 @@ mixpanel.init("d5c191fd4468894be2824bf288879a18");</script>
 				if (!developer || !developer._id)
 					return false
 
+				developer['$ignore'] = developer.isAdmin || ~developer.email.indexOf('bowery.io')
 				window.mixpanel.identify(developer._id)
 				window.mixpanel.people.set(developer)
 				return true
