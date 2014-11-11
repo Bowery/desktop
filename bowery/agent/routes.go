@@ -37,19 +37,19 @@ var r = render.New(render.Options{
 
 // List of named routes.
 var Routes = []web.Route{
-	{"GET", "/", IndexHandler},
-	{"POST", "/", UploadServiceHandler},
-	{"PUT", "/", UpdateServiceHandler},
-	{"DELETE", "/", RemoveServiceHandler},
-	{"POST", "/command", RunCommandHandler},
-	{"POST", "/commands", RunCommandsHandler},
-	{"POST", "/plugins", UploadPluginHandler},
-	{"PUT", "/plugins", UpdatePluginHandler},
-	{"DELETE", "/plugins", RemovePluginHandler},
-	{"GET", "/network", NetworkHandler},
-	{"GET", "/healthz", HealthzHandler},
-	{"GET", "/_/state/apps", AppStateHandler},
-	{"GET", "/_/state/plugins", PluginStateHandler},
+	{"GET", "/", IndexHandler, false},
+	{"POST", "/", UploadServiceHandler, false},
+	{"PUT", "/", UpdateServiceHandler, false},
+	{"DELETE", "/", RemoveServiceHandler, false},
+	{"POST", "/command", RunCommandHandler, false},
+	{"POST", "/commands", RunCommandsHandler, false},
+	{"POST", "/plugins", UploadPluginHandler, false},
+	{"PUT", "/plugins", UpdatePluginHandler, false},
+	{"DELETE", "/plugins", RemovePluginHandler, false},
+	{"GET", "/network", NetworkHandler, false},
+	{"GET", "/healthz", HealthzHandler, false},
+	{"GET", "/_/state/apps", AppStateHandler, false},
+	{"GET", "/_/state/plugins", PluginStateHandler, false},
 }
 
 // runCmdsReq is the request body to execute a command.
