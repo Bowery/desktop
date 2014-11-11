@@ -5,15 +5,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"runtime"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/util"
-	"github.com/gorilla/mux"
+	"github.com/Bowery/gopackages/web"
 	loggly "github.com/segmentio/go-loggly"
 )
 
@@ -44,24 +42,9 @@ func main() {
 	// Get host
 	AgentHost, _ = util.GetHost()
 
-	// Register routes.
-	router := mux.NewRouter()
-	router.NotFoundHandler = NotFoundHandler
-	for _, r := range Routes {
-		route := router.NewRoute()
-		route.Path(r.Path).Methods(r.Methods...)
-		route.HandlerFunc(r.Handler)
-	}
-
 	port := config.BoweryAgentProdSyncPort
 	if InDevelopment {
 		port = config.BoweryAgentDevSyncPort
-	}
-
-	// Start the server.
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: &SlashHandler{&LogHandler{os.Stdout, router}},
 	}
 
 	// Start tcp.
@@ -78,13 +61,17 @@ func main() {
 		<-Restart(app, true, true)
 	}
 
-	log.Println("agent starting")
 	go logClient.Info("agent starting", map[string]interface{}{
 		"version": VERSION,
 		"arch":    runtime.GOARCH,
 		"os":      runtime.GOOS,
 		"ip":      AgentHost,
 	})
+
+	server := web.NewServer(":"+port, []web.Handler{
+		new(web.SlashHandler),
+	}, Routes)
+	server.Router.NotFoundHandler = &web.NotFoundHandler{r}
 
 	err := server.ListenAndServe()
 	if err != nil {
