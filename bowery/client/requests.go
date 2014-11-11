@@ -27,21 +27,21 @@ import (
 )
 
 var Routes = []web.Route{
-	{"POST", "/applications", createApplicationHandler},
-	{"GET", "/applications", getApplicationsHandler},
-	{"POST", "/applications/{id}", updateApplicationHandler},
-	{"GET", "/applications/{id}", getApplicationHandler},
-	{"DELETE", "/applications/{id}", removeApplicationHandler},
-	{"GET", "/environments", searchEnvironmentsHandler},
-	{"GET", "/environments/{id}", getEnvironmentHandler},
-	{"POST", "/environments/{id}", updateEnvironmentHandler},
-	{"POST", "/commands", createCommandHandler},
-	{"POST", "/auth/validate-keys", validateKeysHandler},
-	{"POST", "/auth/password-reset", forgotPassHandler},
-	{"GET", "/logout", logoutHandler},
-	{"GET", "/update/check", checkUpdateHandler},
-	{"GET", "/update/{version}", doUpdateHandler},
-	{"GET", "/_/sse", sseHandler},
+	{"POST", "/applications", createApplicationHandler, false},
+	{"GET", "/applications", getApplicationsHandler, false},
+	{"POST", "/applications/{id}", updateApplicationHandler, false},
+	{"GET", "/applications/{id}", getApplicationHandler, false},
+	{"DELETE", "/applications/{id}", removeApplicationHandler, false},
+	{"GET", "/environments", searchEnvironmentsHandler, false},
+	{"GET", "/environments/{id}", getEnvironmentHandler, false},
+	{"POST", "/environments/{id}", updateEnvironmentHandler, false},
+	{"POST", "/commands", createCommandHandler, false},
+	{"POST", "/auth/validate-keys", validateKeysHandler, false},
+	{"POST", "/auth/password-reset", forgotPassHandler, false},
+	{"GET", "/logout", logoutHandler, false},
+	{"GET", "/update/check", checkUpdateHandler, false},
+	{"GET", "/update/{version}", doUpdateHandler, false},
+	{"GET", "/_/sse", sseHandler, false},
 }
 
 var r = render.New(render.Options{
