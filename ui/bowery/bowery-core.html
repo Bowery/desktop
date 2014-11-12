@@ -83,7 +83,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
   <bowery-list type="apps" item="{{app}}" list="{{applications}}" keys="{{keys}}" token="{{developer.token}}">
     <a class="btn images" id="updateBtn" href="#" style="display: {{newVersion != '0.0.0' ? 'block': 'none'}}" on-click="{{downloadUpdate}}">Version {{newVersion}} available. Click to upgrade.</a>
   </bowery-list>
-  <bowery-nav type="footer" background="apps active" href="/keys" on-click="{{navigate}}">Add App</bowery-nav>
+  <bowery-nav type="footer" background="apps active" href="/keys" on-click="{{selectFolder}}">Add App</bowery-nav>
 </bowery-screen>
 
 <bowery-screen path="/apps/exec">
@@ -116,7 +116,7 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
 <core-ajax id="appsAjax" handlAs="json" on-core-response="{{getApps}}" on-core-error="{{logout}}" url="http://localhost:32055/applications?token={{developer.token}}" auto></core-ajax>
 <core-ajax id="updateAjax" handleAs="json" on-core-response="{{checkUpdate}}" url="http://localhost:32055/update/check" auto></core-ajax>
 </template>
-<script src="gifstream.js" type="text/javascript"></script>
+<script src="../components/jszip/dist/jszip.js" type="text/javascript"></script>
 <script>
 Polymer('bowery-core', {
   created: function () {
@@ -137,6 +137,20 @@ Polymer('bowery-core', {
 
     // The new version of Bowery Desktop
     this.newVersion = '0.0.0'
+
+    // Prevent Default on Drag and drop
+    window.addEventListener('dragenter', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    })
+    window.addEventListener('dragover', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    })
+    window.addEventListener('drop', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    })
   },
   loginFields: [
     {name: 'email', placeholder: 'your@email.com'},
@@ -166,18 +180,6 @@ Polymer('bowery-core', {
   ],
   ready: function () {
     this.$.analytics.track("Opened App")
-
-    // Drag & Drop Swag
-    window.addEventListener('dragenter', function (e) {
-      e.stopPropagation()
-      e.preventDefault()
-    })
-    window.addEventListener('dragover', function (e) {
-      e.stopPropagation()
-      e.preventDefault()
-    })
-    window.addEventListener('drop', this.handleDroppedFile.bind(this))
-
     this.$.db.load()
     this.$.keys.load()
 
@@ -201,28 +203,21 @@ Polymer('bowery-core', {
 
     this.navigate('/apps')
   },
-  handleDroppedFile: function (e) {
+  selectFolder: function (e) {
     e.preventDefault()
-    var file = e.dataTransfer.files[0]
-    if (!~file.path.indexOf('.')) {
-      return this.createAppFromDroppedFolder(file)
-    }
-    if (file.type == "image/gif") {
-      return this.createAppFromDroppedImage(file)
-    }
-    alert('Bowery Image/App Not Found')
-  },
-  createAppFromDroppedFolder: function (file) {
-    this.defaultLocalPath = file.path
-    this.navigate('/apps/new')
-  },
-  createAppFromDroppedImage: function (file) {
-    var self = this
-    var reader = new FileReader();
-    reader.onload = function (evt) {
-      (new GifStream(evt.target.result)).parseID(self.populateNewAppScreen.bind(self))
-    }
-    reader.readAsBinaryString(file)
+    var remote = require('remote')
+    var paths = remote.require('dialog').showOpenDialog({
+      title: 'Where is your code?',
+      properties: ['openDirectory'],
+    })
+    if (!paths.length)
+      return console.log('$$$ no directory selected')
+
+    remote.require('./uploader')(this.developer._id + '-' + Date.now(), paths[0], function (err) {
+      console.log('request complete')
+    })
+
+    // TODO (thebyrd) upload to s3 using remote
   },
   populateNewAppScreen: function (comExt) {
     var envID = comExt && comExt.comment

@@ -1,5 +1,9 @@
 {
   "name": "bowery",
   "version": "0.1.0",
-  "main": "main.js"
+  "main": "main.js",
+  "dependencies": {
+    "aws-sdk": "^2.0.26",
+    "s3": "^4.3.1"
+  }
 }

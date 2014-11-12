@@ -19,4 +19,7 @@ fi
 cat "${root}/shell/Info.plist" > atom-shell/Bowery.app/Contents/Info.plist
 cp -f "${root}/shell/bowery.icns" atom-shell/Bowery.app/Contents/Resources
 
+cd "${shell}" && npm install
+cd "${build}"
+
 ./atom-shell/Bowery.app/Contents/MacOS/Atom "${root}/shell"
