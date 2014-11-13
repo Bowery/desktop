@@ -60,8 +60,8 @@ var killProc = function (cb) {
   }
 
   // Send 'exit' to the updaters socket server.
-  var socketAddr = '\\\\.\\pipe\\bowery'
-  if (!/^win/.test(process.platform)) socketAddr = path.join(os.tmpdir(), 'bowery.sock')
+  var socketAddr = '\\\\.\\pipe\\bowery-'+proc.pid
+  if (!/^win/.test(process.platform)) socketAddr = path.join(os.tmpdir(), 'bowery-'+proc.pid+'.sock')
 
   var conn = net.connect({path: socketAddr}, function () {
     conn.write('exit', function () {

@@ -7,9 +7,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
-var socketAddr = filepath.Join(os.TempDir(), "bowery.sock")
+var socketAddr = filepath.Join(os.TempDir(), "bowery-"+strconv.Itoa(os.Getpid())+".sock")
 
 func listenSocket(addr string) (net.Listener, error) {
 	return net.Listen("unix", addr)
