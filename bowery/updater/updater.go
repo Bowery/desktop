@@ -7,10 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -93,20 +93,21 @@ func main() {
 		installDir = filepath.Join(binDir, installDir)
 	}
 
-	// Check for updates.
-	doUpdate() // Do update on start.
-	go func() {
-		for {
-			<-time.After(1 * time.Hour)
-			doUpdate()
-		}
-	}()
+	// Start socket server to listen for kill events.
+	socket, err := listenSocket(socketAddr)
+	if err != nil {
+		rollbarC.Report(err, map[string]string{
+			"version": version,
+		})
+		log.Println(err)
+		os.Exit(1)
+	}
+	log.Println("Started socket server at", socketAddr)
 
-	// Listen for signals and forward to the process.
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, os.Kill)
+	// When we get a socket kill signal, end the processes.
 	go func() {
-		<-signals
+		<-catchKill(socket)
+		socket.Close()
 		restartSetter.Set(0)
 		err := killPid()
 		if err != nil {
@@ -118,6 +119,15 @@ func main() {
 		}
 
 		os.Exit(0)
+	}()
+
+	// Check for updates.
+	doUpdate() // Do update on start.
+	go func() {
+		for {
+			<-time.After(1 * time.Hour)
+			doUpdate()
+		}
 	}()
 
 	// Setup the backoff limiter for restarts.
@@ -313,4 +323,37 @@ func doUpdate() error {
 	}
 
 	return err
+}
+
+// catchKill detects when a exit event occurs over a network connection.
+func catchKill(listener net.Listener) chan bool {
+	sig := make(chan bool)
+
+	go func() {
+		var (
+			conn net.Conn
+		)
+
+		// Loop until we get a good connection.
+		for conn == nil {
+			conn, _ = listener.Accept()
+		}
+		defer conn.Close()
+
+		// Read data until the data is "exit".
+		buf := make([]byte, 512)
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				continue
+			}
+
+			if string(buf[:n]) == "exit" {
+				sig <- true
+				return
+			}
+		}
+	}()
+
+	return sig
 }

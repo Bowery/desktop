@@ -2,6 +2,7 @@
 var fs = require('fs')
 var os = require('os')
 var path = require('path')
+var net = require('net')
 var spawn = require('child_process').spawn
 var tmpdir = os.tmpdir()
 
@@ -49,18 +50,42 @@ try {
   console.log(e, 'could not write pidfile')
 }
 
+// killProc sends the kill event to the processes handler
+var killProc = function (cb) {
+  // Darwin doesn't use the updater so just kill the client.
+  if (process.platform == 'darwin') {
+    proc.kill('SIGINT')
+    cb && cb()
+    return
+  }
+
+  // Send 'exit' to the updaters socket server.
+  var socketAddr = '\\\\.\\pipe\\bowery-'+proc.pid
+  if (!/^win/.test(process.platform)) socketAddr = path.join(os.tmpdir(), 'bowery-'+proc.pid+'.sock')
+
+  var conn = net.connect({path: socketAddr}, function () {
+    conn.write('exit', function () {
+      cb && cb()
+    })
+  })
+
+  conn.on('error', function () {
+    cb && cb()
+  })
+}
+
 // Kill the client when we get a signal.
 var exitEvents = ['SIGINT', 'SIGTERM', 'SIGHUP', 'exit', 'kill']
 for (var i = 0, e; e = exitEvents[i]; i++) {
   process.on(e, function () {
-    proc.kill('SIGINT')
+    killProc()
   })
 }
 
 app.on('window-all-closed', function() {
-  // if (process.platform != 'darwin')
-  app.quit()
-  proc.kill('SIGINT')
+  killProc(function () {
+    app.quit()
+  })
 })
 
 app.on('ready', function() {
