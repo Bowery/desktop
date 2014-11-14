@@ -10,18 +10,7 @@ var app = require('app')
 var BrowserWindow = require('browser-window')
 var Menu = require('menu')
 
-require('crash-reporter').start() // Report crashes to our server.
-
-// Kill any previous clients.
-try {
-  var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'), 'utf8')
-  if (pid) process.kill(parseInt(pid, 10), 'SIGINT')
-} catch (e) {
-  // ESRCH is the process not found, not an issue here.
-  if (e.code != 'ESRCH') console.log('yolo. no pid file found.')
-}
-
-// Start client, and run updater if not on darwin.
+// Set vars that control updater/client.
 var versionUrl = 'http://desktop.bowery.io.s3.amazonaws.com/VERSION'
 var ext = /^win/.test(process.platform) ? '.exe' : ''
 var installDir = '..'
@@ -29,38 +18,80 @@ var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
-var opts = {stdio: 'inherit'}
+
+require('crash-reporter').start() // Report crashes to our server.
+
+// killClient kills any running updater/client process.
+// NOTE: Sync ops only, the process exit event doesn't allow async ops.
+var killClient = function () {
+  // Kill the running instance.
+  if (proc) {
+    console.log('killing process started in this instance')
+    proc.kill('SIGINT')
+  }
+
+  // Kill any stored pids from the updater.
+  try {
+    var contents = fs.readFileSync(path.join(tmpdir, 'bowery_pids'), 'utf8')
+    if (contents) {
+      contents = contents.split('\n')
+      for (var i in contents) {
+        try {
+          process.kill(parseInt(contents[i], 10), 'SIGINT')
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    if (e.code != 'ENOENT') console.log("Couldn't remove previous pids", e)
+  }
+
+  // Kill the pid stored by this script.
+  try {
+    var pid = fs.readFileSync(path.join(tmpdir, 'bowery_client_pid'), 'utf8')
+    if (pid) process.kill(parseInt(pid, 10), 'SIGINT')
+  } catch (e) {
+    if (e.code != 'ENOENT' && e.code != 'ESRCH') console.log("Couldn't remove previous pids", e)
+  }
+
+  try {
+    fs.unlinkSync(path.join(tmpdir, 'bowery_pids'))
+    fs.unlinkSync(path.join(tmpdir, 'bowery_client_pid'))
+  } catch (e) {}
+}
+
+killClient()
 
 if (process.platform == 'darwin') {
-  proc = spawn(clientPath, [], opts)
+  proc = spawn(clientPath, [])
 } else {
-  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath], opts)
+  proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath])
 }
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
 })
+proc.stdout.pipe(process.stdout)
+proc.stderr.pipe(process.stderr)
 
 // Write bowery processes info.
 try {
   fs.writeFileSync(path.join(tmpdir, 'bowery_client_pid'), proc.pid)
   fs.writeFileSync(path.join(tmpdir, 'bowery_dir'), __dirname)
 } catch (e) {
-  console.log(e, 'could not write pidfile')
+  console.log(e, 'could not write process info')
 }
 
 // Kill the client when we get a signal.
 var exitEvents = ['SIGINT', 'SIGTERM', 'SIGHUP', 'exit', 'kill']
 for (var i = 0, e; e = exitEvents[i]; i++) {
   process.on(e, function () {
-    proc.kill('SIGINT')
+    killClient()
+    process.exit(0)
   })
 }
 
 app.on('window-all-closed', function() {
-  // if (process.platform != 'darwin')
   app.quit()
-  proc.kill('SIGINT')
 })
 
 app.on('ready', function() {

@@ -2,16 +2,18 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -102,24 +104,6 @@ func main() {
 		}
 	}()
 
-	// Listen for signals and forward to the process.
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, os.Kill)
-	go func() {
-		<-signals
-		restartSetter.Set(0)
-		err := killPid()
-		if err != nil {
-			rollbarC.Report(err, map[string]string{
-				"version": version,
-			})
-			log.Println("Killing pid error:", err)
-			os.Exit(1)
-		}
-
-		os.Exit(0)
-	}()
-
 	// Setup the backoff limiter for restarts.
 	exponential := backoff.Exponential()
 	exponential.MaxRetries = 100
@@ -155,6 +139,13 @@ func main() {
 		} else {
 			pidSetter.Set(cmd.Process.Pid)
 			log.Println("Starting process", cmdArgs, "with pid:", pidSetter.Get())
+		}
+
+		err = storePids()
+		if err != nil {
+			rollbarC.Report(err, map[string]string{
+				"version": version,
+			})
 		}
 
 		err = cmd.Wait()
@@ -313,4 +304,36 @@ func doUpdate() error {
 	}
 
 	return err
+}
+
+// storePids saves the running pids in $TMPDIR/bowery_pids
+func storePids() error {
+	proc, err := sys.GetPidTree(os.Getpid())
+	if err != nil {
+		return err
+	}
+	pids := treeList(proc)
+
+	file, err := os.Create(filepath.Join(os.TempDir(), "bowery_pids"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	buf := bytes.NewBufferString(strings.Join(pids, "\n"))
+	_, err = io.Copy(file, buf)
+	return err
+}
+
+// treeList creates a list of a proc trees pids.
+func treeList(proc *sys.Proc) []string {
+	pids := []string{strconv.Itoa(proc.Pid)}
+
+	if proc.Children != nil {
+		for _, p := range proc.Children {
+			pids = append(pids, treeList(p)...)
+		}
+	}
+
+	return pids
 }
