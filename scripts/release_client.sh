@@ -36,7 +36,7 @@ echo "--> Cross compiling client..."
 goxc \
   -wd="${client}" \
   -d="${root}/pkg" \
-  -bc="linux windows,386 darwin,amd64" \
+  -bc="linux windows darwin,amd64" \
   -pv="${version}" \
   xc &> "${root}/goxc.log"
 
@@ -44,7 +44,7 @@ echo "--> Cross compiling updater..."
 goxc \
   -wd="${updater}" \
   -d="${root}/pkg" \
-  -bc="linux windows,386 darwin,amd64" \
+  -bc="linux windows darwin,amd64" \
   -pv="${version}" \
   xc &> "${root}/goxc.log"
 
@@ -71,6 +71,7 @@ if [[ ! -f "/tmp/atom/${ver}_windows_386.zip" ]]; then
   wget -q "${url}-win32-ia32.zip" -O "/tmp/atom/${ver}_windows_386.zip"
 fi
 unzip -q "/tmp/atom/${ver}_windows_386.zip" -d "${atom}/windows_386"
+unzip -q "/tmp/atom/${ver}_windows_386.zip" -d "${atom}/windows_amd64"
 
 echo "--> Creating updates for ${version}..."
 
@@ -208,6 +209,19 @@ cat /tmp/7zextra/7zS.sfx "${atom}/windows_386/extractor_config.txt" "/tmp/${vers
 rm -rf "${atom}/windows_386/"*
 cp -f "/tmp/${version}_windows_386.exe" "${atom}/windows_386/bowery.exe"
 cp -f "${datadir}/README_windows" "${atom}/windows_386/README"
+
+setupAtom "windows_amd64" "${atom}/windows_amd64/resources" "{{1}}"
+mv "${atom}/windows_amd64/atom.exe" "${atom}/windows_amd64/bowery.exe"
+setupExtractor "windows_amd64" "install.bat" "logo.ico"
+rm -rf "/tmp/${version}_windows_amd64.7z"
+cp -f "${datadir}/bowery.exe.manifest" /tmp/rmmanifest.exe "${atom}/windows_amd64"
+cd "${atom}/windows_amd64"
+7z a "/tmp/${version}_windows_amd64.7z" * &> "${root}/debug.log"
+cd -
+cat /tmp/7zextra/7zS.sfx "${atom}/windows_amd64/extractor_config.txt" "/tmp/${version}_windows_amd64.7z" > "/tmp/${version}_windows_amd64.exe"
+rm -rf "${atom}/windows_amd64/"*
+cp -f "/tmp/${version}_windows_amd64.exe" "${atom}/windows_amd64/bowery.exe"
+cp -f "${datadir}/README_windows" "${atom}/windows_amd64/README"
 
 echo "--> Compressing shells..."
 for dir in "${atom}/"*; do
