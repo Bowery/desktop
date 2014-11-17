@@ -62,7 +62,7 @@ func main() {
 		new(web.SlashHandler),
 		new(web.CorsHandler),
 	}, Routes)
-	server.Router.NotFoundHandler = &web.NotFoundHandler{r}
+	server.Router.NotFoundHandler = &web.NotFoundHandler{renderer}
 
 	server.ListenAndServe()
 }
