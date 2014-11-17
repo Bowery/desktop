@@ -44,7 +44,7 @@ var Routes = []web.Route{
 	{"GET", "/_/sse", sseHandler, false},
 }
 
-var r = render.New(render.Options{
+var renderer = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 })
@@ -107,7 +107,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -125,7 +125,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if len(missingFields) > 0 {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  strings.Join(missingFields, ", ") + " is required.",
 		})
@@ -136,7 +136,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if reqBody.LocalPath != "" {
 		localPath, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
-			r.JSON(rw, http.StatusBadRequest, map[string]string{
+			renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
@@ -152,7 +152,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"reqBody": reqBody,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -167,7 +167,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"reqBody": reqBody,
 				"VERSION": VERSION,
 			})
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -181,7 +181,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"sourceApp": sourceApp,
 				"VERSION":   VERSION,
 			})
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -195,7 +195,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"sourceApp": sourceApp,
 				"VERSION":   VERSION,
 			})
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -209,7 +209,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"sourceApp": sourceApp,
 				"VERSION":   VERSION,
 			})
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -223,14 +223,14 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"reqBody": reqBody,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusOK, map[string]string{
+		renderer.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"application": app,
 	})
@@ -246,7 +246,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -264,7 +264,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":       requests.STATUS_FOUND,
 		"applications": apps,
 	})
@@ -285,7 +285,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"id":      id,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -296,7 +296,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	token := reqBody.Token
 	if token == "" {
 		log.Println("no token")
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
 		})
@@ -306,7 +306,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	// Ensure that a name is provided.
 	if reqBody.Name == "" {
 		log.Println("no name")
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "name required",
 		})
@@ -319,7 +319,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		localPath, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
 			log.Println("path", err)
-			r.JSON(rw, http.StatusBadRequest, map[string]string{
+			renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
@@ -348,7 +348,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"reqBody": reqBody,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -377,7 +377,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"updateBody": updateBody,
 			"VERSION":    VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -394,7 +394,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"updateBody": updateBody,
 			"VERSION":    VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -411,7 +411,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"updateBody": updateBody,
 			"VERSION":    VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -431,7 +431,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"updateBody": updateBody,
 			"VERSION":    VERSION,
 		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -446,7 +446,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"updateBody": updateBody,
 			"VERSION":    VERSION,
 		})
-		r.JSON(rw, http.StatusOK, map[string]string{
+		renderer.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  resBody.Error(),
 		})
@@ -464,7 +464,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Respond OK with the application.
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"application": resBody.Application,
 	})
@@ -481,7 +481,7 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"id":      id,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -496,7 +496,7 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_FOUND,
 		"application": app,
 	})
@@ -509,7 +509,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	token := req.URL.Query().Get("token")
 	if token == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "missing fields",
 		})
@@ -524,7 +524,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -539,7 +539,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -556,7 +556,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -570,7 +570,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, res.StatusCode, map[string]string{
+		renderer.JSON(rw, res.StatusCode, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  removeRes.Error(),
 		})
@@ -585,14 +585,14 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"token":   token,
 			"VERSION": VERSION,
 		})
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 		"id":     id,
 	})
@@ -603,7 +603,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 	query := req.URL.Query().Get("query")
 	if query == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "missing query field",
 		})
@@ -612,14 +612,14 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 
 	envs, err := SearchEnvironments(query)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":       requests.STATUS_FOUND,
 		"environments": envs,
 	})
@@ -631,14 +631,14 @@ func getEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 
 	env, err := GetEnvironment(id)
 	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_FOUND,
 		"environment": env,
 	})
@@ -652,7 +652,7 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
 		})
@@ -661,7 +661,7 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 
 	token := reqBody.Token
 	if token == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
 		})
@@ -676,14 +676,14 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 
 	updatedEnv, err := UpdateEnvironment(updateBody, token)
 	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]interface{}{
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":      requests.STATUS_SUCCESS,
 		"environment": updatedEnv,
 	})
@@ -696,7 +696,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -705,7 +705,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 
 	token := reqBody.Token
 	if token == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "token required",
 		})
@@ -713,7 +713,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reqBody.Cmd == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "non-empty command required",
 		})
@@ -722,7 +722,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 
 	app, err := applicationManager.GetByID(reqBody.AppID)
 	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -731,7 +731,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 
 	err = DelanceyExec(app, reqBody.Cmd)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -740,14 +740,14 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 
 	err = CreateEvent(app, reqBody.Cmd)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
 }
@@ -759,7 +759,7 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -770,7 +770,7 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 	secret := reqBody.SecretKey
 
 	if access == "" || secret == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "Access Key and Secret Key required",
 		})
@@ -779,14 +779,14 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 
 	err = ValidateKeys(access, secret)
 	if err != nil {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
 }
@@ -797,7 +797,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -806,7 +806,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 
 	email := reqBody.Email
 	if email == "" {
-		r.JSON(rw, http.StatusBadRequest, map[string]string{
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  "Email required",
 		})
@@ -815,7 +815,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 
 	res, err := http.Get(config.BroomeAddr + "/reset/" + email)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -830,14 +830,14 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 		err = resBody
 	}
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
 }
@@ -846,7 +846,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	applicationManager.Empty()
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_SUCCESS,
 	})
 }
@@ -859,7 +859,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 	// This is only needed for darwin.
 	if runtime.GOOS != "darwin" {
-		r.JSON(rw, http.StatusOK, map[string]string{
+		renderer.JSON(rw, http.StatusOK, map[string]string{
 			"status": requests.STATUS_UPDATED,
 		})
 		return
@@ -867,7 +867,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 	contents, err := update.DownloadVersion(addr)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -882,7 +882,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
 		if err != nil {
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -891,7 +891,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 		file, err := os.Create(path)
 		if err != nil {
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -901,7 +901,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 		_, err = io.Copy(file, body)
 		if err != nil {
-			r.JSON(rw, http.StatusInternalServerError, map[string]string{
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 				"status": requests.STATUS_FAILED,
 				"error":  err.Error(),
 			})
@@ -919,7 +919,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	r.JSON(rw, http.StatusOK, map[string]string{
+	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.STATUS_UPDATED,
 	})
 }
@@ -927,7 +927,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	newVer, _, err := update.GetLatest(config.ClientS3Addr + "/VERSION")
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -936,7 +936,7 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 	changed, err := update.OutOfDate(VERSION, newVer)
 	if err != nil {
-		r.JSON(rw, http.StatusInternalServerError, map[string]string{
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.STATUS_FAILED,
 			"error":  err.Error(),
 		})
@@ -951,7 +951,7 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		body["version"] = newVer
 	}
 
-	r.JSON(rw, http.StatusOK, body)
+	renderer.JSON(rw, http.StatusOK, body)
 }
 
 func sseHandler(rw http.ResponseWriter, req *http.Request) {
