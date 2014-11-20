@@ -62,6 +62,7 @@ func main() {
 		new(web.SlashHandler),
 		new(web.CorsHandler),
 	}, Routes)
+	server.AuthHandler = &web.AuthHandler{Auth: web.DefaultAuthHandler}
 
 	server.ListenAndServe()
 }
