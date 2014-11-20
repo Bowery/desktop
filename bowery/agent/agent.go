@@ -71,7 +71,6 @@ func main() {
 	server := web.NewServer(":"+port, []web.Handler{
 		new(web.SlashHandler),
 	}, Routes)
-	server.Router.NotFoundHandler = &web.NotFoundHandler{renderer}
 
 	err := server.ListenAndServe()
 	if err != nil {
