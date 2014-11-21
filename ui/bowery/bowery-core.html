@@ -245,8 +245,37 @@ Polymer('bowery-core', {
       return
     }
 
-    if (event.type == 'sync')
-      this.$.analytics.track('Sync Event: ' + event.status)
+    if (event.type == 'sync') {
+      var ev = event.event
+      this.$.analytics.track('Sync Event: ' + ev.status)
+
+      for (var i in this.applications) {
+        var app = this.applications[i]
+
+        if (app._id == ev.application._id) {
+          app.syncTimeout && clearTimeout(app.syncTimeout)
+          var timeout = 2000
+
+          switch (ev.status) {
+            case 'upload-start':
+              app.syncMsg = 'Uploading code'
+              return // Don't do the reset timer here, upload-finish should overwrite.
+            case 'upload-finish':
+              app.syncMsg = 'Upload complete. File changes are now being synced.'
+              timeout = 4000
+              break
+            default:
+              ev.status = ev.status[0].toUpperCase() + ev.status.slice(1)
+              app.syncMsg = ev.status + 'd ' + ev.path
+          }
+
+          app.syncTimeout = setTimeout(function () {
+            app.syncMsg = ""
+          }, timeout)
+          break
+        }
+      }
+    }
 
     if (event.type == 'log' && (!event.appID || this.app._id == event.appID) && event.message) {
       this.app.logs += event.message

@@ -45,8 +45,8 @@ func main() {
 			case ev := <-applicationManager.Syncer.Event:
 				log.Println(ev)
 				msg := map[string]interface{}{
-					"status": ev.Status,
-					"type":   "sync",
+					"event": ev,
+					"type":  "sync",
 				}
 				ssePool.messages <- msg
 			case err := <-applicationManager.Syncer.Error:
