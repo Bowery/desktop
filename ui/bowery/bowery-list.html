@@ -67,7 +67,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
               <a class="sub nocollapse" href="{{item.location + getPort(item)}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.statusMsg : (('Copy ' + item.location + getPort(item) + ' to clipboard') || 'Your app is provisioning')}}</a>
             </template>
             <a class="sub" href="" on-click="{{edit}}">Edit Information</a>
-            <a class="sub" href="/apps/exec" on-click="{{navigate}}">Exec Commands</a>
             <a class="sub" href="/images/edit" on-click="{{navigate}}">Publish Image</a>
             <a class="sub bad" href="" on-click="{{delete}}">Delete App</a>
           </template>
@@ -110,9 +109,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       require('clipboard').writeText(this.item.location + this.getPort(this.item))
       e.target.innerHTML = 'Copied!'
     },
-    openLogsWindow: function () {
-      window.open("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.item._id, this.item.name + " Logs", "resizable,scrollbars," + this.item.name + " Logs")
-    },
     navigate: function (path) {
       var self = this
       if (typeof path != "string") {
@@ -122,10 +118,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       }
 
       this.$.analytics.track('Navigated to ' + path)
-
-      //TODO (thebyrd) make this less ghetto
-      if (path == "/apps/exec")
-        this.openLogsWindow()
 
       this.fire('bowery-navigate', {path: path})
     },

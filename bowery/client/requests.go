@@ -42,6 +42,7 @@ var Routes = []web.Route{
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
 	{"GET", "/_/sse", sseHandler, false},
+	{"POST", "/code", analyzeCodeHandler, false},
 }
 
 var renderer = render.New(render.Options{
@@ -86,6 +87,10 @@ type keyReq struct {
 	SecretKey string `json:"aws_secret_key"`
 }
 
+type analyzeCodeReq struct {
+	Path string `json:"path"`
+}
+
 // Res is a generic response with status and an error message.
 type Res struct {
 	Status string `json:"status"`
@@ -94,6 +99,52 @@ type Res struct {
 
 func (res *Res) Error() string {
 	return res.Err
+}
+
+// analyzeCodeHandler sends the code to mercer and responds with various
+// commands needed to create the app
+func analyzeCodeHandler(rw http.ResponseWriter, req *http.Request) {
+	reqBody := new(analyzeCodeReq)
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(reqBody)
+	if err != nil {
+		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+	if reqBody.Path == "" {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  "path is a required field",
+		})
+	}
+
+	localPath, err := formatLocalDir(reqBody.Path)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.Path),
+		})
+		return
+	}
+
+	cmds, err := MercerUpload(localPath)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.STATUS_FAILED,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	fmt.Println("$$$$ cmds", cmds)
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":   requests.STATUS_SUCCESS,
+		"commands": cmds,
+	})
 }
 
 // createApplicationHandler creates a new Application which includes:

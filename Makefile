@@ -25,7 +25,6 @@ ui:
 	@cd ui && bower install > debug.log 2>&1
 	@mkdir -p bin
 	@vulcanize --verbose --inline ui/bowery/bowery.html -o bin/app.html > debug.log 2>&1
-	@cp -f ui/bowery/logs.html bin/logs.html
 
 ui-test: ui
 	npm test
