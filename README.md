@@ -18,7 +18,24 @@ Dropbox for Dev Environments
 - `debug.log` is where the makefile writes its output to. You can also see application logs there. I highly recommend `tail -f debug.log` while you're developing.
 
 ## Database
-Uses orchestrate and schemas can be found in `bowery/server/schemas`.
+Uses orchestrate and schemas can be found in `bowery/server/schemas`. All keys will be orchestrate generated ids which are also stored as fields for good measure.
+
+## Team
+Information about what `Developer`'s are sharing what `Env`.
+- `ignoredPaths:[]string`
+- `members:[]Developer.id`
+- `master:Env.id`
+
+## Env
+An array of files that need to be synced. Individual files are not stored in their own collection with their own keys.
+- `[]{localPath:string, s3Path:string, version:string, md5:string}`
+
+## Developer
+Our version of a user model.
+- `name:string`
+- `email:string`
+- `password:string`
+- `salt:string`
 
 ## Routes
 ### Server
