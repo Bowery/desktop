@@ -94,6 +94,15 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				return
 			}
 		}
+
+		if err := am.Syncer.Remove(app); err != nil {
+			log.Println("StreamManager.Remove Failed in Add", err)
+		}
+		am.Syncer.Watch(app)
+
+		// Reset the log manager.
+		am.StreamManager.Remove(app)
+		am.StreamManager.Connect(app)
 	}()
 
 	am.Applications[app.ID] = app
