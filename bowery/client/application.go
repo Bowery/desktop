@@ -77,6 +77,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				status = application.Status
 				app.Status = application.Status
 				app.Location = application.Location
+				app.IsSyncAvailable = application.IsSyncAvailable
 				app.Errors = application.Errors
 				app.StatusMsg = application.StatusMsg
 				msg := map[string]interface{}{
