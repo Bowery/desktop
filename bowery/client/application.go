@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"sort"
 	"strings"
 	"time"
@@ -76,14 +75,7 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 			if err == nil {
 				log.Println("provisioning status: " + application.Status)
 				status = application.Status
-
-				// The instance is running but still display as provisioning because
-				// the app hasn't been created on the agent yet.
-				if status == "running" {
-					app.Status = "provisioning"
-				} else {
-					app.Status = status
-				}
+				app.Status = application.Status
 				app.Location = application.Location
 				app.Errors = application.Errors
 				app.StatusMsg = application.StatusMsg
@@ -94,42 +86,12 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 				}
 				ssePool.messages <- msg
 				if status == "running" {
-					app.StatusMsg = "Doing health checks"
 					break
 				}
 			} else if strings.Contains(err.Error(), "Not Found") {
 				// If the application can't be found then it's been deleted.
 				return
 			}
-		}
-
-		exponential = backoff.Exponential()
-		exponential.MaxRetries = 200
-
-		// Ping the agent to verify it's healthy. Once a healthy
-		// response is returned, update the database.
-		for app != nil && !app.IsSyncAvailable {
-			if !exponential.Next() {
-				return
-			}
-			<-time.After(exponential.Delay)
-			err := DelanceyCheck(net.JoinHostPort(app.Location, "32056"))
-			if err != nil {
-				continue
-			}
-
-			app.IsSyncAvailable = true
-			app.Status = "running"
-			app.StatusMsg = ""
-			SetAppPort(app)
-			msg := map[string]interface{}{
-				"appID":   app.ID,
-				"type":    "status",
-				"message": app,
-			}
-			ssePool.messages <- msg
-			application, _ := GetApplication(app.ID)
-			app, _ = am.UpdateByID(app.ID, application)
 		}
 	}()
 
