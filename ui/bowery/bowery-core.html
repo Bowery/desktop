@@ -128,12 +128,16 @@ Polymer('bowery-core', {
 
     // All of the current users application
     this.applications = []
+    this.foundApplications = false
 
     // The current user
     this.developer = {}
 
     // Map of aws keys
     this.keys = {aws_access_key: '', aws_secret_key: ''}
+
+    // List of sync events that occur before applications are retrieved.
+    this.syncbuf = []
 
     // The new version of Bowery Desktop
     this.newVersion = '0.0.0'
@@ -235,7 +239,13 @@ Polymer('bowery-core', {
     console.log('$$$ event', event)
     if (event.type == 'status') {
       for (var i in this.applications) {
-        if (event.appID == this.applications[i]._id) {
+        var app = this.applications[i]
+
+        if (event.appID == app._id) {
+          if (app.justCreated) {
+            event.message.justCreated = app.justCreated
+          }
+
           this.applications[i] = event.message
         }
         if (event.appID == this.app._id) {
@@ -246,34 +256,10 @@ Polymer('bowery-core', {
     }
 
     if (event.type == 'sync') {
-      var ev = event.event
-      this.$.analytics.track('Sync Event: ' + ev.status)
-
-      for (var i in this.applications) {
-        var app = this.applications[i]
-
-        if (app._id == ev.application._id) {
-          app.syncTimeout && clearTimeout(app.syncTimeout)
-          var timeout = 2000
-
-          switch (ev.status) {
-            case 'upload-start':
-              app.syncMsg = 'Step 4/4: Uploading code...'
-              return // Don't do the reset timer here, upload-finish should overwrite.
-            case 'upload-finish':
-              app.syncMsg = 'Upload complete! File changes are now being synced.'
-              timeout = 4000
-              break
-            default:
-              ev.status = ev.status[0].toUpperCase() + ev.status.slice(1)
-              app.syncMsg = ev.status + 'd ' + ev.path
-          }
-
-          app.syncTimeout = setTimeout(function () {
-            app.syncMsg = ""
-          }, timeout)
-          break
-        }
+      if (this.foundApplications) {
+        this.handleSyncEvent.bind(this)(event.event)
+      } else {
+        this.syncbuf.push(event.event)
       }
     }
 
@@ -281,10 +267,45 @@ Polymer('bowery-core', {
       this.app.logs += event.message
     }
   },
+  handleSyncEvent: function (e) {
+    this.$.analytics.track('Sync Event: ' + e.status)
+
+    for (var i in this.applications) {
+      var app = this.applications[i]
+
+      if (app._id == e.application._id) {
+        app.syncTimeout && clearTimeout(app.syncTimeout)
+        var timeout = 2000
+
+        switch (e.status) {
+          case 'upload-start':
+            if (app.justCreated) {
+              app.syncMsg = 'Step 4/4: Uploading code...'
+            } else {
+              app.syncMsg = 'Uploading code...'
+            }
+            return // Don't do the reset timer here, upload-finish should overwrite.
+          case 'upload-finish':
+            app.syncMsg = 'Upload complete! File changes are now being synced.'
+            timeout = 4000
+            break
+          default:
+            e.status = e.status[0].toUpperCase() + e.status.slice(1)
+            app.syncMsg = e.status + 'd ' + e.path
+        }
+
+        app.syncTimeout = setTimeout(function () {
+          app.syncMsg = ""
+        }, timeout)
+        break
+      }
+    }
+  },
   handleCreateAppAttempt: function (e, detail) {
     var response = e.target.response
 
     this.app = response.application
+    this.app.justCreated = true
     this.app.localPath = this.defaultLocalPath
     this.applications.push(this.app)
 
@@ -297,9 +318,12 @@ Polymer('bowery-core', {
     var ids = this.applications.map(function (a) {return a._id})
     if (~ids.indexOf(response.application._id)) {
       for (var i = 0, app; app = this.applications[i]; i++)
-        if (app._id == response.application._id)
+        if (app._id == response.application._id) {
+          // Don't set justCreated here since we're editing an existing app.
           this.applications[i] = response.application
+        }
     } else {
+      response.application.justCreated = true
       this.applications.push(response.application)
     }
 
@@ -345,10 +369,15 @@ Polymer('bowery-core', {
   },
   getApps: function (e, detail) {
     var r = JSON.parse(detail.response)
-    if (r.status == "found")
+    if (r.status == "found") {
       this.applications = r.applications
-    else
+      this.foundApplications = true
+      for (var i in this.syncbuf) {
+        this.handleSyncEvent.bind(this)(this.syncbuf[i])
+      }
+    } else {
       this.logout()
+    }
   },
   openExternalWindow: function (path) {
     if (typeof path != "string") {
