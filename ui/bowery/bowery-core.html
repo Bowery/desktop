@@ -258,10 +258,10 @@ Polymer('bowery-core', {
 
           switch (ev.status) {
             case 'upload-start':
-              app.syncMsg = 'Uploading code'
+              app.syncMsg = 'Step 4/4: Uploading code...'
               return // Don't do the reset timer here, upload-finish should overwrite.
             case 'upload-finish':
-              app.syncMsg = 'Upload complete. File changes are now being synced.'
+              app.syncMsg = 'Upload complete! File changes are now being synced.'
               timeout = 4000
               break
             default:
