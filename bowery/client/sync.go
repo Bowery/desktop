@@ -2,9 +2,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -165,14 +167,12 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Manages deletes.
 	checkDeletes := func() {
-		for path := range stats {
-			skip := false
-			rel, err := filepath.Rel(local, path)
-			if err != nil {
-				errChan <- watcher.wrapErr(err)
-				continue
-			}
+		delList := make(sort.StringSlice, 0)
+		delStats := make(map[string]os.FileInfo)
 
+		// Get a list of paths to delete.
+		for path, stat := range stats {
+			skip := false
 			for _, f := range found {
 				if f == path {
 					skip = true
@@ -185,6 +185,36 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			}
 
 			delete(stats, path)
+			delList = append(delList, path)
+			delStats[path] = stat
+		}
+
+		sort.Sort(delList)
+		rootList := make(map[string]os.FileInfo)
+
+		// Do the deletes.
+		for _, path := range delList {
+			// Check if the path or a parent dir has already done the event.
+			skip := false
+			for alreadyDone, stat := range rootList {
+				if path == alreadyDone ||
+					(stat.IsDir() && strings.Contains(path, alreadyDone+string(filepath.Separator))) {
+					skip = true
+					break
+				}
+			}
+			if skip {
+				continue
+			}
+			rootList[path] = delStats[path]
+			fmt.Println("Doing event for", path)
+
+			rel, err := filepath.Rel(local, path)
+			if err != nil {
+				errChan <- watcher.wrapErr(err)
+				continue
+			}
+
 			err = watcher.Update(rel, "delete")
 			if err != nil {
 				errChan <- watcher.wrapErr(err)
