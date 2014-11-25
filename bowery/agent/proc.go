@@ -29,7 +29,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		"ip":  AgentHost,
 	})
 
-	plugin.EmitPluginEvent(schemas.BEFORE_APP_RESTART, "", app.Path, app.ID, app.EnabledPlugins)
+	plugin.EmitPluginEvent(schemas.BeforeAppRestart, "", app.Path, app.ID, app.EnabledPlugins)
 	mutex.Lock() // Lock here so no other restarts can interfere.
 	finish := make(chan bool, 1)
 	log.Println(fmt.Sprintf("restart beginning: %s", app.ID))
@@ -140,7 +140,7 @@ func Restart(app *Application, initReset, reset bool) chan bool {
 		}
 
 		// Signal the start and prepare the wait group to keep tcp open.
-		plugin.EmitPluginEvent(schemas.AFTER_APP_RESTART, "", app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AfterAppRestart, "", app.Path, app.ID, app.EnabledPlugins)
 		finish <- true
 		wg.Add(len(cmds))
 

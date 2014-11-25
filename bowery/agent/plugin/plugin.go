@@ -160,7 +160,7 @@ func StartPluginListener() {
 				for _, ep := range ev.EnabledPlugins {
 					if ep == plugin.Name {
 						background := false
-						if ev.Type == schemas.BACKGROUND {
+						if ev.Type == schemas.Background {
 							background = true
 						}
 
