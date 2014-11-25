@@ -108,7 +108,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -126,7 +126,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if len(missingFields) > 0 {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  strings.Join(missingFields, ", ") + " is required.",
 		})
 		return
@@ -137,7 +137,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		localPath, err = formatLocalDir(reqBody.LocalPath)
 		if err != nil {
 			renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
 			return
@@ -153,7 +153,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -168,7 +168,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"VERSION": VERSION,
 			})
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -182,7 +182,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"VERSION":   VERSION,
 			})
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -196,7 +196,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"VERSION":   VERSION,
 			})
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -210,7 +210,7 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 				"VERSION":   VERSION,
 			})
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -224,14 +224,14 @@ func createApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusOK, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":      requests.STATUS_SUCCESS,
+		"status":      requests.StatusSuccess,
 		"application": app,
 	})
 }
@@ -247,7 +247,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -265,7 +265,7 @@ func getApplicationsHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":       requests.STATUS_FOUND,
+		"status":       requests.StatusFound,
 		"applications": apps,
 	})
 }
@@ -286,7 +286,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -297,7 +297,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if token == "" {
 		log.Println("no token")
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "token required",
 		})
 		return
@@ -307,7 +307,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	if reqBody.Name == "" {
 		log.Println("no name")
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "name required",
 		})
 		return
@@ -320,7 +320,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Println("path", err)
 			renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  fmt.Sprintf("%s is not a valid path on your computer.", reqBody.LocalPath),
 			})
 			return
@@ -349,7 +349,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -378,7 +378,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION":    VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -395,7 +395,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION":    VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -412,7 +412,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION":    VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -432,13 +432,13 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION":    VERSION,
 		})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
-	if resBody.Status == requests.STATUS_FAILED {
+	if resBody.Status == requests.StatusFailed {
 		log.Println("failed res", err)
 		rollbarC.Report(resBody, map[string]interface{}{
 			"token":      token,
@@ -447,7 +447,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION":    VERSION,
 		})
 		renderer.JSON(rw, http.StatusOK, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  resBody.Error(),
 		})
 		return
@@ -465,7 +465,7 @@ func updateApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 
 	// Respond OK with the application.
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":      requests.STATUS_SUCCESS,
+		"status":      requests.StatusSuccess,
 		"application": resBody.Application,
 	})
 }
@@ -482,7 +482,7 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -497,7 +497,7 @@ func getApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":      requests.STATUS_FOUND,
+		"status":      requests.StatusFound,
 		"application": app,
 	})
 }
@@ -510,7 +510,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 	token := req.URL.Query().Get("token")
 	if token == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "missing fields",
 		})
 		return
@@ -525,7 +525,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -540,7 +540,7 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -557,21 +557,21 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	// If removal failed on kenmare respond with it.
-	if removeRes.Status == requests.STATUS_FAILED {
+	if removeRes.Status == requests.StatusFailed {
 		rollbarC.Report(removeRes, map[string]interface{}{
 			"id":      id,
 			"token":   token,
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, res.StatusCode, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  removeRes.Error(),
 		})
 		return
@@ -586,14 +586,14 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 			"VERSION": VERSION,
 		})
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 		"id":     id,
 	})
 }
@@ -604,7 +604,7 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 	query := req.URL.Query().Get("query")
 	if query == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "missing query field",
 		})
 		return
@@ -613,14 +613,14 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 	envs, err := SearchEnvironments(query)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":       requests.STATUS_FOUND,
+		"status":       requests.StatusFound,
 		"environments": envs,
 	})
 }
@@ -632,14 +632,14 @@ func getEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	env, err := GetEnvironment(id)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":      requests.STATUS_FOUND,
+		"status":      requests.StatusFound,
 		"environment": env,
 	})
 }
@@ -653,7 +653,7 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "token required",
 		})
 		return
@@ -662,7 +662,7 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	token := reqBody.Token
 	if token == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "token required",
 		})
 		return
@@ -677,14 +677,14 @@ func updateEnvironmentHandler(rw http.ResponseWriter, req *http.Request) {
 	updatedEnv, err := UpdateEnvironment(updateBody, token)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status":      requests.STATUS_SUCCESS,
+		"status":      requests.StatusSuccess,
 		"environment": updatedEnv,
 	})
 }
@@ -697,7 +697,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		rollbarC.Report(err, map[string]string{"VERSION": VERSION})
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -706,7 +706,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	token := reqBody.Token
 	if token == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "token required",
 		})
 		return
@@ -714,7 +714,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if reqBody.Cmd == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "non-empty command required",
 		})
 		return
@@ -723,7 +723,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	app, err := applicationManager.GetByID(reqBody.AppID)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -732,7 +732,7 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	err = DelanceyExec(app, reqBody.Cmd)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -741,14 +741,14 @@ func createCommandHandler(rw http.ResponseWriter, req *http.Request) {
 	err = CreateEvent(app, reqBody.Cmd)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 	})
 }
 
@@ -760,7 +760,7 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -771,7 +771,7 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 
 	if access == "" || secret == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "Access Key and Secret Key required",
 		})
 		return
@@ -780,14 +780,14 @@ func validateKeysHandler(rw http.ResponseWriter, req *http.Request) {
 	err = ValidateKeys(access, secret)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 	})
 }
 
@@ -798,7 +798,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -807,7 +807,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 	email := reqBody.Email
 	if email == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  "Email required",
 		})
 		return
@@ -816,7 +816,7 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 	res, err := http.Get(config.BroomeAddr + "/reset/" + email)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -826,19 +826,19 @@ func forgotPassHandler(rw http.ResponseWriter, req *http.Request) {
 	resBody := new(Res)
 	decoder = json.NewDecoder(res.Body)
 	err = decoder.Decode(&resBody)
-	if err == nil && resBody.Status == requests.STATUS_FAILED {
+	if err == nil && resBody.Status == requests.StatusFailed {
 		err = resBody
 	}
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 	})
 }
 
@@ -847,7 +847,7 @@ func logoutHandler(rw http.ResponseWriter, req *http.Request) {
 	applicationManager.Empty()
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 	})
 }
 
@@ -860,7 +860,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	// This is only needed for darwin.
 	if runtime.GOOS != "darwin" {
 		renderer.JSON(rw, http.StatusOK, map[string]string{
-			"status": requests.STATUS_UPDATED,
+			"status": requests.StatusUpdated,
 		})
 		return
 	}
@@ -868,7 +868,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	contents, err := update.DownloadVersion(addr)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -883,7 +883,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		err = os.MkdirAll(filepath.Dir(path), os.ModePerm|os.ModeDir)
 		if err != nil {
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -892,7 +892,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		file, err := os.Create(path)
 		if err != nil {
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -902,7 +902,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 		_, err = io.Copy(file, body)
 		if err != nil {
 			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-				"status": requests.STATUS_FAILED,
+				"status": requests.StatusFailed,
 				"error":  err.Error(),
 			})
 			return
@@ -920,7 +920,7 @@ func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	}()
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status": requests.STATUS_UPDATED,
+		"status": requests.StatusUpdated,
 	})
 }
 
@@ -928,7 +928,7 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	newVer, _, err := update.GetLatest(config.ClientS3Addr + "/VERSION")
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
@@ -937,17 +937,17 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	changed, err := update.OutOfDate(VERSION, newVer)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
-			"status": requests.STATUS_FAILED,
+			"status": requests.StatusFailed,
 			"error":  err.Error(),
 		})
 		return
 	}
 
 	body := map[string]string{
-		"status": requests.STATUS_NO_UPDATE,
+		"status": requests.StatusNoUpdate,
 	}
 	if changed {
-		body["status"] = requests.STATUS_NEW_UPDATE
+		body["status"] = requests.StatusNewUpdate
 		body["version"] = newVer
 	}
 

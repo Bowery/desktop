@@ -277,7 +277,7 @@ func DelanceyNetwork(app *schemas.Application) ([]*sys.Listener, []*sys.Listener
 		return nil, nil, err
 	}
 
-	if netRes.Status == requests.STATUS_SUCCESS {
+	if netRes.Status == requests.StatusSuccess {
 		return netRes.App, netRes.Generic, nil
 	}
 

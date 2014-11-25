@@ -28,7 +28,7 @@ func TestValidateKeysSuccess(t *testing.T) {
 
 func kenmareValidateKeysHandlerSuccessful(rw http.ResponseWriter, req *http.Request) {
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 	})
 }
 
@@ -45,7 +45,7 @@ func TestValidateKeysFailure(t *testing.T) {
 
 func kenmareValidateKeysHandlerBadKeys(rw http.ResponseWriter, req *http.Request) {
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status": requests.STATUS_FAILED,
+		"status": requests.StatusFailed,
 		"error":  "invalid keys",
 	})
 }
