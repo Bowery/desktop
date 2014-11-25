@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -207,7 +206,6 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 				continue
 			}
 			rootList[path] = delStats[path]
-			fmt.Println("Doing event for", path)
 
 			rel, err := filepath.Rel(local, path)
 			if err != nil {

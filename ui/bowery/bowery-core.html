@@ -280,9 +280,9 @@ Polymer('bowery-core', {
         switch (e.status) {
           case 'upload-start':
             if (app.justCreated) {
-              app.syncMsg = 'Step 4/4: Uploading code...'
+              app.syncMsg = 'Step 4/4: Uploading and starting code...'
             } else {
-              app.syncMsg = 'Uploading code...'
+              app.syncMsg = 'Uploading and starting code...'
             }
             return // Don't do the reset timer here, upload-finish should overwrite.
           case 'upload-finish':
