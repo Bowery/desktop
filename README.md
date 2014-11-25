@@ -20,16 +20,6 @@ Dropbox for Dev Environments
 ## Database
 Uses orchestrate and schemas can be found in `bowery/server/schemas`. All keys will be orchestrate generated ids which are also stored as fields for good measure.
 
-## Team
-Information about what `Developer`'s are sharing what `Env`.
-- `ignoredPaths:[]string`
-- `members:[]Developer.id`
-- `master:Env.id`
-
-## Env
-An array of files that need to be synced. Individual files are not stored in their own collection with their own keys.
-- `[]{localPath:string, s3Path:string, version:string, md5:string}`
-
 ## Developer
 Our version of a user model.
 - `name:string`
@@ -37,9 +27,26 @@ Our version of a user model.
 - `password:string`
 - `salt:string`
 
+## MetaFile
+- localPath:string
+- s3Path:string
+- version:string
+- md5:string
+
+## Env
+An array of `MetaFile`'s that need to be synced. Individual files are not stored in their own collection with their own keys.
+- `files:[]MetaFile`
+
+## Team
+Information about what `Developer`'s are sharing what `Env`.
+- `path:[]string` (we will merge everyone's $PATH)
+- `members:[]Developer.id`
+- `master:Env.id`
+- `creator:Developer`
+
 ## Routes
 ### Server
-- `POST /team` creates a new `Team`.
+- `POST /signup` creates a `Developer`, a new `Team` with the local `Env` from scratch.
 - `PATCH /team/:teamId` adds someone to the `Team`.
 - `GET /pull/:teamId` responds with the `Team`'s master `Env`.
 - `PATCH /push/:teamId` updates the `Team`'s master `Env`.

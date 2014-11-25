@@ -306,7 +306,7 @@ func doUpdate() error {
 	return err
 }
 
-// storePids saves the running pids in $TMPDIR/bowery_pids
+// storePids saves the running pids in $TMPDIR/mercer_pids
 func storePids() error {
 	proc, err := sys.GetPidTree(os.Getpid())
 	if err != nil {
@@ -314,7 +314,7 @@ func storePids() error {
 	}
 	pids := treeList(proc)
 
-	file, err := os.Create(filepath.Join(os.TempDir(), "bowery_pids"))
+	file, err := os.Create(filepath.Join(os.TempDir(), "mercer_pids"))
 	if err != nil {
 		return err
 	}
