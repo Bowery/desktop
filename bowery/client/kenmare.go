@@ -62,7 +62,7 @@ func CreateApplication(reqBody *applicationReq) (*schemas.Application, error) {
 		return nil, err
 	}
 
-	if resBody.Status == requests.STATUS_FAILED {
+	if resBody.Status == requests.StatusFailed {
 		return nil, resBody
 	}
 
@@ -84,7 +84,7 @@ func GetApplications(token string) ([]*schemas.Application, error) {
 		return nil, err
 	}
 
-	if appsRes.Status != requests.STATUS_FOUND {
+	if appsRes.Status != requests.StatusFound {
 		return nil, appsRes
 	}
 
@@ -106,7 +106,7 @@ func GetApplication(id string) (*schemas.Application, error) {
 		return nil, err
 	}
 
-	if appRes.Status != requests.STATUS_FOUND {
+	if appRes.Status != requests.StatusFound {
 		return nil, appRes
 	}
 
@@ -164,7 +164,7 @@ func SearchEnvironments(query string) ([]*schemas.Environment, error) {
 		return nil, err
 	}
 
-	if searchRes.Status != requests.STATUS_FOUND {
+	if searchRes.Status != requests.StatusFound {
 		return nil, searchRes
 	}
 
@@ -186,7 +186,7 @@ func GetEnvironment(id string) (*schemas.Environment, error) {
 		return nil, err
 	}
 
-	if envRes.Status != requests.STATUS_FOUND {
+	if envRes.Status != requests.StatusFound {
 		return nil, envRes
 	}
 
@@ -233,7 +233,7 @@ func UpdateEnvironment(env *schemas.Environment, token string) (*schemas.Environ
 		return nil, err
 	}
 
-	if resBody.Status != requests.STATUS_SUCCESS {
+	if resBody.Status != requests.StatusSuccess {
 		return nil, resBody
 	}
 
@@ -262,7 +262,7 @@ func ValidateKeys(access, secret string) error {
 		return err
 	}
 
-	if resBody.Status != requests.STATUS_SUCCESS {
+	if resBody.Status != requests.StatusSuccess {
 		return resBody
 	}
 

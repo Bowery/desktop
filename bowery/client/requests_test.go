@@ -68,7 +68,7 @@ func TestCreateApplicationHandlerSuccessful(t *testing.T) {
 
 func kenmareCreateApplicationHandlerSuccessful(rw http.ResponseWriter, req *http.Request) {
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
-		"status": requests.STATUS_SUCCESS,
+		"status": requests.StatusSuccess,
 		"application": schemas.Application{
 			ID:        "some-id",
 			LocalPath: dir,
