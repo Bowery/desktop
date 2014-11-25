@@ -145,7 +145,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	Applications[id] = app
 	SaveApps()
 
-	plugin.EmitPluginEvent(schemas.BEFORE_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
+	plugin.EmitPluginEvent(schemas.BeforeFullUpload, "", app.Path, app.ID, app.EnabledPlugins)
 
 	if attach != nil {
 		defer attach.Close()
@@ -160,7 +160,7 @@ func UploadServiceHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	plugin.EmitPluginEvent(schemas.AFTER_FULL_UPLOAD, "", app.Path, app.ID, app.EnabledPlugins)
+	plugin.EmitPluginEvent(schemas.AfterFullUpload, "", app.Path, app.ID, app.EnabledPlugins)
 	<-Restart(app, true, true)
 	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.StatusCreated,
@@ -217,11 +217,11 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	switch typ {
 	case "delete":
-		plugin.EmitPluginEvent(schemas.BEFORE_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BeforeFileDelete, path, app.Path, app.ID, app.EnabledPlugins)
 	case "update":
-		plugin.EmitPluginEvent(schemas.BEFORE_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BeforeFileUpdate, path, app.Path, app.ID, app.EnabledPlugins)
 	case "create":
-		plugin.EmitPluginEvent(schemas.BEFORE_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BeforeFileCreate, path, app.Path, app.ID, app.EnabledPlugins)
 	}
 	path = filepath.Join(app.Path, filepath.Join(strings.Split(path, "/")...))
 
@@ -318,11 +318,11 @@ func UpdateServiceHandler(rw http.ResponseWriter, req *http.Request) {
 
 	switch typ {
 	case "delete":
-		plugin.EmitPluginEvent(schemas.AFTER_FILE_DELETE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AfterFileDelete, path, app.Path, app.ID, app.EnabledPlugins)
 	case "update":
-		plugin.EmitPluginEvent(schemas.AFTER_FILE_UPDATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AfterFileUpdate, path, app.Path, app.ID, app.EnabledPlugins)
 	case "create":
-		plugin.EmitPluginEvent(schemas.AFTER_FILE_CREATE, path, app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AfterFileCreate, path, app.Path, app.ID, app.EnabledPlugins)
 	}
 
 	<-Restart(app, false, true)
@@ -336,10 +336,10 @@ func RemoveServiceHandler(rw http.ResponseWriter, req *http.Request) {
 	id := req.FormValue("id")
 	app := Applications[id]
 	if app != nil {
-		plugin.EmitPluginEvent(schemas.BEFORE_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.BeforeAppDelete, "", app.Path, app.ID, app.EnabledPlugins)
 		Kill(app, true)
 		delete(Applications, id)
-		plugin.EmitPluginEvent(schemas.AFTER_APP_DELETE, "", app.Path, app.ID, app.EnabledPlugins)
+		plugin.EmitPluginEvent(schemas.AfterAppDelete, "", app.Path, app.ID, app.EnabledPlugins)
 	}
 
 	go logClient.Info("removing application", map[string]interface{}{
@@ -532,8 +532,8 @@ func UploadPluginHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Fire off init and background plugin events.
-	go plugin.EmitPluginEvent(schemas.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
-	go plugin.EmitPluginEvent(schemas.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
+	go plugin.EmitPluginEvent(schemas.OnPluginInit, "", "", app.ID, app.EnabledPlugins)
+	go plugin.EmitPluginEvent(schemas.Background, "", "", app.ID, app.EnabledPlugins)
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.StatusSuccess,
@@ -587,8 +587,8 @@ func UpdatePluginHandler(rw http.ResponseWriter, req *http.Request) {
 		app.EnabledPlugins = append(app.EnabledPlugins, p.Name)
 
 		// Fire off init and background events.
-		go plugin.EmitPluginEvent(schemas.ON_PLUGIN_INIT, "", "", app.ID, app.EnabledPlugins)
-		go plugin.EmitPluginEvent(schemas.BACKGROUND, "", "", app.ID, app.EnabledPlugins)
+		go plugin.EmitPluginEvent(schemas.OnPluginInit, "", "", app.ID, app.EnabledPlugins)
+		go plugin.EmitPluginEvent(schemas.Background, "", "", app.ID, app.EnabledPlugins)
 	} else {
 		for i, ep := range app.EnabledPlugins {
 			if ep == p.Name {
