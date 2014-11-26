@@ -149,8 +149,9 @@ func CreateEvent(app *schemas.Application, cmd string) error {
 	return createRes
 }
 
-func SearchEnvironments(query string) ([]*schemas.Environment, error) {
-	addr := fmt.Sprintf("%s/environments?query=%s", config.KenmareAddr, query)
+func SearchEnvironments(query, token string) ([]*schemas.Environment, error) {
+	addr := fmt.Sprintf("%s/environments?query=%s&token=", config.KenmareAddr,
+		query, token)
 	res, err := http.Get(addr)
 	if err != nil {
 		return nil, err
