@@ -50,12 +50,12 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         </div>
       </template>
     </div>
-    <core-ajax url="http://localhost:32055/environments?query={{query || 'default'}}" handleAs="json" on-core-response="{{updateImages}}" auto></core-ajax>
+    <core-ajax url="http://localhost:32055/environments?query={{query || 'default'}}&token={{token || ''}}" handleAs="json" on-core-response="{{updateImages}}" auto></core-ajax>
     <core-ajax id="ajax" url="http://localhost:32055/applications" method="POST" handleAs="json" on-core-complete="{{emitResult}}"></core-ajax>
   </template>
   <script>
   Polymer('bowery-image-select', {
-    ready: function (e) {
+    created: function (e) {
       this.images = []
     },
     updateImages: function (e, detail) {

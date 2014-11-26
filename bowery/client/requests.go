@@ -601,7 +601,8 @@ func removeApplicationHandler(rw http.ResponseWriter, req *http.Request) {
 // searchEnvironmentsHandler is a handler that searches environments.
 // See func name for more details.
 func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
-	query := req.URL.Query().Get("query")
+	token := req.FormValue("token")
+	query := req.FormValue("query")
 	if query == "" {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.StatusFailed,
@@ -610,7 +611,7 @@ func searchEnvironmentsHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	envs, err := SearchEnvironments(query)
+	envs, err := SearchEnvironments(query, token)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
