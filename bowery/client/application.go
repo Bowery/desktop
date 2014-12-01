@@ -22,16 +22,14 @@ var (
 )
 
 type ApplicationManager struct {
-	Applications  map[string]*schemas.Application
-	Syncer        *Syncer
-	StreamManager *StreamManager
+	Applications map[string]*schemas.Application
+	Syncer       *Syncer
 }
 
 func NewApplicationManager() *ApplicationManager {
 	return &ApplicationManager{
-		Applications:  make(map[string]*schemas.Application),
-		Syncer:        NewSyncer(),
-		StreamManager: NewStreamManager(),
+		Applications: make(map[string]*schemas.Application),
+		Syncer:       NewSyncer(),
 	}
 }
 
@@ -96,13 +94,9 @@ func (am *ApplicationManager) Add(app *schemas.Application) error {
 		}
 
 		if err := am.Syncer.Remove(app); err != nil {
-			log.Println("StreamManager.Remove Failed in Add", err)
+			log.Println("Syncer.Remove Failed in Add", err)
 		}
 		am.Syncer.Watch(app)
-
-		// Reset the log manager.
-		am.StreamManager.Remove(app)
-		am.StreamManager.Connect(app)
 	}()
 
 	am.Applications[app.ID] = app
@@ -183,13 +177,9 @@ func (am *ApplicationManager) UpdateByID(id string, changes *schemas.Application
 	// Reset the syncer so an upload is done.
 	if app.Location != "" && app.IsSyncAvailable {
 		if err := am.Syncer.Remove(app); err != nil {
-			log.Println("StreamManager.Remove Failed in UpdateByID", err)
+			log.Println("Syncer.Remove Failed in UpdateByID", err)
 		}
 		am.Syncer.Watch(app)
-
-		// Reset the log manager.
-		am.StreamManager.Remove(app)
-		am.StreamManager.Connect(app)
 	}
 	return app, nil
 }
@@ -205,28 +195,17 @@ func (am *ApplicationManager) RemoveByID(id string) (*schemas.Application, error
 		return nil, err
 	}
 
-	err = am.StreamManager.Remove(app)
-	if err != nil {
-		return nil, err
-	}
-
 	delete(am.Applications, id)
 	return app, nil
 }
 
 func (am *ApplicationManager) Close() error {
-	err := am.StreamManager.Close()
-	if err != nil {
-		return err
-	}
-
 	return am.Syncer.Close()
 }
 
 func (am *ApplicationManager) Empty() {
 	for _, app := range am.Applications {
 		am.Syncer.Remove(app)
-		am.StreamManager.Remove(app)
 	}
 
 	am.Applications = make(map[string]*schemas.Application)

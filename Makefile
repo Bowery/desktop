@@ -21,11 +21,7 @@ test: deps
 	@go test ./...
 
 ui:
-	@myth -v ui/bowery/bowery.css ui/bowery/out.css > debug.log 2>&1
-	@cd ui && bower install > debug.log 2>&1
-	@mkdir -p bin
-	@vulcanize --verbose --inline ui/bowery/bowery.html -o bin/app.html > debug.log 2>&1
-	@cp -f ui/bowery/logs.html bin/logs.html
+	@bash --norc ./scripts/make_ui.sh &> debug.log
 
 ui-test: ui
 	npm test

@@ -2,6 +2,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bowery/desktop/bowery/agent/plugin"
 	"github.com/Bowery/gopackages/requests"
@@ -48,6 +51,7 @@ var Routes = []web.Route{
 	{"DELETE", "/plugins", RemovePluginHandler, false},
 	{"GET", "/network", NetworkHandler, false},
 	{"GET", "/healthz", HealthzHandler, false},
+	{"POST", "/password", PasswordHandler, false},
 	{"GET", "/_/state/apps", AppStateHandler, false},
 	{"GET", "/_/state/plugins", PluginStateHandler, false},
 }
@@ -695,6 +699,109 @@ func PluginStateHandler(rw http.ResponseWriter, req *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.Write(data)
+}
+
+// POST /password, Sets the password for a user and sets up ssh for password.
+func PasswordHandler(rw http.ResponseWriter, req *http.Request) {
+	sshPath := "/etc/ssh/sshd_config"
+	user := req.FormValue("user")
+	pass := req.FormValue("password")
+	if user == "" || pass == "" {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  "user and password is required",
+		})
+		return
+	}
+	buf := bytes.NewBufferString(user + ":" + pass)
+	var buferr bytes.Buffer
+
+	// Set the users password.
+	cmd := sys.NewCommand("chpasswd", nil)
+	cmd.Stdin = buf
+	cmd.Stderr = &buferr
+	err := cmd.Run()
+	if err != nil {
+		if cmd.ProcessState != nil && !cmd.ProcessState.Success() {
+			err = errors.New("ProcessError: " + strings.TrimSpace(buferr.String()))
+		}
+
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// Open the sshd config to edit it.
+	source, err := os.Open(sshPath)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+	defer source.Close()
+
+	// Create tmp file to store changes.
+	tmp := filepath.Join(os.TempDir(), "bowery_ssh_"+strconv.FormatInt(time.Now().Unix(), 10))
+	dest, err := os.Create(tmp)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+	defer dest.Close()
+
+	// Replace the PasswordAuthentication to yes.
+	scanner := bufio.NewScanner(source)
+	for scanner.Scan() {
+		text := scanner.Text()
+		isComment := len(text) > 0 && text[0] == '#'
+		text = strings.TrimLeft(text, "# ")
+		passStr := "PasswordAuthentication"
+
+		// If we've found the password auth line, reset it to yes.
+		if len(text) >= len(passStr) && text[:len(passStr)] == passStr &&
+			len(strings.Fields(text)) == 2 {
+			text = "PasswordAuthentication yes"
+		}
+		if isComment {
+			text = "# " + text
+		}
+
+		_, err := dest.Write([]byte(text + "\n"))
+		if err != nil {
+			renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+				"status": requests.StatusFailed,
+				"error":  err.Error(),
+			})
+			return
+		}
+	}
+
+	// Move the tmp file back to the ssh path.
+	err = scanner.Err()
+	if err == nil {
+		err = os.Rename(tmp, sshPath)
+	}
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	// Restart the sshd daemon.
+	cmd = sys.NewCommand("service ssh restart", nil)
+	cmd.Run()
+	renderer.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.StatusSuccess,
+	})
 }
 
 // GET /healthz, Return the status of a container

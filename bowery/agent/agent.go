@@ -21,7 +21,6 @@ var (
 	VERSION       string // This is set when release_agent.sh is ran.
 	InDevelopment = false
 	Applications  = map[string]*Application{}
-	streamManager = NewStreamManager()
 	logClient     = loggly.New(config.LogglyKey, "agent")
 )
 
@@ -47,13 +46,8 @@ func main() {
 		port = config.BoweryAgentDevSyncPort
 	}
 
-	// Start tcp.
-	go StartTCP()
-	// Start event listening.
-	pluginManager := plugin.SetPluginManager()
+	// Start plugin management.
 	go plugin.StartPluginListener()
-	streamManager.pluginErr = pluginManager.Error
-	go streamManager.Stream()
 
 	// Add saved applications.
 	LoadApps()
