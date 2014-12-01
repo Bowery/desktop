@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -150,7 +151,7 @@ func CreateEvent(app *schemas.Application, cmd string) error {
 }
 
 func SearchEnvironments(query, token string) ([]*schemas.Environment, error) {
-	addr := fmt.Sprintf("%s/environments?query=%s&token=", config.KenmareAddr,
+	addr := fmt.Sprintf("%s/environments?query=%s&token=%s", config.KenmareAddr,
 		query, token)
 	res, err := http.Get(addr)
 	if err != nil {
