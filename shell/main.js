@@ -102,6 +102,7 @@ app.on('ready', function() {
       submenu:[
         {label: 'About Bowery', selector: 'orderFrontStandardAboutPanel:'},
         {type: 'separator'},
+        // Don't use CommandOrControl here, since these aren't typical on PCs.
         {label: 'Hide', accelerator: 'Command+H', selector: 'hide:'},
         {label: 'Quit', accelerator: 'Command+Q', click: function() {app.quit()}}
       ]
@@ -111,12 +112,12 @@ app.on('ready', function() {
       submenu: [
         {
           label: 'Undo',
-          accelerator: 'Command+Z',
+          accelerator: 'CommandOrControl+Z',
           selector: 'undo:'
         },
         {
           label: 'Redo',
-          accelerator: 'Shift+Command+Z',
+          accelerator: 'Shift+CommandOrControl+Z',
           selector: 'redo:'
         },
         {
@@ -124,22 +125,22 @@ app.on('ready', function() {
         },
         {
           label: 'Cut',
-          accelerator: 'Command+X',
+          accelerator: 'CommandOrControl+X',
           selector: 'cut:'
         },
         {
           label: 'Copy',
-          accelerator: 'Command+C',
+          accelerator: 'CommandOrControl+C',
           selector: 'copy:'
         },
         {
           label: 'Paste',
-          accelerator: 'Command+V',
+          accelerator: 'CommandOrControl+V',
           selector: 'paste:'
         },
         {
           label: 'Select All',
-          accelerator: 'Command+A',
+          accelerator: 'CommandOrControl+A',
           selector: 'selectAll:'
         },
       ]
@@ -149,12 +150,12 @@ app.on('ready', function() {
       submenu: [
         {
           label: 'Reload',
-          accelerator: 'Command+R',
+          accelerator: 'CommandOrControl+R',
           click: function() { BrowserWindow.getFocusedWindow().reloadIgnoringCache(); }
         },
         {
           label: 'Toggle DevTools',
-          accelerator: 'Alt+Command+I',
+          accelerator: 'Alt+CommandOrControl+I',
           click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
         },
       ]
@@ -164,11 +165,12 @@ app.on('ready', function() {
       submenu: [
         {
           label: 'Minimize',
-          accelerator: 'Command+M',
+          accelerator: 'CommandOrControl+M',
           selector: 'performMiniaturize:'
         },
         {
           label: 'Close',
+          // Don't use CommandOrControl here, since these aren't typical on PCs.
           accelerator: 'Command+W',
           selector: 'performClose:'
         },
