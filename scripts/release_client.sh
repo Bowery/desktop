@@ -32,13 +32,21 @@ updates="${pkgdir}/updates"
 rm -rf "${pkgdir}"
 mkdir -p /tmp/atom "${atom}" "${updates}" "${distdir}"
 
+cd "${root}/scripts"
+go build util.go
+cd -
+
+if [[ ! -f "$(which goxc)" ]]; then
+  go get github.com/laher/goxc &> "${root}/debug.log"
+fi
+
 echo "--> Cross compiling client..."
 goxc \
   -wd="${client}" \
   -d="${root}/pkg" \
   -bc="linux windows darwin,amd64" \
   -pv="${version}" \
-  xc &> "${root}/goxc.log"
+  xc &> "${root}/debug.log"
 
 echo "--> Cross compiling updater..."
 goxc \
@@ -46,7 +54,7 @@ goxc \
   -d="${root}/pkg" \
   -bc="linux windows darwin,amd64" \
   -pv="${version}" \
-  xc &> "${root}/goxc.log"
+  xc &> "${root}/debug.log"
 
 echo "--> Downloading shells..."
 ver="0.19.1"
@@ -236,23 +244,4 @@ cd "${distdir}"
 shasum -a256 * > "${version}_SHA256SUMS"
 
 echo "--> Uploading archives to s3..."
-for file in "${distdir}/"*; do
-  name="$(basename "${file}")"
-  bucket=desktop.bowery.io
-  resource="/${bucket}/${name}"
-  contentType="application/octet-stream"
-  dateValue="$(date -u +"%a, %d %h %Y %T +0000")"
-  stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-  s3Key=${AWS_KEY}
-  s3Secret=${AWS_SECRET}
-  signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-  curl -k \
-    -T ${name} \
-    -H "Host: ${bucket}.s3.amazonaws.com" \
-    -H "Date: ${dateValue}" \
-    -H "Content-Type: ${contentType}" \
-    -H "Authorization: AWS ${s3Key}:${signature}" \
-    https://${bucket}.s3.amazonaws.com/${name}
-
-  echo "* http://desktop.bowery.io/${name} is available for download."
-done
+"${root}/util" aws "${distdir}"
