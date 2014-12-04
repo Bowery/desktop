@@ -244,4 +244,4 @@ cd "${distdir}"
 shasum -a256 * > "${version}_SHA256SUMS"
 
 echo "--> Uploading archives to s3..."
-"${root}/util" aws "${distdir}"
+"${root}/scripts/util" aws "${distdir}"
