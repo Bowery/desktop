@@ -18,6 +18,10 @@ cd "${agent}"
 version="$(cat VERSION)"
 echo "Version: ${version}"
 
+cd "${root}/scripts"
+go build util.go
+cd -
+
 go get -u github.com/laher/goxc
 
 # Build the agent.
@@ -64,22 +68,4 @@ pushd "pkg/${version}/dist"
 shasum -a256 * > "${version}_SHA256SUMS"
 popd
 
-for archive in "pkg/${version}/dist/"*; do
-  name=$(basename ${archive})
-  echo "Uploading: ${name} from ${archive}"
-  file="${name}"
-  resource="/${bucket}/${file}"
-  contentType="application/octet-stream"
-  dateValue="$(date -u +"%a, %d %h %Y %T +0000")"
-  stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-  s3Key=AKIAJKTSTYBSHPKQTMPQ
-  s3Secret=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
-  signature="$(echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64)"
-  curl -k \
-    -T ${archive} \
-    -H "Host: ${bucket}.s3.amazonaws.com" \
-    -H "Date: ${dateValue}" \
-    -H "Content-Type: ${contentType}" \
-    -H "Authorization: AWS ${s3Key}:${signature}" \
-    "${s3endpoint}/${file}"
-done
+"${root}/util" aws "pkg/${version}/dist"
