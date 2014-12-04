@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,11 +19,13 @@ import (
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/ssh"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/tar"
 	"github.com/Bowery/gopackages/update"
 	"github.com/Bowery/gopackages/web"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
 )
 
@@ -42,6 +45,7 @@ var Routes = []web.Route{
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
 	{"GET", "/_/sse", sseHandler, false},
+	{"GET", "/ssh/{id}", sshHandler, false},
 }
 
 var renderer = render.New(render.Options{
@@ -988,6 +992,65 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(rw, "data: %v\n\n", string(data))
 			f.Flush()
 		}
+	}
+}
+
+func sshHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	app, err := applicationManager.GetByID(id)
+	if err != nil {
+		rollbarC.Report(err, map[string]interface{}{
+			"id":      id,
+			"VERSION": VERSION,
+		})
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	sshClient := &ssh.Client{
+		Addr:     net.JoinHostPort(app.Location, "22"),
+		User:     app.User,
+		Password: app.Password,
+	}
+	defer sshClient.Close()
+
+	var rows int
+	cols, err := strconv.Atoi(req.FormValue("cols"))
+	if err == nil {
+		rows, err = strconv.Atoi(req.FormValue("rows"))
+	}
+	if err != nil {
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	sshClient.Rows = rows
+	sshClient.Cols = cols
+
+	// Setup WebSocket connection.
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(req *http.Request) bool { return true },
+	}
+	conn, err := upgrader.Upgrade(rw, req, nil)
+	if err != nil {
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	defer conn.Close()
+
+	// Set the stdio wrappers for the connection.
+	wsio := NewWebSocketIO(conn)
+	sshClient.Stdout = wsio
+	sshClient.Stderr = wsio
+	sshClient.Stdin = wsio
+
+	err = sshClient.Shell()
+	if err != nil && err != websocket.ErrCloseSent {
+		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(1, err.Error()))
 	}
 }
 

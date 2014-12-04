@@ -40,10 +40,6 @@ func (ow *OutputWriter) Write(b []byte) (int, error) {
 		return n, err
 	}
 
-	// this is awful. make app manager with a chan []byte that the Stream method of
-	// *Stream manager uses
-	streamManager.SendLog(b)
-
 	return n, ow.file.Sync()
 }
 

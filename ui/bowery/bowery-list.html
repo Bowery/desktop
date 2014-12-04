@@ -67,7 +67,8 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
               <a class="sub nocollapse" href="{{item.location + getPort(item)}}" on-click="{{copy}}" class="{{item.status != 'running' ? 'error' : ''}}">{{item.status != 'running' ? item.statusMsg : (('Copy ' + item.location + getPort(item) + ' to clipboard') || 'Your app is provisioning')}}</a>
             </template>
             <a class="sub" href="" on-click="{{edit}}">Edit Information</a>
-            <a class="sub" href="/apps/exec" on-click="{{navigate}}">Exec Commands</a>
+            <a class="sub" href="" on-click="{{openTerm}}">Open Console</a>
+            <a class="sub" href="" on-click="{{openLogs}}">View Logs</a>
             <a class="sub" href="/images/edit" on-click="{{navigate}}">Publish Image</a>
             <a class="sub bad" href="" on-click="{{delete}}">Delete App</a>
           </template>
@@ -110,9 +111,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       require('clipboard').writeText(this.item.location + this.getPort(this.item))
       e.target.innerHTML = 'Copied!'
     },
-    openLogsWindow: function () {
-      window.open("file://" + require('path').join(__dirname, "logs.html") + "?appId=" + this.item._id, this.item.name + " Logs", "resizable,scrollbars," + this.item.name + " Logs")
-    },
     navigate: function (path) {
       var self = this
       if (typeof path != "string") {
@@ -122,10 +120,6 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
       }
 
       this.$.analytics.track('Navigated to ' + path)
-
-      //TODO (thebyrd) make this less ghetto
-      if (path == "/apps/exec")
-        this.openLogsWindow()
 
       this.fire('bowery-navigate', {path: path})
     },
@@ -156,6 +150,22 @@ Copyright (c) 2014 Bowery, Inc. All rights reserved.
         this.list = this.list.filter(function (i) {return i._id != id})
         delete this.item
       }
+    },
+    openTerm: function (e, data) {
+      e.preventDefault()
+      var title = this.item.name + ' Console'
+      var query = '?appId=' + this.item._id + '&remotePath=' + this.item.remotePath
+      query += '&user=' + this.item.user
+      if (data == "logs") {
+        query += '&logs=true'
+        title = this.item.name + ' Logs'
+      }
+
+      window.open('file://' + require('path').join(__dirname, 'term.html') + query,
+        title.replace(/\s/g, '_')+(new Date), 'resizable=no,scrollbars,' + title)
+    },
+    openLogs: function (e) {
+      this.openTerm(e, "logs")
     },
     getPort: function (item) {
       return item.portInUse ? (':' + item.portInUse) : ''
