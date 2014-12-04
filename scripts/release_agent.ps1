@@ -85,5 +85,5 @@ if ($LastExitCode -gt 0) {
 }
 
 cd $dir
-..\..\scripts\util.exe aws "$dir\pkg\$version\dist"
+..\..\scripts\util.exe aws "bowery.sh" "$dir\pkg\$version\dist"
 cd $origpwd
