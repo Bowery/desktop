@@ -68,4 +68,4 @@ pushd "pkg/${version}/dist"
 shasum -a256 * > "${version}_SHA256SUMS"
 popd
 
-"${root}/scripts/util" aws "pkg/${version}/dist"
+"${root}/scripts/util" aws "${bucket}" "pkg/${version}/dist"

@@ -99,31 +99,32 @@ func zipsCmd(args ...string) error {
 func awsCmd(args ...string) error {
 	var (
 		done        = make(chan error, 1)
-		bucket      = "desktop.bowery.io"
 		contentType = "application/octet-stream"
 		perm        = "public-read"
 		wg          sync.WaitGroup
 	)
-	if len(args) < 1 {
-		return errors.New("Usage: util aws <path>")
+	if len(args) < 2 {
+		return errors.New("Usage: util aws <bucket> <path>")
 	}
+	bucket := args[0]
 
 	client, err := aws.NewClient(config.S3AccessKey, config.S3SecretKey)
 	if err != nil {
 		return err
 	}
 
-	stat, err := os.Stat(args[0])
+	stat, err := os.Stat(args[1])
 	if err != nil {
 		return err
 	}
 
 	// If the path isn't a directory just upload it.
 	if !stat.IsDir() {
-		return client.PutFile(bucket, filepath.Base(args[0]), args[0], contentType, perm)
+		fmt.Println("Uploading", args[1], "to", filepath.Base(args[1]))
+		return client.PutFile(bucket, filepath.Base(args[1]), args[1], contentType, perm)
 	}
 
-	dir, err := os.Open(args[0])
+	dir, err := os.Open(args[1])
 	if err != nil {
 		return err
 	}
@@ -140,11 +141,13 @@ func awsCmd(args ...string) error {
 
 		go func(info os.FileInfo) {
 			defer wg.Done()
+			path := filepath.Join(args[1], info.Name())
 
-			err := client.PutFile(bucket, info.Name(), filepath.Join(args[0], info.Name()), contentType, perm)
+			err := client.PutFile(bucket, info.Name(), path, contentType, perm)
 			if err != nil {
 				done <- err
 			}
+			fmt.Println("Uploaded", path, "to", info.Name())
 		}(stat)
 	}
 
