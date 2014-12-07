@@ -1,8 +1,7 @@
 DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
-all: deps format ui
+all: deps format
 	@bash --norc ./scripts/build_client.sh
-	@bash --norc ./scripts/build_agent.sh
 	@bash --norc ./scripts/build_updater.sh
 	@echo "--> Starting shell..."
 	@bash --norc ./scripts/run_shell.sh > debug.log 2>&1 &
@@ -20,21 +19,11 @@ format:
 test: deps
 	@go test ./...
 
-ui:
-	@bash --norc ./scripts/make_ui.sh &> debug.log
-
-ui-test: ui
-	npm test
-
-ui-clean:
-	-rm -rf node_modules
-	-rm -rf ui/diff
-
 agent:
 	@echo "--> Releasing agent..."
 	@bash --norc ./scripts/release_agent.sh
 
-client: ui
+client:
 	@bash --norc ./scripts/release_client.sh
 
 release: agent client
@@ -49,12 +38,8 @@ clean:
 	-rm -f debug.log
 	-rm -f goxc.log
 	-pkill -f bin/client
-	-pkill -f bin/agent
-	-pkill -f node_modules/.bin
 
-extra-clean: clean ui-clean
-	-rm -rf build/node_modules
-	-rm -rf build/atom-shell
+extra-clean: clean
 	-rm -rf /tmp/atom
 
-.PHONY: all deps test format clean release agent client ui ui-test ui-clean
+.PHONY: all deps test format clean release agent client
