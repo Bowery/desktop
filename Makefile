@@ -31,6 +31,7 @@ release: agent client
 
 clean:
 	-rm -rf pkg
+
 	-rm -rf bowery/client/pkg
 	-rm -rf bowery/agent/pkg
 	-rm -rf dist
@@ -41,5 +42,7 @@ clean:
 
 extra-clean: clean
 	-rm -rf /tmp/atom
+	-rm -rf /tmp/shell
+	-rm -rf build/
 
 .PHONY: all deps test format clean release agent client

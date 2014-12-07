@@ -10,9 +10,7 @@ pkg/
 bin/
 debug.log
 goxc.log
-build/atom-shell
-build/node_modules
-build/cache
+build/
 dist/
 scripts/util
 scripts/util.exe
