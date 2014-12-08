@@ -8,7 +8,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/desktop/agent/plugin"
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/util"
 	"github.com/Bowery/gopackages/web"

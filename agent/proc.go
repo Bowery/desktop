@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/desktop/agent/plugin"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
 )

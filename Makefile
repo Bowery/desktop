@@ -14,7 +14,9 @@ deps:
 
 format:
 	@echo "--> Running go fmt"
-	@gofmt -w bowery/
+	@gofmt -w agent/
+	@gofmt -w client/
+	@gofmt -w updater/
 
 test: deps
 	@go test ./...

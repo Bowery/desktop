@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Bowery/desktop/bowery/agent/plugin"
+	"github.com/Bowery/desktop/agent/plugin"
 )
 
 func init() {
