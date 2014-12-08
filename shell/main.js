@@ -195,12 +195,11 @@ app.on('ready', function() {
     resizable: false,
     center: true,
     show: true,
-    frame: false,
     icon: path.join(__dirname, 'icon.png')
   })
 
   mainWindow.setSize(400, 485)
-  mainWindow.loadUrl('file://' + path.join(__dirname, '..', 'bin', 'app.html'))
+  mainWindow.loadUrl('file://' + path.join(__dirname, 'bowery.html'))
   mainWindow.on('closed', function() {
     mainWindow = null
   })

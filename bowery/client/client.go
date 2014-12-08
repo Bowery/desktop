@@ -61,7 +61,7 @@ func main() {
 	server := web.NewServer(port, []web.Handler{
 		new(web.SlashHandler),
 		new(web.CorsHandler),
-	}, Routes)
+	}, routes)
 	server.AuthHandler = &web.AuthHandler{Auth: web.DefaultAuthHandler}
 
 	server.ListenAndServe()

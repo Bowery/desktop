@@ -19,15 +19,15 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleVersion</key>
-	<string>0.15.3</string>
+	<string>0.19.5</string>
 	<key>DTSDKBuild</key>
 	<string>13C64</string>
 	<key>DTSDKName</key>
 	<string>macosx</string>
 	<key>DTXcode</key>
-	<string>0511</string>
+	<string>0510</string>
 	<key>DTXcodeBuild</key>
-	<string>5B1008</string>
+	<string>5B130a</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.8.0</string>
 	<key>NSMainNibFile</key>
