@@ -6,16 +6,16 @@ source="${BASH_SOURCE[0]}"
 while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
 root="$(cd -P "$(dirname "${source}")/.." && pwd)"
 
-if [[ -d build/Bowery.app ]]; then
+if [[ ! -d "${root}/build/Bowery.app" ]]; then
   echo "Downloading Atom Shell..."
   mkdir -p "${root}/build"
   mkdir -p /tmp/shell
   wget -O /tmp/shell/mac.zip https://github.com/atom/atom-shell/releases/download/v0.19.5/atom-shell-v0.19.5-darwin-x64.zip
   unzip -d "${root}/build/" /tmp/shell/mac.zip
   mv "${root}/build/Atom.app" "${root}/build/Bowery.app"
+
 fi
 
-cat "${root}/shell/Info.plist" > build/Bowery.app/Contents/Info.plist
-cp -f "${root}/shell/bowery.icns" build/Bowery.app/Contents/Resources
-
-./build/Bowery.app/Contents/MacOS/Atom "${root}/shell"
+cat "${root}/shell/Info.plist" > "${root}/build/Bowery.app/Contents/Info.plist"
+cp -f "${root}/shell/bowery.icns" "${root}/build/Bowery.app/Contents/Resources"
+"/${root}/build/Bowery.app/Contents/MacOS/Atom" "${root}/shell"

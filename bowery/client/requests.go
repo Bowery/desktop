@@ -24,7 +24,7 @@ import (
 )
 
 var routes = []web.Route{
-	{"POST", "/containers", runContainerHandler, false},
+	{"POST", "/containers", createContainerHandler, false},
 	{"DELETE", "/containers/:id", deleteContainerHandler, false},
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
@@ -83,15 +83,14 @@ func (res *Res) Error() string {
 	return res.Err
 }
 
-// runContainerHandler requests a container from kenmare.io and initiates the
+// createContainerHandler requests a container from kenmare.io and initiates the
 // sync of the contents of the directory to the container it created.
-func runContainerHandler(rw http.ResponseWriter, req *http.Request) {
+func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rw, "ok")
 }
 
-// deleteContainerHandler is requested when the nassh screen is closed. It should
-// ask kenmare to delete the container, clean up the host, and add it back to
-// the buffer so that it can be reused.
+// deleteContainerHandler sends a request to kenmare to terminate the container
+// and stops local file syncing.
 func deleteContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rw, "ok")
 }
