@@ -6,45 +6,26 @@ while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
 root="$(cd -P "$(dirname "${source}")/.." && pwd)"
 cd "${root}"
 
-# Handle installing deps.
-if [[ ! -f "$(which myth)" ]]; then
-  npm install -g myth
-fi
+mkdir -p build/
 
 if [[ ! -f "$(which vulcanize)" ]]; then
   npm install -g vulcanize
 fi
 
-if [[ ! -f "$(which bower)" ]]; then
-  npm install -g bower
-fi
-
-if [[ ! -f "$(which grunt)" ]]; then
-  npm install -g grunt grunt-cli
-fi
-
-myth -v ui/bowery/bowery.css ui/bowery/out.css &> debug.log
-
-cd ui
-bower install &> ../debug.log
-cd -
-
-if [[ ! -d ui/components/libdot ]]; then
-  git clone https://github.com/macton/libdot.git ui/components/libdot
-  cd ui/components/libdot
+if [[ ! -d build/libdot ]]; then
+  git clone https://github.com/macton/libdot.git build/libdot
+  cd build/libdot
   npm install
   grunt
   mv dist/* .
   cd -
 fi
 
-if [[ ! -d ui/components/hterm ]]; then
-  git clone https://github.com/macton/hterm.git ui/components/hterm
-  cd ui/components/hterm
+if [[ ! -d build/hterm ]]; then
+  git clone https://github.com/macton/hterm.git build/hterm
+  cd build/hterm
   mv src/* .
   cd -
 fi
 
-mkdir -p bin
-vulcanize --verbose --inline ui/bowery/bowery.html -o bin/app.html &> debug.log
-vulcanize --verbose --inline ui/bowery/term.html -o bin/term.html &> debug.log
+vulcanize --verbose --inline shell/term.html -o shell/term.min.html &> debug.log

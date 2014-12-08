@@ -6,8 +6,8 @@ while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
 root="$(cd -P "$(dirname "${source}")/.." && pwd)"
 CGO_ENABLED=0
 
-agent="${root}/bowery/agent"
-updater="${root}/bowery/updater"
+agent="${root}/agent"
+updater="${root}/updater"
 bucket=bowery.sh
 s3endpoint="https://${bucket}.s3.amazonaws.com"
 

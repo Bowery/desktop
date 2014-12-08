@@ -4,7 +4,7 @@
 source="${BASH_SOURCE[0]}"
 while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
 root="$(cd -P "$(dirname "${source}")/.." && pwd)"
-cd "${root}/bowery/updater"
+cd "${root}/updater"
 mkdir -p "${root}/bin"
 
 echo "--> Installing dependencies..."

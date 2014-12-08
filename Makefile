@@ -14,7 +14,9 @@ deps:
 
 format:
 	@echo "--> Running go fmt"
-	@gofmt -w bowery/
+	@gofmt -w agent/
+	@gofmt -w client/
+	@gofmt -w updater/
 
 test: deps
 	@go test ./...
@@ -26,14 +28,10 @@ agent:
 client:
 	@bash --norc ./scripts/release_client.sh
 
-release: agent client
-	@echo "Done."
-
 clean:
 	-rm -rf pkg
-
-	-rm -rf bowery/client/pkg
-	-rm -rf bowery/agent/pkg
+	-rm -rf client/pkg
+	-rm -rf agent/pkg
 	-rm -rf dist
 	-rm -rf bin
 	-rm -f debug.log
@@ -45,4 +43,4 @@ extra-clean: clean
 	-rm -rf /tmp/shell
 	-rm -rf build/
 
-.PHONY: all deps test format clean release agent client
+.PHONY: all deps test format clean agent client
