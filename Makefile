@@ -14,24 +14,20 @@ deps:
 
 format:
 	@echo "--> Running go fmt"
-	@gofmt -w agent/
 	@gofmt -w client/
 	@gofmt -w updater/
 
 test: deps
 	@go test ./...
 
-agent:
-	@echo "--> Releasing agent..."
-	@bash --norc ./scripts/release_agent.sh
-
-client:
+release:
 	@bash --norc ./scripts/release_client.sh
+
+client: release
 
 clean:
 	-rm -rf pkg
 	-rm -rf client/pkg
-	-rm -rf agent/pkg
 	-rm -rf dist
 	-rm -rf bin
 	-rm -f debug.log
@@ -43,4 +39,4 @@ extra-clean: clean
 	-rm -rf /tmp/shell
 	-rm -rf build/
 
-.PHONY: all deps test format clean agent client
+.PHONY: all deps test format clean release client extra-clean
