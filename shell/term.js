@@ -101,11 +101,10 @@ hterm.PreferenceManager = function (id) {
 
     // Create websocket connection.
     var query = 'cols='+term.screenSize.width+'&rows='+term.screenSize.height
-    this.conn = new WebSocket('ws://localhost:32055/ssh/'+qmark('appId')+'?'+query)
+    this.conn = new WebSocket('ws://localhost:32055/_/ssh'+'?'+query)
     this.conn.binaryType = 'arraybuffer'
 
     this.conn.onopen = function () {
-      self.conn.send('cd ' + qmark('remotePath') + '\n')
       if (qmark('logs') == 'true') {
         var path = '/home/'+qmark('user')+'/.bowery/log/'+qmark('appId')+'-std'
         self.conn.send('tail -f '+path+'out.log '+path+'err.log\n')

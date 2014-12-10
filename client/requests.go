@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,10 +17,12 @@ import (
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/ssh"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/update"
 	"github.com/Bowery/gopackages/web"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
 )
 
@@ -28,6 +31,7 @@ var routes = []web.Route{
 	{"DELETE", "/containers/:id", deleteContainerHandler, false},
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
+	{"GET", "/_/ssh", sshHandler, false},
 	{"GET", "/_/sse", sseHandler, false},
 }
 
@@ -86,7 +90,12 @@ func (res *Res) Error() string {
 // createContainerHandler requests a container from kenmare.io and initiates the
 // sync of the contents of the directory to the container it created.
 func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "ok")
+	renderer.JSON(rw, http.StatusOK, map[string]string{
+		"status":   requests.StatusCreated,
+		"ip":       "80.maspeth.io",
+		"user":     "pi",
+		"password": "80maspeth",
+	})
 }
 
 // deleteContainerHandler sends a request to kenmare to terminate the container
@@ -196,6 +205,54 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	renderer.JSON(rw, http.StatusOK, body)
+}
+
+func sshHandler(rw http.ResponseWriter, req *http.Request) {
+	// values, err := url.ParseQuery(req.URL.RawQuery)
+	// fmt.Println(req.URL.RawQuery, values.Get("user"), err.Error(), "$$$$")
+
+	sshClient := &ssh.Client{
+		Addr:     net.JoinHostPort("80.maspeth.io", "22"),
+		User:     "pi",
+		Password: "80maspeth",
+	}
+	defer sshClient.Close()
+
+	var rows int
+	cols, err := strconv.Atoi(req.FormValue("cols"))
+	if err == nil {
+		rows, err = strconv.Atoi(req.FormValue("rows"))
+	}
+	if err != nil {
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	sshClient.Rows = rows
+	sshClient.Cols = cols
+
+	// Setup WebSocket connection.
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(req *http.Request) bool { return true },
+	}
+	conn, err := upgrader.Upgrade(rw, req, nil)
+	if err != nil {
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	defer conn.Close()
+
+	// Set the stdio wrappers for the connection.
+	wsio := NewWebSocketIO(conn)
+	sshClient.Stdout = wsio
+	sshClient.Stderr = wsio
+	sshClient.Stdin = wsio
+
+	err = sshClient.Shell()
+	if err != nil && err != websocket.ErrCloseSent {
+		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(1, err.Error()))
+	}
 }
 
 func sseHandler(rw http.ResponseWriter, req *http.Request) {

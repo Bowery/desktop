@@ -11,7 +11,6 @@ Set up your development environment in 30 seconds flat.
 ## Directory Structure
 - `/bin` is where things get compiled to
 - `/client` runs on the users computer, watches files for changes, and syncs them to `agent`.
-- `/agent` runs remotely and syncs code send to it by the `client`
 - `/updater` is an app used to update the `client`. It is started by `shell` and starts `client`.
 - `/build` is where the Bowery.app we run in development is actually located
 - `/scripts` are a set of utilities that you should never call directly, but are used by the Makefile

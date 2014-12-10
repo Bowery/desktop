@@ -1,6 +1,7 @@
 DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
 all: deps format
+	@bash --norc ./scripts/make_ui.sh
 	@bash --norc ./scripts/build_client.sh
 	@bash --norc ./scripts/build_updater.sh
 	@echo "--> Starting shell..."

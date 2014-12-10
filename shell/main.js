@@ -200,7 +200,7 @@ app.on('ready', function() {
 
   mainWindow.setSize(400, 485)
   mainWindow.loadUrl('file://' + path.join(__dirname, 'bowery.html'))
-  mainWindow.on('closed', function() {
+  mainWindow.on('closed', function () {
     mainWindow = null
   })
 
