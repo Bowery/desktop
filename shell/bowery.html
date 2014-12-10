@@ -21,6 +21,24 @@
   </style>
   <script type="text/javascript" src="http://zeptojs.com/zepto.min.js"></script>
   <script type="text/javascript">
+  var path = require('path')
+  var BrowserWindow = require('remote').require('browser-window')
+  function openSSH (ip, user, password) {
+    var w = new BrowserWindow({
+      title: ip,
+      frame: true,
+      width: 570,
+      height: 370,
+      show: true,
+      resizable: true
+    })
+    var query = $.param({ip: ip, user: user, password: password})
+    w.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
+    w.on('closed', function () {
+      w = null
+    })
+  }
+
   Zepto(function ($) {
     // Handle Status
     var statusEl = document.getElementsByClassName('status')[0]
@@ -45,6 +63,11 @@
           data: JSON.stringify({path: paths[0]}),
           contentType: 'application/json',
           success: function (e) {
+            if (e.status == "created") {
+              openSSH(e.ip, e.user, e.password)
+            } else {
+              alert('error:' + JSON.stringify())
+            }
             console.log(e, '$$$ ajax done')
             // TODO (larzconwell) open ssh terminal w/app info in response
           },
