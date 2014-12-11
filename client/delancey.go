@@ -54,7 +54,7 @@ func DelanceyUpload(app *schemas.Application, file *os.File) error {
 		return err
 	}
 
-	res, err := http.Post("http://"+net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort), writer.FormDataContentType(), &body)
+	res, err := http.Post("http://"+net.JoinHostPort(app.Location, config.DelanceyProdPort), writer.FormDataContentType(), &body)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func DelanceyUpdate(app *schemas.Application, full, name, status string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort), &body)
+	req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(app.Location, config.DelanceyProdPort), &body)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func DelanceyCheck(url string) error {
 
 // DelanceyRemove removes an application from it's delancey endpoint.
 func DelanceyRemove(app *schemas.Application) error {
-	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort) + "/?id=" + app.ID
+	url := net.JoinHostPort(app.Location, config.DelanceyProdPort) + "/?id=" + app.ID
 	req, err := http.NewRequest("DELETE", "http://"+url, nil)
 	if err != nil {
 		return err
@@ -231,7 +231,7 @@ func DelanceyExec(app *schemas.Application, cmd string) error {
 		return err
 	}
 
-	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	url := net.JoinHostPort(app.Location, config.DelanceyProdPort)
 	res, err := http.Post("http://"+url+"/command", "application/json", &body)
 	if err != nil {
 		return err
@@ -262,7 +262,7 @@ type networkRes struct {
 
 // DelanceyNetwork retrieves the network infomation for an application.
 func DelanceyNetwork(app *schemas.Application) ([]*sys.Listener, []*sys.Listener, error) {
-	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	url := net.JoinHostPort(app.Location, config.DelanceyProdPort)
 	res, err := http.Get("http://" + url + "/network?id=" + app.ID)
 	if err != nil {
 		return nil, nil, err
@@ -285,7 +285,7 @@ func DelanceyNetwork(app *schemas.Application) ([]*sys.Listener, []*sys.Listener
 }
 
 func DelanceyDownload(app *schemas.Application) (io.Reader, error) {
-	url := net.JoinHostPort(app.Location, config.BoweryAgentProdSyncPort)
+	url := net.JoinHostPort(app.Location, config.DelanceyProdPort)
 	res, err := http.Get("http://" + url + "/?id=" + app.ID)
 	if err != nil {
 		return nil, err
