@@ -205,9 +205,9 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 
 func sshHandler(rw http.ResponseWriter, req *http.Request) {
 	sshClient := &ssh.Client{
-		Addr:     net.JoinHostPort("80.maspeth.io", "22"),
-		User:     "pi",
-		Password: "80maspeth",
+		Addr:     net.JoinHostPort(req.FormValue("ip"), config.DelanceySSHPort),
+		User:     req.FormValue("user"),
+		Password: req.FormValue("password"),
 	}
 	defer sshClient.Close()
 
