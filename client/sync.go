@@ -10,47 +10,48 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Bowery/delancey/delancey"
 	"github.com/Bowery/gopackages/ignores"
 	"github.com/Bowery/gopackages/log"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/tar"
 )
 
-// Event describes a file event and the associated application.
+// Event describes a file event and the associated container.
 type Event struct {
-	Application *schemas.Application `json:"application"`
-	Status      string               `json:"status"`
-	Path        string               `json:"path"`
+	Container *schemas.Container `json:"container"`
+	Status    string             `json:"status"`
+	Path      string             `json:"path"`
 }
 
-// WatchError wraps an error to identify the app origin.
+// WatchError wraps an error to identify the container origin.
 type WatchError struct {
-	Application *schemas.Application `json:"application"`
-	Err         error                `json:"error"`
+	Container *schemas.Container `json:"container"`
+	Err       error              `json:"error"`
 }
 
 func (w *WatchError) Error() string {
 	return w.Err.Error()
 }
 
-// Watcher syncs file changes for an application to it's remote address.
+// Watcher syncs file changes for a container to it's remote address.
 type Watcher struct {
-	Application *schemas.Application
-	uploadPath  string
-	mutex       sync.Mutex
-	done        chan struct{}
-	isDone      bool
+	Container  *schemas.Container
+	uploadPath string
+	mutex      sync.Mutex
+	done       chan struct{}
+	isDone     bool
 }
 
 // NewWatcher creates a watcher.
-func NewWatcher(app *schemas.Application) *Watcher {
+func NewWatcher(container *schemas.Container) *Watcher {
 	var mutex sync.Mutex
 
 	return &Watcher{
-		Application: app,
-		uploadPath:  filepath.Join(os.TempDir(), "bowery_"+app.ID),
-		mutex:       mutex,
-		done:        make(chan struct{}),
+		Container:  container,
+		uploadPath: filepath.Join(os.TempDir(), "bowery_"+container.ID),
+		mutex:      mutex,
+		done:       make(chan struct{}),
 	}
 }
 
@@ -58,7 +59,7 @@ func NewWatcher(app *schemas.Application) *Watcher {
 func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	stats := make(map[string]os.FileInfo)
 	found := make([]string, 0)
-	local := watcher.Application.LocalPath
+	local := watcher.Container.LocalPath
 
 	// If previously called Close reset the state.
 	watcher.mutex.Lock()
@@ -160,7 +161,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			return nil
 		}
 
-		evChan <- &Event{Application: watcher.Application, Status: status, Path: rel}
+		evChan <- &Event{Container: watcher.Container, Status: status, Path: rel}
 		return nil
 	}
 
@@ -219,7 +220,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 				continue
 			}
 
-			evChan <- &Event{Application: watcher.Application, Status: "delete", Path: rel}
+			evChan <- &Event{Container: watcher.Container, Status: "delete", Path: rel}
 		}
 	}
 
@@ -255,13 +256,13 @@ func (watcher *Watcher) Upload() error {
 	)
 	i := 0
 
-	ignoreList, err := ignores.Get(watcher.Application.LocalPath)
+	ignoreList, err := ignores.Get(watcher.Container.LocalPath)
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
 
 	// Tar up the path and write it to the uploadPath.
-	upload, err := tar.Tar(watcher.Application.LocalPath, ignoreList)
+	upload, err := tar.Tar(watcher.Container.LocalPath, ignoreList)
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
@@ -290,7 +291,7 @@ func (watcher *Watcher) Upload() error {
 			return watcher.wrapErr(err)
 		}
 
-		err = DelanceyUpload(watcher.Application, file)
+		err = delancey.Upload(watcher.Container, file)
 		if err == nil {
 			return nil
 		}
@@ -302,11 +303,11 @@ func (watcher *Watcher) Upload() error {
 	return watcher.wrapErr(err)
 }
 
-// Update updates a path to the applications remote address.
+// Update updates a path to the containers remote address.
 func (watcher *Watcher) Update(name, status string) error {
-	path := filepath.Join(watcher.Application.LocalPath, name)
+	path := filepath.Join(watcher.Container.LocalPath, name)
 
-	err := DelanceyUpdate(watcher.Application, path, name, status)
+	err := delancey.Update(watcher.Container, path, name, status)
 	if err != nil && strings.Contains(err.Error(), "invalid app id") {
 		// If the id is invalid that indicates the server died, just reupload
 		// and try again.
@@ -320,7 +321,7 @@ func (watcher *Watcher) Update(name, status string) error {
 			return err
 		}
 
-		return DelanceyUpdate(watcher.Application, path, name, status)
+		return delancey.Update(watcher.Container, path, name, status)
 	}
 
 	return err
@@ -346,7 +347,7 @@ func (watcher *Watcher) wrapErr(err error) error {
 		return nil
 	}
 
-	return &WatchError{Application: watcher.Application, Err: err}
+	return &WatchError{Container: watcher.Container, Err: err}
 }
 
 // Syncer manages the syncing of a list of file watchers.
@@ -365,10 +366,10 @@ func NewSyncer() *Syncer {
 	}
 }
 
-// GetWatcher gets a watcher for a specific application.
-func (syncer *Syncer) GetWatcher(app *schemas.Application) (*Watcher, bool) {
+// GetWatcher gets a watcher for a specific container.
+func (syncer *Syncer) GetWatcher(container *schemas.Container) (*Watcher, bool) {
 	for _, watcher := range syncer.Watchers {
-		if watcher != nil && watcher.Application.ID == app.ID {
+		if watcher != nil && watcher.Container.ID == container.ID {
 			return watcher, false
 		}
 	}
@@ -376,29 +377,29 @@ func (syncer *Syncer) GetWatcher(app *schemas.Application) (*Watcher, bool) {
 	return nil, true
 }
 
-// Watch starts watching the given application syncing changes.
-func (syncer *Syncer) Watch(app *schemas.Application) {
-	watcher := NewWatcher(app)
+// Watch starts watching the given container syncing changes.
+func (syncer *Syncer) Watch(container *schemas.Container) {
+	watcher := NewWatcher(container)
 	syncer.Watchers = append(syncer.Watchers, watcher)
 
 	// Do the actual event management, and the inital upload.
 	go func() {
-		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-start"}
+		syncer.Event <- &Event{Container: watcher.Container, Status: "upload-start"}
 		err := watcher.Upload()
 		if err != nil {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Application: watcher.Application, Status: "upload-finish"}
+		syncer.Event <- &Event{Container: watcher.Container, Status: "upload-finish"}
 
 		watcher.Start(syncer.Event, syncer.Error)
 	}()
 }
 
-// Remove removes an applications syncer.
-func (syncer *Syncer) Remove(app *schemas.Application) error {
+// Remove removes a containers syncer.
+func (syncer *Syncer) Remove(container *schemas.Container) error {
 	for idx, watcher := range syncer.Watchers {
-		if watcher != nil && watcher.Application.ID == app.ID {
+		if watcher != nil && watcher.Container.ID == container.ID {
 			err := watcher.Close()
 			if err != nil {
 				return err

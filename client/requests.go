@@ -16,11 +16,11 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
-	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/ssh"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/update"
 	"github.com/Bowery/gopackages/web"
+	"github.com/Bowery/kenmare/kenmare"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
@@ -40,68 +40,64 @@ var renderer = render.New(render.Options{
 	IsDevelopment: true,
 })
 
-type commandReq struct {
-	AppID string `json:"appID"`
-	Cmd   string `json:"cmd"`
-	Token string `json:"token"`
-}
-
-type applicationReq struct {
-	SourceAppID  string `json:"sourceAppID"`
-	AMI          string `json:"ami"`
-	EnvID        string `json:"envID"`
-	Token        string `json:"token"`
-	Location     string `json:"location"`
-	InstanceType string `json:"instance_type"`
-	AWSAccessKey string `json:"aws_access_key"`
-	AWSSecretKey string `json:"aws_secret_key"`
-	Ports        string `json:"ports"`
-	Name         string `json:"name"`
-	Start        string `json:"start"`
-	Build        string `json:"build"`
-	LocalPath    string `json:"localPath"`
-	RemotePath   string `json:"remotePath"`
-}
-
-type environmentReq struct {
-	*schemas.Environment
-	Token string `json:"token"`
-}
-
-type emailReq struct {
-	Email string `json:"email"`
-}
-
-type keyReq struct {
-	AccessKey string `json:"aws_access_key"`
-	SecretKey string `json:"aws_secret_key"`
-}
-
-// Res is a generic response with status and an error message.
-type Res struct {
-	Status string `json:"status"`
-	Err    string `json:"error"`
-}
-
-func (res *Res) Error() string {
-	return res.Err
-}
-
 // createContainerHandler requests a container from kenmare.io and initiates the
 // sync of the contents of the directory to the container it created.
 func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
-	renderer.JSON(rw, http.StatusOK, map[string]string{
-		"status":   requests.StatusCreated,
-		"ip":       "80.maspeth.io",
-		"user":     "pi",
-		"password": "80maspeth",
+	var reqBody requests.ContainerReq
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	container, err := kenmare.CreateContainer(reqBody.ImageID)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	containerManager.Add(container)
+
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":    requests.StatusCreated,
+		"container": container,
 	})
 }
 
 // deleteContainerHandler sends a request to kenmare to terminate the container
 // and stops local file syncing.
 func deleteContainerHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "ok")
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	err := kenmare.DeleteContainer(id)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	err = containerManager.RemoveByID(id)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	renderer.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.StatusRemoved,
+	})
 }
 
 func doUpdateHandler(rw http.ResponseWriter, req *http.Request) {
@@ -208,9 +204,6 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func sshHandler(rw http.ResponseWriter, req *http.Request) {
-	// values, err := url.ParseQuery(req.URL.RawQuery)
-	// fmt.Println(req.URL.RawQuery, values.Get("user"), err.Error(), "$$$$")
-
 	sshClient := &ssh.Client{
 		Addr:     net.JoinHostPort("80.maspeth.io", "22"),
 		User:     "pi",

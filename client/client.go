@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	env                string
-	port               string
-	applicationManager *ApplicationManager
-	rollbarC           *rollbar.Client
-	AbsPath            string
-	VERSION            string // This is set when release_client.sh is ran.
+	env              string
+	port             string
+	containerManager *ContainerManager
+	rollbarC         *rollbar.Client
+	AbsPath          string
+	VERSION          string // This is set when release_client.sh is ran.
 )
 
 func main() {
@@ -36,20 +36,20 @@ func main() {
 	go ssePool.run()
 
 	rollbarC = rollbar.NewClient(config.RollbarToken, env)
-	applicationManager = NewApplicationManager()
-	defer applicationManager.Close()
+	containerManager = NewContainerManager()
+	defer containerManager.Close()
 
 	go func() {
 		for {
 			select {
-			case ev := <-applicationManager.Syncer.Event:
+			case ev := <-containerManager.Syncer.Event:
 				log.Println(ev)
 				msg := map[string]interface{}{
 					"event": ev,
 					"type":  "sync",
 				}
 				ssePool.messages <- msg
-			case err := <-applicationManager.Syncer.Error:
+			case err := <-containerManager.Syncer.Error:
 				log.Println(err)
 			}
 		}
