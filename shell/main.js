@@ -2,8 +2,11 @@
 var fs = require('fs')
 var os = require('os')
 var path = require('path')
+var http = require('http')
 var spawn = require('child_process').spawn
 var tmpdir = os.tmpdir()
+var Pusher = require('pusher-client')
+var pusher = new Pusher('bbdd9d611b463822cf6e')
 
 // Atom shell modules.
 var app = require('app')
@@ -187,24 +190,62 @@ app.on('ready', function() {
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
-  var mainWindow = new BrowserWindow({
-    title: 'Bowery',
-    frame: true,
-    width: 400,
-    height: 485,
-    resizable: false,
-    center: true,
-    show: true,
-    icon: path.join(__dirname, 'icon.png')
+  var paths = require('dialog').showOpenDialog({
+    title: 'Where is your code?',
+    properties: ['openDirectory']
   })
+  if (paths.length > 0) {
+    var req = http.request({
+      host: 'localhost',
+      port: 32055,
+      method: 'POST',
+      path: '/containers',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }, function (response) {
+      var body = ''
+      response.on('data', function (chunk) {
+        body += chunk
+      })
 
-  mainWindow.setSize(400, 485)
-  mainWindow.loadUrl('file://' + path.join(__dirname, 'bowery.html'))
-  mainWindow.on('closed', function () {
-    mainWindow = null
-  })
+      response.on('end', function () {
+        var data = JSON.parse(body.toString())
+        var container = data.container
+        var channel = pusher.subscribe('container-' + container._id)
+        channel.bind('update', function (data) {
+          openSSH(data._id, data.address, data.user, data.password)
+        })
+      })
+    })
 
-  mainWindow.webContents.on('did-finish-load', function () {
-    mainWindow.focus()
-  })
+    req.write(JSON.stringify({path: paths[0]}))
+    req.end()
+  }
+
+  function openSSH (id, ip, user, password) {
+    mainWindow = new BrowserWindow({
+      title: ip,
+      frame: true,
+      width: 570,
+      height: 370,
+      show: true,
+      resizable: true
+    })
+    var query = require('url').format({
+      query: {
+        ip: ip, user: user, password: password
+      }
+    })
+    mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
+    mainWindow.on('closed', function (e) {
+      mainWindow = null
+      http.request({
+        host: 'localhost',
+        port: 32055,
+        method: 'DELETE',
+        path: '/containers/' + id
+      }).end()
+    })
+  }
 })

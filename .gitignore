@@ -24,3 +24,4 @@ ui/diff
 client_pid
 bowery/updater/updater
 shell/term.min.html
+shell/node_modules

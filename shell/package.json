@@ -1,5 +1,8 @@
 {
   "name": "bowery",
   "version": "0.1.0",
-  "main": "main.js"
+  "main": "main.js",
+  "dependencies": {
+    "pusher-client": "^0.2.2"
+  }
 }
