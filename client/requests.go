@@ -76,8 +76,9 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 func deleteContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
+	skipDelanceyCommit := req.FormValue("skip") != ""
 
-	err := kenmare.DeleteContainer(id)
+	err := kenmare.DeleteContainer(id, skipDelanceyCommit)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.StatusFailed,
