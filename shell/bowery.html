@@ -20,7 +20,9 @@
   }
   </style>
   <script type="text/javascript" src="http://zeptojs.com/zepto.min.js"></script>
+  <script type="text/javascript" src="http://js.pusher.com/2.2/pusher.min.js"></script>
   <script type="text/javascript">
+  var pusher = new Pusher('bbdd9d611b463822cf6e');
   var path = require('path')
   var BrowserWindow = require('remote').require('browser-window')
   function openSSH (ip, user, password) {
@@ -33,6 +35,7 @@
       resizable: true
     })
     var query = $.param({ip: ip, user: user, password: password})
+    console.log(query)
     w.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
     w.on('closed', function () {
       w = null
@@ -64,12 +67,16 @@
           contentType: 'application/json',
           success: function (e) {
             if (e.status == "created") {
-              openSSH(e.ip, e.user, e.password)
+              var container = e.container
+              var channel = pusher.subscribe('container-' + container._id)
+              channel.bind('update', function (data) {
+                console.log(data, '$$$ pusher update')
+                openSSH(data.address, data.user, data.password)
+              })
             } else {
               alert('error:' + JSON.stringify())
             }
             console.log(e, '$$$ ajax done')
-            // TODO (larzconwell) open ssh terminal w/app info in response
           },
           error: function (e) {
             console.log(e, '$$$ ajax error')

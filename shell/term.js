@@ -100,7 +100,8 @@ hterm.PreferenceManager = function (id) {
     this.exited = false
 
     // Create websocket connection.
-    var query = 'cols='+term.screenSize.width+'&rows='+term.screenSize.height
+    var query = 'cols=' + term.screenSize.width + '&rows=' + term.screenSize.height
+      + '&ip=' + qmark('ip') + '&user=' + qmark('user') + '&password=' + qmark('password')
     this.conn = new WebSocket('ws://localhost:32055/_/ssh'+'?'+query)
     this.conn.binaryType = 'arraybuffer'
 
