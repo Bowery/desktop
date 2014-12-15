@@ -28,7 +28,7 @@ import (
 
 var routes = []web.Route{
 	{"POST", "/containers", createContainerHandler, false},
-	{"DELETE", "/containers/:id", deleteContainerHandler, false},
+	{"DELETE", "/containers/{id}", deleteContainerHandler, false},
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
 	{"GET", "/_/ssh", sshHandler, false},

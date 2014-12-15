@@ -25,7 +25,7 @@
   var pusher = new Pusher('bbdd9d611b463822cf6e');
   var path = require('path')
   var BrowserWindow = require('remote').require('browser-window')
-  function openSSH (ip, user, password) {
+  function openSSH (id, ip, user, password) {
     var w = new BrowserWindow({
       title: ip,
       frame: true,
@@ -35,10 +35,17 @@
       resizable: true
     })
     var query = $.param({ip: ip, user: user, password: password})
-    console.log(query)
     w.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
-    w.on('closed', function () {
+    w.on('closed', function (e) {
+      console.log(e, '$$$ hterm closed')
       w = null
+      $.ajax({
+        type: 'DELETE',
+        url: 'http://localhost:32055/containers/' + id,
+        success: function (e) {
+          console.log(e, '$$$ successful close request')
+        }
+      })
     })
   }
 
@@ -71,7 +78,7 @@
               var channel = pusher.subscribe('container-' + container._id)
               channel.bind('update', function (data) {
                 console.log(data, '$$$ pusher update')
-                openSSH(data.address, data.user, data.password)
+                openSSH(data._id, data.address, data.user, data.password)
               })
             } else {
               alert('error:' + JSON.stringify())
