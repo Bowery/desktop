@@ -10,12 +10,14 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/rollbar"
+	"github.com/Bowery/gopackages/sse"
 	"github.com/Bowery/gopackages/web"
 )
 
 var (
 	env              string
 	port             string
+	ssePool          *sse.Pool
 	containerManager *ContainerManager
 	rollbarC         *rollbar.Client
 	AbsPath          string
@@ -33,7 +35,8 @@ func main() {
 		return
 	}
 
-	go ssePool.run()
+	ssePool = sse.NewPool()
+	go ssePool.Run()
 
 	rollbarC = rollbar.NewClient(config.RollbarToken, env)
 	containerManager = NewContainerManager()
@@ -48,7 +51,7 @@ func main() {
 					"event": ev,
 					"type":  "sync",
 				}
-				ssePool.messages <- msg
+				ssePool.Messages <- msg
 			case err := <-containerManager.Syncer.Error:
 				log.Println(err)
 			}

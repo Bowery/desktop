@@ -256,9 +256,9 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	messageChan := make(chan map[string]interface{})
-	ssePool.newClients <- messageChan
+	ssePool.NewClients <- messageChan
 	defer func() {
-		ssePool.defunctClients <- messageChan
+		ssePool.DefunctClients <- messageChan
 	}()
 
 	rw.Header().Set("Content-Type", "text/event-stream")
