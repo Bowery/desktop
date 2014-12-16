@@ -238,7 +238,7 @@ func sshHandler(rw http.ResponseWriter, req *http.Request) {
 	defer conn.Close()
 
 	// Set the stdio wrappers for the connection.
-	wsio := NewWebSocketIO(conn)
+	wsio := web.NewWebSocketIO(conn)
 	sshClient.Stdout = wsio
 	sshClient.Stderr = wsio
 	sshClient.Stdin = wsio
