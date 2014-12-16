@@ -219,7 +219,7 @@ app.on('ready', function() {
       })
     })
 
-    req.write(JSON.stringify({path: paths[0]}))
+    req.write(JSON.stringify({localPath: paths[0]}))
     req.end()
   }
 
