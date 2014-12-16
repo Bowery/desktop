@@ -94,7 +94,8 @@ for (var i = 0, e; e = exitEvents[i]; i++) {
 }
 
 app.on('window-all-closed', function() {
-  app.quit()
+  console.log('$$$ window-all-closed')
+  // app.quit()
 })
 
 app.on('ready', function() {
@@ -210,6 +211,7 @@ app.on('ready', function() {
       })
 
       response.on('end', function () {
+        console.log('$$$ response end')
         var data = JSON.parse(body.toString())
         var container = data.container
         var channel = pusher.subscribe('container-' + container._id)
@@ -232,20 +234,46 @@ app.on('ready', function() {
       show: true,
       resizable: true
     })
+    
     var query = require('url').format({
       query: {
         ip: ip, user: user, password: password
       }
     })
+    
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
+    
+    // mainWindow.on('close', function (e) {
+    //   var req = http.request({
+    //     host: 'localhost',
+    //     port: 32055,
+    //     method: 'DELETE',
+    //     path: '/containers/' + id
+    //   })
+
+    //   req.write('')
+    //   req.end()
+    // })
+
     mainWindow.on('closed', function (e) {
-      mainWindow = null
-      http.request({
+      console.log(e, '$$$ window closed')
+      e.preventDefault()
+      var req = http.request({
         host: 'localhost',
         port: 32055,
         method: 'DELETE',
         path: '/containers/' + id
-      }).end()
+      }, function (response) {
+        response.on('end', function () {
+          console.log('$$$ response complete')
+          mainWindow = null
+
+          app.quit()
+        })
+      })
+
+      req.write('')
+      req.end()
     })
   }
 })
