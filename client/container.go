@@ -4,8 +4,13 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"time"
 
+	"github.com/Bowery/delancey/delancey"
+	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/schemas"
+	"github.com/Bowery/gopackages/util"
 )
 
 // ContainerManager manages all active containers as well as
@@ -25,7 +30,19 @@ func NewContainerManager() *ContainerManager {
 
 // Add adds a container and initiates file syncing.
 func (cm *ContainerManager) Add(container *schemas.Container) {
-	cm.Syncer.Watch(container)
+	go func() {
+		backoff := util.NewBackoff(1)
+		for backoff.Next() {
+			<-time.After(backoff.Delay)
+			addr := net.JoinHostPort(container.Address, config.DelanceyProdPort)
+			err := delancey.Health(addr)
+			if err == nil {
+				cm.Syncer.Watch(container)
+				break
+			}
+		}
+	}()
+
 	cm.Containers[container.ID] = container
 }
 
@@ -37,11 +54,7 @@ func (cm *ContainerManager) RemoveByID(id string) error {
 		return fmt.Errorf("no container with id %s exists", id)
 	}
 
-	err := cm.Syncer.Remove(container)
-	if err != nil {
-		return err
-	}
-
+	cm.Syncer.Remove(container)
 	delete(cm.Containers, id)
 	return nil
 }
