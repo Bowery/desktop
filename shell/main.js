@@ -242,18 +242,7 @@ app.on('ready', function() {
     })
     
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
-    
-    // mainWindow.on('close', function (e) {
-    //   var req = http.request({
-    //     host: 'localhost',
-    //     port: 32055,
-    //     method: 'DELETE',
-    //     path: '/containers/' + id
-    //   })
-
-    //   req.write('')
-    //   req.end()
-    // })
+  
 
     mainWindow.on('closed', function (e) {
       console.log(e, '$$$ window closed')
@@ -268,6 +257,7 @@ app.on('ready', function() {
           console.log('$$$ response complete')
           mainWindow = null
 
+          // todo(steve): i am so sorry.
           app.quit()
         })
       })
