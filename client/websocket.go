@@ -13,7 +13,7 @@ type WebSocketIO struct {
 	buf *bytes.Buffer
 }
 
-// Connect connects a websocket to do io.
+// NewWebSocketIO connects a websocket to do io.
 func NewWebSocketIO(conn *websocket.Conn) *WebSocketIO {
 	return &WebSocketIO{
 		Conn: conn,

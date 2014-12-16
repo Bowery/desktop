@@ -14,6 +14,7 @@ import (
 	"github.com/Bowery/gopackages/web"
 )
 
+// Application specific variables.
 var (
 	env              string
 	port             string
