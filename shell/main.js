@@ -64,7 +64,7 @@ var killClient = function () {
 
 killClient()
 
-if (process.platform == 'darwin') {
+if (process.platform == 'darwin' || process.env.ENV == "no-updater") {
   proc = spawn(clientPath, [])
 } else {
   proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath])
