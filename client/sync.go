@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
@@ -36,11 +37,10 @@ func (w *WatchError) Error() string {
 
 // Watcher syncs file changes for a container to it's remote address.
 type Watcher struct {
-	Container  *schemas.Container
-	uploadPath string
-	mutex      sync.Mutex
-	done       chan struct{}
-	isDone     bool
+	Container *schemas.Container
+	mutex     sync.Mutex
+	done      chan struct{}
+	isDone    bool
 }
 
 // NewWatcher creates a watcher.
@@ -48,10 +48,9 @@ func NewWatcher(container *schemas.Container) *Watcher {
 	var mutex sync.Mutex
 
 	return &Watcher{
-		Container:  container,
-		uploadPath: filepath.Join(os.TempDir(), "bowery_"+container.ID),
-		mutex:      mutex,
-		done:       make(chan struct{}),
+		Container: container,
+		mutex:     mutex,
+		done:      make(chan struct{}),
 	}
 }
 
@@ -261,37 +260,26 @@ func (watcher *Watcher) Upload() error {
 		return watcher.wrapErr(err)
 	}
 
-	// Tar up the path and write it to the uploadPath.
+	// Tar up the path and write to a type supporting seeking.
 	upload, err := tar.Tar(watcher.Container.LocalPath, ignoreList)
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
-
-	err = os.MkdirAll(filepath.Dir(watcher.uploadPath), os.ModePerm|os.ModeDir)
+	var buf bytes.Buffer
+	_, err = io.Copy(&buf, upload)
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
-
-	file, err := os.Create(watcher.uploadPath)
-	if err != nil {
-		return watcher.wrapErr(err)
-	}
-	defer os.RemoveAll(watcher.uploadPath)
-	defer file.Close()
-
-	_, err = io.Copy(file, upload)
-	if err != nil {
-		return watcher.wrapErr(err)
-	}
+	uploadContents := bytes.NewReader(buf.Bytes())
 
 	// Attempt to upload, ensuring the upload is at the beginning of the file.
 	for i < 1000 {
-		_, err = file.Seek(0, os.SEEK_SET)
+		_, err = uploadContents.Seek(0, os.SEEK_SET)
 		if err != nil {
 			return watcher.wrapErr(err)
 		}
 
-		err = delancey.Upload(watcher.Container, file)
+		err = delancey.Upload(watcher.Container, uploadContents)
 		if err == nil {
 			return nil
 		}
@@ -338,7 +326,7 @@ func (watcher *Watcher) Close() error {
 	close(watcher.done)
 	watcher.isDone = true
 
-	return watcher.wrapErr(os.RemoveAll(watcher.uploadPath))
+	return nil
 }
 
 // wrapErr wraps an error with the application it occurred for.

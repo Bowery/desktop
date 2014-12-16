@@ -62,7 +62,7 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-
+	container.LocalPath = reqBody.LocalPath
 	containerManager.Add(container)
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
