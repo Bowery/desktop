@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -54,7 +55,16 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	container, err := kenmare.CreateContainer(reqBody.ImageID)
+	// Determine if the local path has a .bowery file. If so,
+	// use that as the imageID.
+	imageID := ""
+	boweryConfPath := filepath.Join(reqBody.LocalPath, ".bowery")
+	data, err := ioutil.ReadFile(boweryConfPath)
+	if err == nil {
+		imageID = string(data)
+	}
+
+	container, err := kenmare.CreateContainer(imageID)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
@@ -64,6 +74,12 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	container.LocalPath = reqBody.LocalPath
 	containerManager.Add(container)
+
+	// If the imageID has just been generated, write it to
+	// the application directory.
+	if container.ImageID != imageID {
+		ioutil.WriteFile(boweryConfPath, []byte(container.ImageID), 0644)
+	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":    requests.StatusCreated,
