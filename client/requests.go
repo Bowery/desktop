@@ -221,11 +221,9 @@ func checkUpdateHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func sshHandler(rw http.ResponseWriter, req *http.Request) {
-	sshClient := &ssh.Client{
-		Addr:     net.JoinHostPort(req.FormValue("ip"), config.DelanceySSHPort),
-		User:     req.FormValue("user"),
-		Password: req.FormValue("password"),
-	}
+	sshClient := ssh.NewClient(net.JoinHostPort(req.FormValue("ip"), config.DelanceySSHPort))
+	sshClient.User = req.FormValue("user")
+	sshClient.Password = req.FormValue("password")
 	defer sshClient.Close()
 
 	var rows int
@@ -253,12 +251,39 @@ func sshHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	defer conn.Close()
 
-	// Set the stdio wrappers for the connection.
 	wsio := web.NewWebSocketIO(conn)
+	evDone := make(chan struct{})
+	defer close(evDone)
+
+	// Catch resize events and forward to the shell.
+	go func() {
+		for {
+			select {
+			// Check if we're done.
+			case <-evDone:
+				return
+			case ev := <-wsio.Events:
+				cols, err := strconv.Atoi(ev.Values[0])
+				if err != nil {
+					continue
+				}
+				rows, err := strconv.Atoi(ev.Values[1])
+				if err != nil {
+					continue
+				}
+
+				sshClient.Resize <- &ssh.Resize{
+					Cols: cols,
+					Rows: rows,
+				}
+			}
+		}
+	}()
+
+	// Set stdio for the shell and start it.
 	sshClient.Stdout = wsio
 	sshClient.Stderr = wsio
 	sshClient.Stdin = wsio
-
 	err = sshClient.Shell()
 	if err != nil && err != websocket.ErrCloseSent {
 		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(1, err.Error()))

@@ -80,14 +80,13 @@ hterm.PreferenceManager = function (id) {
     this.argv = argv;
     this.termsel = document.querySelector('#terminal')
     this.environment = argv.environment || {}
-    this.user = ''
-    this.addr = ''
-    this.pass = ''
     this.io = null
     this.conn = null
     this.exited = false
     this.gotErr = false
     this.restarting = false
+    this.cols = 0
+    this.rows = 0
 
     window.instance = this
   }
@@ -98,9 +97,11 @@ hterm.PreferenceManager = function (id) {
     this.io = this.argv.io.push()
     var term = this.io.terminal_
     this.exited = false
+    this.cols = term.screenSize.width
+    this.rows = term.screenSize.height
 
     // Create websocket connection.
-    var query = 'cols=' + term.screenSize.width + '&rows=' + term.screenSize.height
+    var query = 'cols=' + this.cols + '&rows=' + this.rows
       + '&ip=' + qmark('ip') + '&user=' + qmark('user') + '&password=' + qmark('password')
     this.conn = new WebSocket('ws://localhost:32055/_/ssh'+'?'+query)
     this.conn.binaryType = 'arraybuffer'
@@ -128,16 +129,25 @@ hterm.PreferenceManager = function (id) {
       var dataView = new DataView(ev.data)
       var decoder = new TextDecoder('utf-8')
 
-      self.io.writeUTF8(decoder.decode(dataView))
+      self.io.writeUTF8(decoder.decode(dataView).slice('data: '.length))
     }
 
     // Handle io events.
     this.io.setTerminalProfile('default')
     this.io.onVTKeystroke = function (data) {
-      self.conn && self.conn.send(data)
+      self.conn && self.conn.send('data: ' + data)
     }
     this.io.sendString = function (data) {
-      self.conn && self.conn.send(data)
+      self.conn && self.conn.send('data: ' + data)
+    }
+    this.io.onTerminalResize = function (cols, rows) {
+      if (!self.conn || (self.cols == cols && self.rows == rows)) {
+        return
+      }
+      self.cols = cols
+      self.rows = rows
+
+      self.conn.send('event: resize ' + cols + ' ' + rows)
     }
     this.termsel.focus()
   }
