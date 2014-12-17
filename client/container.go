@@ -3,14 +3,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"net"
-	"time"
+	"os"
+	"path/filepath"
 
 	"github.com/Bowery/delancey/delancey"
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/schemas"
-	"github.com/Bowery/gopackages/util"
+	"github.com/Bowery/gopackages/sys"
+	"github.com/oguzbilgic/pusher"
 )
 
 // ContainerManager manages all active containers as well as
@@ -31,16 +33,24 @@ func NewContainerManager() *ContainerManager {
 // Add adds a container and initiates file syncing.
 func (cm *ContainerManager) Add(container *schemas.Container) {
 	go func() {
-		backoff := util.NewBackoff(1)
-		for backoff.Next() {
-			<-time.After(backoff.Delay)
-			addr := net.JoinHostPort(container.Address, config.DelanceyProdPort)
-			err := delancey.Health(addr)
-			if err == nil {
-				cm.Syncer.Watch(container)
-				break
-			}
+		conn, err := pusher.New(config.PusherKey)
+		if err != nil {
+			return
 		}
+		channel := conn.Channel("container-" + container.ID)
+		ev := channel.Bind("update")
+		data := (<-ev).(string)
+
+		cont := new(schemas.Container)
+		err = json.Unmarshal([]byte(data), cont)
+		if err != nil {
+			return
+		}
+
+		cont.LocalPath = container.LocalPath
+		cm.Containers[container.ID] = cont
+		cm.Syncer.Watch(cont)
+		delancey.UploadSSH(cont, filepath.Join(os.Getenv(sys.HomeVar), ".ssh"))
 	}()
 
 	cm.Containers[container.ID] = container
