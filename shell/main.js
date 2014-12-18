@@ -205,6 +205,16 @@ app.on('ready', function() {
         'Content-Type': 'application/json'
       }
     }, function (response) {
+      // On successful response, create window.
+      mainWindow = new BrowserWindow({
+        title: 'Bowery',
+        frame: true,
+        width: 570,
+        height: 370,
+        show: false,
+        resizable: true
+      })
+
       var body = ''
       response.on('data', function (chunk) {
         body += chunk
@@ -226,24 +236,15 @@ app.on('ready', function() {
   }
 
   function openSSH (id, ip, user, password) {
-    mainWindow = new BrowserWindow({
-      title: ip,
-      frame: true,
-      width: 570,
-      height: 370,
-      show: true,
-      resizable: true
-    })
-    
     var query = require('url').format({
       query: {
         ip: ip, user: user, password: password
       }
     })
     
+    mainWindow.show()  
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
   
-
     mainWindow.on('closed', function (e) {
       console.log(e, '$$$ window closed')
       e.preventDefault()
