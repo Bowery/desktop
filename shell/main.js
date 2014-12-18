@@ -211,9 +211,11 @@ app.on('ready', function() {
         frame: true,
         width: 570,
         height: 370,
-        show: false,
+        show: true,
         resizable: true
       })
+
+      mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html'))
 
       var body = ''
       response.on('data', function (chunk) {
@@ -242,7 +244,6 @@ app.on('ready', function() {
       }
     })
     
-    mainWindow.show()  
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
   
     mainWindow.on('closed', function (e) {
