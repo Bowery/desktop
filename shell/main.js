@@ -215,20 +215,22 @@ app.on('ready', function() {
         resizable: true
       })
 
-      mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html'))
-
       var body = ''
       response.on('data', function (chunk) {
         body += chunk
       })
 
       response.on('end', function () {
-        console.log('$$$ response end')
-        var data = JSON.parse(body.toString())
+        var data = JSON.parse(body.toString())        
         var container = data.container
+
+        mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+
         var channel = pusher.subscribe('container-' + container._id)
         channel.bind('update', function (data) {
-          openSSH(data._id, data.address, data.user, data.password)
+          setTimeout(function () {
+            openSSH(data._id, data.address, data.user, data.password)
+          }, 500)
         })
       })
     })
