@@ -211,7 +211,7 @@ app.on('ready', function() {
         frame: true,
         width: 570,
         height: 370,
-        show: false,
+        show: true,
         resizable: true
       })
 
@@ -221,12 +221,16 @@ app.on('ready', function() {
       })
 
       response.on('end', function () {
-        console.log('$$$ response end')
-        var data = JSON.parse(body.toString())
+        var data = JSON.parse(body.toString())        
         var container = data.container
+
+        mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+
         var channel = pusher.subscribe('container-' + container._id)
         channel.bind('update', function (data) {
-          openSSH(data._id, data.address, data.user, data.password)
+          setTimeout(function () {
+            openSSH(data._id, data.address, data.user, data.password)
+          }, 500)
         })
       })
     })
@@ -242,7 +246,6 @@ app.on('ready', function() {
       }
     })
     
-    mainWindow.show()  
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
   
     mainWindow.on('closed', function (e) {
