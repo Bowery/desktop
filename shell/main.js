@@ -112,6 +112,17 @@ app.on('ready', function() {
       ]
     },
     {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Environment',
+          accelerator: 'CommandOrControl+N',
+          selector: 'new:',
+          click: function() {newContainer()}
+        }
+      ]
+    },
+    {
       label: 'Edit',
       submenu: [
         {
@@ -191,52 +202,55 @@ app.on('ready', function() {
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
-  var paths = require('dialog').showOpenDialog({
-    title: 'Where is your code?',
-    properties: ['openDirectory']
-  })
-  if (paths.length > 0) {
-    var req = http.request({
-      host: 'localhost',
-      port: 32055,
-      method: 'POST',
-      path: '/containers',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }, function (response) {
-      // On successful response, create window.
-      mainWindow = new BrowserWindow({
-        title: 'Bowery',
-        frame: true,
-        width: 570,
-        height: 370,
-        show: true,
-        resizable: true
-      })
 
-      var body = ''
-      response.on('data', function (chunk) {
-        body += chunk
-      })
+  function newContainer () {
+    var paths = require('dialog').showOpenDialog({
+      title: 'Where is your code?',
+      properties: ['openDirectory']
+    })
+    if (paths && paths.length > 0) {
+      var req = http.request({
+        host: 'localhost',
+        port: 32055,
+        method: 'POST',
+        path: '/containers',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }, function (response) {
+        // On successful response, create window.
+        mainWindow = new BrowserWindow({
+          title: 'Bowery',
+          frame: true,
+          width: 570,
+          height: 370,
+          show: true,
+          resizable: true
+        })
 
-      response.on('end', function () {
-        var data = JSON.parse(body.toString())        
-        var container = data.container
+        var body = ''
+        response.on('data', function (chunk) {
+          body += chunk
+        })
 
-        mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+        response.on('end', function () {
+          var data = JSON.parse(body.toString())        
+          var container = data.container
 
-        var channel = pusher.subscribe('container-' + container._id)
-        channel.bind('update', function (data) {
-          setTimeout(function () {
-            openSSH(data._id, data.address, data.user, data.password)
-          }, 500)
+          mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+
+          var channel = pusher.subscribe('container-' + container._id)
+          channel.bind('update', function (data) {
+            setTimeout(function () {
+              openSSH(data._id, data.address, data.user, data.password)
+            }, 500)
+          })
         })
       })
-    })
 
-    req.write(JSON.stringify({localPath: paths[0]}))
-    req.end()
+      req.write(JSON.stringify({localPath: paths[0]}))
+      req.end()
+    }
   }
 
   function openSSH (id, ip, user, password) {
@@ -270,4 +284,6 @@ app.on('ready', function() {
       req.end()
     })
   }
+
+  newContainer()
 })
