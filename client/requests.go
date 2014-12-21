@@ -64,7 +64,7 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		imageID = string(data)
 	}
 
-	container, err := kenmare.CreateContainer(imageID)
+	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
@@ -72,7 +72,6 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	container.LocalPath = reqBody.LocalPath
 	containerManager.Add(container)
 
 	// If the imageID has just been generated, write it to
