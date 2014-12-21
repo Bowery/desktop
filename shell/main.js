@@ -6,6 +6,7 @@ var http = require('http')
 var spawn = require('child_process').spawn
 var tmpdir = os.tmpdir()
 var Pusher = require('pusher-client')
+var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 
 // Atom shell modules.
@@ -254,6 +255,7 @@ app.on('ready', function() {
   }
 
   function openSSH (id, ip, user, password) {
+    var start = Date.now()
     var query = require('url').format({
       query: {
         ip: ip, user: user, password: password
@@ -263,6 +265,9 @@ app.on('ready', function() {
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
   
     mainWindow.on('closed', function (e) {
+      var end = Date.now()
+      stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - start)
+
       console.log(e, '$$$ window closed')
       e.preventDefault()
       var req = http.request({
