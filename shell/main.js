@@ -266,7 +266,10 @@ app.on('ready', function() {
   
     mainWindow.on('closed', function (e) {
       var end = Date.now()
-      stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - start)
+      stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - start,
+        function (status, json) {
+          console.log(status, json)
+      })
 
       console.log(e, '$$$ window closed')
       e.preventDefault()
