@@ -61,8 +61,19 @@
     font-size: 16px;
   }
 
+  .progress-error {
+    color: red;
+  }
+  .progress-error::before {
+    content: "error: ";
+  }
+  .progress-error,
   .progress-description {
     margin-top: 20px;
+  }
+  .progress-error.hidden,
+  .progress-description.hidden {
+    display: none;
   }
   .progress-wrapper {
     width: 300px;
@@ -82,6 +93,7 @@
 </head>
 <div class="container">
   <h1>BOWERY</h1>
+  <p class="progress-error hidden"></p>
   <p class="progress-description">initializing</p>
   <div class="progress-wrapper">
     <span class="progress-bar"></span>
@@ -106,6 +118,12 @@ Pusher.log = function(message) {
     window.console.log(message);
   }
 };
+
+channel.bind('error', function (data) {
+  document.querySelector('.progress-error').className = 'progress-error'
+  document.querySelector('.progress-error').innerHTML = data.error
+  document.querySelector('.progress-description').className = 'progress-description hidden'
+})
 
 channel.bind('progress', function (data) {
   var contents = []
