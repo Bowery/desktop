@@ -21,7 +21,6 @@ import (
 
 	"bitbucket.org/kardianos/osext"
 	"github.com/Bowery/gopackages/config"
-	"github.com/Bowery/gopackages/keen"
 	"github.com/Bowery/gopackages/rollbar"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/update"
@@ -31,11 +30,7 @@ import (
 const usage = `usage: updater [-d installDir] <update url> <current version> <command> [arguments]`
 
 var (
-	rollbarC = rollbar.NewClient(config.RollbarToken, "production")
-	keenC    = &keen.Client{
-		WriteKey:  config.KeenWriteKey,
-		ProjectID: config.KeenProjectID,
-	}
+	rollbarC      = rollbar.NewClient(config.RollbarToken, "production")
 	pidSetter     = new(syncSetter)
 	updatedSetter = new(syncSetter)
 	restartSetter = &syncSetter{val: 1}
@@ -288,10 +283,6 @@ func doUpdate() error {
 		return replaceErr
 	}
 
-	keenC.AddEvent("agent update", map[string]string{
-		"oldVersion": version,
-		"newVersion": newVersion,
-	})
 	version = newVersion
 
 	updatedSetter.Set(1)
