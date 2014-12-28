@@ -22,7 +22,7 @@ if [[ ! -d build/libdot ]]; then
 fi
 
 if [[ ! -d build/hterm ]]; then
-  git clone https://github.com/macton/hterm.git build/hterm
+  git clone https://github.com/bowery/hterm.git build/hterm
   cd build/hterm
   mv src/* .
   cd -
