@@ -263,7 +263,15 @@ app.on('ready', function() {
     })
     
     mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
-  
+    mainWindow.setTitle(ip)
+
+    // hterm changes window title when cwd changes triggering
+    // a page-title-updated event. Override default behavior
+    // and ignore change.
+    mainWindow.on('page-title-updated', function (e) {
+      e.preventDefault()
+    })
+
     mainWindow.on('closed', function (e) {
       var end = Date.now()
       stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - start,
