@@ -203,7 +203,9 @@ app.on('ready', function() {
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
-
+  // newContainer prompts the user for an application to launch
+  // an environment with and listens for an update from Pusher.
+  // On successful launch, initiate SSH connection to the container.
   function newContainer () {
     var paths = require('dialog').showOpenDialog({
       title: 'Where is your code?',
@@ -254,6 +256,8 @@ app.on('ready', function() {
     }
   }
 
+  // openSSH initiates an ssh connection to the container and
+  // sets window bindings for close related events.
   function openSSH (id, ip, user, password) {
     var start = Date.now()
     var query = require('url').format({
@@ -272,32 +276,90 @@ app.on('ready', function() {
       e.preventDefault()
     })
 
-    mainWindow.on('closed', function (e) {
-      var end = Date.now()
-      stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - start,
-        function (status, json) {
-          console.log(status, json)
-      })
-
-      console.log(e, '$$$ window closed')
+    // When the window is closed, prompt the user to "save"
+    // the environment.
+    mainWindow.on('close', function (e) {
+      // Returns a value in [0, 1, 2] corresponding to a button.
       e.preventDefault()
-      var req = http.request({
-        host: 'localhost',
-        port: 32055,
-        method: 'DELETE',
-        path: '/containers/' + id
-      }, function (response) {
-        response.on('end', function () {
-          console.log('$$$ response complete')
-          mainWindow = null
-
-          // todo(steve): i am so sorry.
-          app.quit()
-        })
+      var confirm = require('dialog').showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['Save', 'Don\'t save', 'Cancel'],
+        message: 'Do you want to save the changes you made to this environment?',
+        detail: 'Your changes will be lost if you don\'t save them.'
       })
 
-      req.write('')
-      req.end()
+      console.log('$$$ confirm', confirm)
+
+      // If the user selects save, run save and then delete requests.
+      // Destroy and remove reference to window afterwards. If the user
+      // selects not to save, run delete request and window remove async.
+      switch (confirm) {
+        case 0:
+          saveContainer(id, function () {
+            deleteContainer(id, function () {
+              endSession(start)
+              mainWindow.destroy()
+              mainWindow = null
+            })
+          })
+          break
+        case 1:
+          deleteContainer(id)
+          endSession(start)
+          mainWindow.destroy()
+          mainWindow = null
+          break
+      }
+    })
+  }
+
+  // todo(steve): show save progress.
+  function saveContainer (id, cb) {
+    var req = http.request({
+      host: 'localhost',
+      port: 32055,
+      method: 'PUT',
+      path: '/containers/' + id
+    }, function (response) {
+      response.on('data', function (chunk) {
+        console.log('$$$ data', chunk)
+      })
+
+      response.on('end', function () {
+        cb && cb()
+      })
+    })
+
+    req.write('')
+    req.end()
+  }
+
+  function deleteContainer (id, cb) {
+    var req = http.request({
+      host: 'localhost',
+      port: 32055,
+      method: 'DELETE',
+      path: '/containers/' + id
+    }, function (response) {
+      response.on('data', function (chunk) {
+        console.log('$$$ data', chunk)
+      })
+
+      response.on('end', function () {
+        cb && cb()
+      })
+    })
+
+    req.write('')
+    req.end()
+  }
+
+  // endSession posts the elapsed ssh time to StatHat.
+  function endSession (startTime) {
+    var end = Date.now()
+    stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - startTime,
+      function (status, json) {
+        console.log(status, json)
     })
   }
 
