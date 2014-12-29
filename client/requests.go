@@ -30,6 +30,7 @@ import (
 var routes = []web.Route{
 	{"POST", "/containers", createContainerHandler, false},
 	{"DELETE", "/containers/{id}", deleteContainerHandler, false},
+	{"PUT", "/containers/{id}", updateContainerHandler, false},
 	{"GET", "/update/check", checkUpdateHandler, false},
 	{"GET", "/update/{version}", doUpdateHandler, false},
 	{"GET", "/_/ssh", sshHandler, false},
@@ -91,9 +92,8 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 func deleteContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	commit := req.FormValue("commit") != "false"
 
-	err := kenmare.DeleteContainer(id, commit)
+	err := kenmare.DeleteContainer(id)
 	if err != nil {
 		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
 			"status": requests.StatusFailed,
@@ -113,6 +113,26 @@ func deleteContainerHandler(rw http.ResponseWriter, req *http.Request) {
 
 	renderer.JSON(rw, http.StatusOK, map[string]string{
 		"status": requests.StatusRemoved,
+	})
+}
+
+// updateContainerHandler sends a request to kenmare to save the container's
+// current state.
+func updateContainerHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	err := kenmare.SaveContainer(id)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	renderer.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.StatusUpdated,
 	})
 }
 
