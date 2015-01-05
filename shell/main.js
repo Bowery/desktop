@@ -115,6 +115,14 @@ app.on('ready', function() {
     {
       label: 'File',
       submenu: [
+      {
+        label: 'Open In Browser',
+        accelerator: 'CommandOrControl+O',
+        click: function () {
+          var w = BrowserWindow.getFocusedWindow()
+          if (w) require('open')("http://" + w.getTitle())
+          }
+        },
         {
           label: 'New Environment',
           accelerator: 'CommandOrControl+N',
