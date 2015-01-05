@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
+    "open": "0.0.5",
     "pusher-client": "^0.2.2",
     "stathat": "0.0.8"
   }
