@@ -4,6 +4,9 @@
 source="${BASH_SOURCE[0]}"
 while [[ -h "${source}" ]]; do source="$(readlink "${source}")"; done
 root="$(cd -P "$(dirname "${source}")/.." && pwd)"
+cd "${root}"
+version="$(cat VERSION)"
+
 cd "${root}/client"
 mkdir -p "${root}/bin"
 
@@ -12,7 +15,6 @@ go get ./...
 
 # Modify the version so it's greater than the current version.
 semver='[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)'
-version="$(cat VERSION)"
 major="$(echo "${version}" | sed -e "s#${semver}#\1.\2.#")"
 patch="$(echo "${version}" | sed -e "s#${semver}#\3#")"
 ((patch++)) # Increment

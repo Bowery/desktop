@@ -237,7 +237,7 @@ app.on('ready', function() {
         })
 
         response.on('end', function () {
-          var data = JSON.parse(body.toString())        
+          var data = JSON.parse(body.toString())
           var container = data.container
 
           mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
@@ -265,8 +265,8 @@ app.on('ready', function() {
         ip: ip, user: user, password: password
       }
     })
-    
-    mainWindow.loadUrl('file://' + path.join(__dirname, 'term.html?' + query))
+
+    mainWindow.loadUrl('file://' + path.join(__dirname, 'term.min.html?' + query))
     mainWindow.setTitle(ip)
 
     // hterm changes window title when cwd changes triggering
