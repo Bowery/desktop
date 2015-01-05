@@ -9,10 +9,10 @@ Set up your development environment in 30 seconds flat.
 - `make extra-clean` removes everything. If you do this, the next time you run `make` will take a long time.
 
 ## Directory Structure
-- `/bin` is where things get compiled to
+- `/bin` is where binaries go.
 - `/client` runs on the users computer, watches files for changes, and syncs them to `agent`.
 - `/updater` is an app used to update the `client`. It is started by `shell` and starts `client`.
-- `/build` is where the Bowery.app we run in development is actually located
+- `/build` is where the Bowery.app we run in development is actually located. When you  run `release`, this is where we put the `resources` directories for each platform.
 - `/scripts` are a set of utilities that you should never call directly, but are used by the Makefile
 - `/shell` is where the [atom-shell](github.com/atom/atom-shell) app lives.
 - `circle.yml` tells cirlceci how to run tests / deploy the app

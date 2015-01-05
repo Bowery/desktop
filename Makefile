@@ -21,12 +21,14 @@ format:
 test: deps
 	@go test ./...
 
-release:
+release: clean
+	@echo "--> WARNING: YOU ARE PUTTING BOWERY IN THE WILD!!!"
+	-rm -rf build/
+	@bash --norc ./scripts/make_ui.sh
 	@bash --norc ./scripts/release_client.sh
 
-client: release
-
 clean:
+	@echo "--> Cleaning up a bit."
 	-rm -rf pkg
 	-rm -rf client/pkg
 	-rm -rf dist
@@ -36,8 +38,9 @@ clean:
 	-pkill -f bin/client
 
 extra-clean: clean
+	@echo "--> Cleaning up a lot."
 	-rm -rf /tmp/atom
 	-rm -rf /tmp/shell
 	-rm -rf build/
 
-.PHONY: all deps test format clean release client extra-clean
+.PHONY: all deps format test release clean extra-clean
