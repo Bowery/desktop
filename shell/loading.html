@@ -109,6 +109,7 @@ function qmark (name) {
   return name ? queryString[name] : queryString
 }
 
+var ipc = require('ipc')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 var containerId = qmark('container_id')
 var channel = pusher.subscribe('container-' + containerId)
@@ -119,11 +120,8 @@ Pusher.log = function(message) {
   }
 };
 
-channel.bind('error', function (data) {
-  document.querySelector('.progress-error').className = 'progress-error'
-  document.querySelector('.progress-error').innerHTML = data.error
-  document.querySelector('.progress-description').className = 'progress-description hidden'
-})
+ipc.on('error', handleError)
+channel.bind('error', handleError)
 
 channel.bind('progress', function (data) {
   var contents = []
@@ -133,7 +131,7 @@ channel.bind('progress', function (data) {
 
   var type = contents[0]
   var prog = contents[1]
-  
+
   displayProgress(type, prog)
 })
 
@@ -141,6 +139,13 @@ var types = [
   'instance',
   'container'
 ]
+
+// Handle errors returned from Pusher.
+function handleError(data) {
+  document.querySelector('.progress-error').className = 'progress-error'
+  document.querySelector('.progress-error').innerHTML = data.error
+  document.querySelector('.progress-description').className = 'progress-description hidden'
+}
 
 // displayProgress renders the current provisioning
 // progress based on a type and progress. Progress
