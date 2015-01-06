@@ -96,7 +96,7 @@ for (var i = 0, e; e = exitEvents[i]; i++) {
 
 app.on('window-all-closed', function() {
   console.log('$$$ window-all-closed')
-  // app.quit()
+  app.quit()
 })
 
 app.on('ready', function() {
@@ -261,6 +261,9 @@ app.on('ready', function() {
 
       req.write(JSON.stringify({localPath: paths[0]}))
       req.end()
+    } else {
+      // Pressed "Cancel" so just exit.
+      app.quit()
     }
   }
 
@@ -312,10 +315,11 @@ app.on('ready', function() {
           })
           break
         case 1:
-          deleteContainer(id)
-          endSession(start)
-          mainWindow.destroy()
-          mainWindow = null
+          deleteContainer(id, function () {
+            endSession(start)
+            mainWindow.destroy()
+            mainWindow = null
+          })
           break
       }
     })
