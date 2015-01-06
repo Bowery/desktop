@@ -30,10 +30,10 @@ if [[ ! -d "${build}/Bowery.app" ]]; then
   wget -O "/tmp/shell/${os}.zip" "https://github.com/atom/atom-shell/releases/download/v0.19.5/atom-shell-v0.19.5-${os}-${arch}.zip"
   if [[ "${os}" == "darwin" ]]; then
     unzip -d "${build}" "/tmp/shell/${os}.zip"
+    mv "${build}/Atom.app" "${build}/Bowery.app"
   else
     unzip -d "${build}/Bowery.app" "/tmp/shell/${os}.zip"
   fi
-  mv "${build}/Atom.app" "${build}/Bowery.app"
 fi
 
 if [[ "${os}" == "darwin" ]]; then
