@@ -148,8 +148,9 @@ hterm.PreferenceManager = function (id) {
       self.rows = rows
 
       self.conn.send('event: resize ' + cols + ' ' + rows)
+
+      this.termsel.focus()
     }
-    this.termsel.focus()
   }
 
   // Exit the connection and cleanup.
