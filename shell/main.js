@@ -249,8 +249,12 @@ app.on('ready', function() {
           var container = data.container
 
           mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
-
           var channel = pusher.subscribe('container-' + container._id)
+
+          channel.bind('error', function (data) {
+            mainWindow.send('error', data)
+          })
+
           channel.bind('update', function (data) {
             setTimeout(function () {
               openSSH(data._id, data.address, data.user, data.password)
