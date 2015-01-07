@@ -28,8 +28,8 @@ import (
 	"github.com/unrolled/render"
 )
 
-const boweryFileTmpl = `some text here describing what this is
-another line with text and an env id here %s`
+const boweryFileTmpl = `DO NOT DELETE THIS FILE. It is a key component of Bowery (http://bowery.io/start).
+For questions, email hello@bowery.io and include your id (%s) in the email.`
 
 var routes = []web.Route{
 	{"POST", "/containers", createContainerHandler, false},
