@@ -128,7 +128,7 @@ app.on('ready', function() {
         accelerator: 'CommandOrControl+Shift+O',
         click: function () {
           var w = BrowserWindow.getFocusedWindow()
-          if (mainWindow.paths) require('open')(mainWindow.paths[0])
+          if (mainWindow && mainWindow.paths) require('open')(mainWindow.paths[0])
           }
         },
         {
