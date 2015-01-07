@@ -20,12 +20,16 @@ import (
 	"github.com/Bowery/gopackages/ssh"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/update"
+	"github.com/Bowery/gopackages/util"
 	"github.com/Bowery/gopackages/web"
 	"github.com/Bowery/kenmare/kenmare"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
 )
+
+const boweryFileTmpl = `some text here describing what this is
+another line with text and an env id here %s`
 
 var routes = []web.Route{
 	{"POST", "/containers", createContainerHandler, false},
@@ -62,7 +66,7 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	boweryConfPath := filepath.Join(reqBody.LocalPath, ".bowery")
 	data, err := ioutil.ReadFile(boweryConfPath)
 	if err == nil {
-		imageID = string(data)
+		imageID = util.FindTokenString(string(data))
 	}
 
 	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
@@ -78,7 +82,9 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	// If the imageID has just been generated, write it to
 	// the application directory.
 	if container.ImageID != imageID {
-		ioutil.WriteFile(boweryConfPath, []byte(container.ImageID), 0644)
+		contents := []byte(fmt.Sprintf(boweryFileTmpl, container.ImageID))
+
+		ioutil.WriteFile(boweryConfPath, contents, 0644)
 	}
 
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
