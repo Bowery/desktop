@@ -124,6 +124,14 @@ app.on('ready', function() {
           }
         },
         {
+        label: 'Open In File Manager',
+        accelerator: 'CommandOrControl+Shift+O',
+        click: function () {
+          var w = BrowserWindow.getFocusedWindow()
+          if (mainWindow.paths) require('open')(mainWindow.paths[0])
+          }
+        },
+        {
           label: 'New Environment',
           accelerator: 'CommandOrControl+N',
           selector: 'new:',
@@ -238,6 +246,7 @@ app.on('ready', function() {
           show: true,
           resizable: true
         })
+        mainWindow.paths = paths
 
         var body = ''
         response.on('data', function (chunk) {
