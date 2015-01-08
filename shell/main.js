@@ -22,6 +22,7 @@ var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
+var lastFilePath
 
 require('crash-reporter').start() // Report crashes to our server.
 
@@ -116,6 +117,13 @@ app.on('ready', function() {
       label: 'File',
       submenu: [
       {
+        label: 'Open In Finder',
+        accelerator: 'CommandOrControl+O',
+        click: function () {
+          if (lastFilePath) require('open')(lastFilePath)
+        }
+      },
+      {
         label: 'Open In Browser',
         accelerator: 'CommandOrControl+O',
         click: function () {
@@ -166,7 +174,7 @@ app.on('ready', function() {
           label: 'Select All',
           accelerator: 'CommandOrControl+A',
           selector: 'selectAll:'
-        },
+        }
       ]
     },
     {
@@ -175,13 +183,19 @@ app.on('ready', function() {
         {
           label: 'Reload',
           accelerator: 'CommandOrControl+R',
-          click: function() { BrowserWindow.getFocusedWindow().reloadIgnoringCache(); }
+          click: function() {
+            var w = BrowserWindow.getFocusedWindow()
+            w && w.reloadIgnoringCache()
+          }
         },
         {
           label: 'Toggle DevTools',
           accelerator: 'Alt+CommandOrControl+I',
-          click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
-        },
+          click: function() {
+            var w = BrowserWindow.getFocusedWindow()
+            w && w.toggleDevTools()
+          }
+        }
       ]
     },
     {
@@ -204,7 +218,7 @@ app.on('ready', function() {
         {
           label: 'Bring All to Front',
           selector: 'arrangeInFront:'
-        },
+        }
       ]
     }
   ]
@@ -220,6 +234,7 @@ app.on('ready', function() {
       properties: ['openDirectory']
     })
     if (paths && paths.length > 0) {
+      lastFilePath = paths[0]
       var req = http.request({
         host: 'localhost',
         port: 32055,
