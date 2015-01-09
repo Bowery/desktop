@@ -9,6 +9,7 @@ var Pusher = require('pusher-client')
 var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 var request = require('request')
+var rollbar = require('rollbar')
 
 // Atom shell modules.
 var app = require('app')
@@ -23,8 +24,10 @@ var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
-
+var localAddr = "http://localhost:32055"
 require('crash-reporter').start() // Report crashes to our server.
+
+rollbar.init('a7c4e78074034f04b1882af596657295')
 
 // killClient kills any running updater/client process.
 // NOTE: Sync ops only, the process exit event doesn't allow async ops.
@@ -146,13 +149,27 @@ app.on('ready', function() {
             if (!w) return
 
             var ip = w.getTitle()
-            request("http://localhost:32055/env/" + ip, function(err, res, body) {
-              if (err) return
+
+            var options = {
+              url: localAddr + '/env/' + ip,
+              method: 'GET'
+            }
+            
+            request(options, function(err, res, body) {
+              if (err) {
+                console.log(err)
+                rollbar.reportMessage(err)
+                return
+              }
 
               var bson = JSON.parse(body)
-              if (bson.status != 'success') return
+              if (bson.status != 'success') {
+                console.log(bson.error)
+                rollbar.reportMessage(bson.error)
+                return
+              }
 
-              // aiyo david
+              // TODO(thebyrd): add a front end to this ;)
             })
           }
         }
@@ -253,16 +270,20 @@ app.on('ready', function() {
       properties: ['openDirectory']
     })
     if (paths && paths.length > 0) {
-      var req = http.request({
-        host: 'localhost',
-        port: 32055,
+      var options = {
+        url: localAddr + '/containers',
         method: 'POST',
-        path: '/containers',
-        headers: {
-          'Content-Type': 'application/json'
+        body: JSON.stringify({localPath: paths[0]})
+      }
+
+      request(options, function(err, res, body) {
+        if (err) {
+          console.log(err)
+          rollbar.reportMessage(err)
+          return
         }
-      }, function (response) {
-        // On successful response, create window.
+
+        // On successful res, create window.
         var mainWindow = new BrowserWindow({
           title: 'Bowery',
           frame: true,
@@ -274,36 +295,33 @@ app.on('ready', function() {
 
         mainWindow.localPath = paths[0]
 
-        var body = ''
-        response.on('data', function (chunk) {
-          body += chunk
+        var data = JSON.parse(body.toString())
+
+        if (data.status != 'created') {
+          console.log(data.error)
+          rollbar.reportMessage(data.error)
+          return
+        }
+        
+        var container = data.container
+
+        mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+        var channel = pusher.subscribe('container-' + container._id)
+
+        channel.bind('error', function (data) {
+          mainWindow.send('error', data)
         })
 
-        response.on('end', function () {
-          var data = JSON.parse(body.toString())
-          var container = data.container
+        channel.bind('created', function (data) {
+          setTimeout(function () {
+            openSSH(data._id, data.address, data.user, data.password, mainWindow)
+          }, 500)
+        })
 
-          mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
-          var channel = pusher.subscribe('container-' + container._id)
-
-          channel.bind('error', function (data) {
-            mainWindow.send('error', data)
-          })
-
-          channel.bind('created', function (data) {
-            setTimeout(function () {
-              openSSH(data._id, data.address, data.user, data.password, mainWindow)
-            }, 500)
-          })
-
-          channel.bind('update', function (data) {
-            // TODO(larzconwell): implement update prompt
-          })
+        channel.bind('update', function (data) {
+          // TODO(larzconwell): implement update prompt
         })
       })
-
-      req.write(JSON.stringify({localPath: paths[0]}))
-      req.end()
     } else {
       // Pressed "Cancel" so just exit.
       app.quit()
@@ -375,43 +393,51 @@ app.on('ready', function() {
 
   // todo(steve): show save progress.
   function saveContainer (id, cb) {
-    var req = http.request({
-      host: 'localhost',
-      port: 32055,
-      method: 'PUT',
-      path: '/containers/' + id
-    }, function (response) {
-      response.on('data', function (chunk) {
-        console.log('$$$ data', chunk)
-      })
+    var options = {
+      url: localAddr + '/containers/' + id,
+      method: 'PUT'
+    }
 
-      response.on('end', function () {
-        cb && cb()
-      })
+    request(options, function(err, res, body) {
+      if (err) {
+        console.log(err)
+        rollbar.reportMessage(err)
+        return
+      }
+
+      var data = JSON.parse(body.toString())
+      if (data.status == 'failed') {
+        console.log(data.error)
+        rollbar.reportMessage(data.error)
+        return
+      }
+      
+      cb && cb()
     })
-
-    req.write('')
-    req.end()
   }
 
   function deleteContainer (id, cb) {
-    var req = http.request({
-      host: 'localhost',
-      port: 32055,
-      method: 'DELETE',
-      path: '/containers/' + id
-    }, function (response) {
-      response.on('data', function (chunk) {
-        console.log('$$$ data', chunk)
-      })
+    var options = {
+      url: localAddr + '/containers/' + id,
+      method: 'DELETE'
+    }
+    
+    request(options, function(err, res, body) {
+      if (err) {
+        console.log(err)
+        rollbar.reportMessage(err)
+        return
+      }
 
-      response.on('end', function () {
-        cb && cb()
-      })
+      var data = JSON.parse(body.toString())
+      if (data.status == 'failed') {
+        console.log(data.error)
+        rollbar.reportMessage(data.error)
+        return
+      }
+
+      cb && cb()
     })
-
-    req.write('')
-    req.end()
   }
 
   // endSession posts the elapsed ssh time to StatHat.
