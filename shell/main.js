@@ -23,7 +23,6 @@ var binPath = path.join(__dirname, '..', 'bin')
 var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
-var lastFilePath
 
 require('crash-reporter').start() // Report crashes to our server.
 
@@ -121,7 +120,8 @@ app.on('ready', function() {
           label: 'Open In File Manager',
           accelerator: 'CommandOrControl+O',
           click: function () {
-            if (lastFilePath) require('open')(lastFilePath)
+            var w = BrowserWindow.getFocusedWindow()
+            if (w && w.localPath) require('open')(w.localPath)
           }
         },
         {
@@ -253,7 +253,6 @@ app.on('ready', function() {
       properties: ['openDirectory']
     })
     if (paths && paths.length > 0) {
-      lastFilePath = paths[0]
       var req = http.request({
         host: 'localhost',
         port: 32055,
@@ -264,7 +263,7 @@ app.on('ready', function() {
         }
       }, function (response) {
         // On successful response, create window.
-        mainWindow = new BrowserWindow({
+        var mainWindow = new BrowserWindow({
           title: 'Bowery',
           frame: true,
           width: 570,
@@ -272,6 +271,8 @@ app.on('ready', function() {
           show: true,
           resizable: true
         })
+
+        mainWindow.localPath = paths[0]
 
         var body = ''
         response.on('data', function (chunk) {
@@ -291,7 +292,7 @@ app.on('ready', function() {
 
           channel.bind('update', function (data) {
             setTimeout(function () {
-              openSSH(data._id, data.address, data.user, data.password)
+              openSSH(data._id, data.address, data.user, data.password, mainWindow)
             }, 500)
           })
         })
@@ -307,7 +308,7 @@ app.on('ready', function() {
 
   // openSSH initiates an ssh connection to the container and
   // sets window bindings for close related events.
-  function openSSH (id, ip, user, password) {
+  function openSSH (id, ip, user, password, mainWindow) {
     var start = Date.now()
     var query = require('url').format({
       query: {
