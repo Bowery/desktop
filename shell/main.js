@@ -344,6 +344,8 @@ app.on('ready', function() {
       // selects not to save, run delete request and window remove async.
       switch (confirm) {
       case 0:
+        mainWindow.loadUrl('file://' + path.join(__dirname, 'saving.html'))
+
         saveContainer(id, function () {
           deleteContainer(id, function () {
             endSession(start)
