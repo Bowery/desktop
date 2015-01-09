@@ -290,10 +290,14 @@ app.on('ready', function() {
             mainWindow.send('error', data)
           })
 
-          channel.bind('update', function (data) {
+          channel.bind('created', function (data) {
             setTimeout(function () {
               openSSH(data._id, data.address, data.user, data.password, mainWindow)
             }, 500)
+          })
+
+          channel.bind('update', function (data) {
+            // TODO(larzconwell): implement update prompt
           })
         })
       })
