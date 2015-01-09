@@ -383,5 +383,5 @@ func getExportByIPHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	renderer.JSON(rw, http.StatusInternalServerError, export)
+	renderer.JSON(rw, http.StatusOK, export)
 }
