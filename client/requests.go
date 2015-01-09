@@ -17,6 +17,7 @@ import (
 
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/requests"
+	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/ssh"
 	"github.com/Bowery/gopackages/sys"
 	"github.com/Bowery/gopackages/update"
@@ -39,6 +40,7 @@ var routes = []web.Route{
 	{"GET", "/update/{version}", doUpdateHandler, false},
 	{"GET", "/_/ssh", sshHandler, false},
 	{"GET", "/_/sse", sseHandler, false},
+	{"GET", "/env/{ip}", getExportByIPHandler, false},
 }
 
 var renderer = render.New(render.Options{
@@ -349,4 +351,37 @@ func sseHandler(rw http.ResponseWriter, req *http.Request) {
 			f.Flush()
 		}
 	}
+}
+
+func getExportByIPHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	ip := vars["ip"]
+
+	var container *schemas.Container
+
+	for _, cont := range containerManager.Containers {
+		if cont.Address == ip {
+			container = cont
+			break
+		}
+	}
+
+	if container == nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  fmt.Sprintf("no container with ip %s exists", ip),
+		})
+		return
+	}
+
+	export, err := kenmare.Export(container.ImageID)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	renderer.JSON(rw, http.StatusInternalServerError, export)
 }
