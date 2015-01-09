@@ -8,6 +8,7 @@ var tmpdir = os.tmpdir()
 var Pusher = require('pusher-client')
 var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
+var request = require('request')
 
 // Atom shell modules.
 var app = require('app')
@@ -116,19 +117,19 @@ app.on('ready', function() {
     {
       label: 'File',
       submenu: [
-      {
-        label: 'Open In Finder',
-        accelerator: 'CommandOrControl+O',
-        click: function () {
-          if (lastFilePath) require('open')(lastFilePath)
-        }
-      },
-      {
-        label: 'Open In Browser',
-        accelerator: 'CommandOrControl+O',
-        click: function () {
-          var w = BrowserWindow.getFocusedWindow()
-          if (w) require('open')("http://" + w.getTitle())
+        {
+          label: 'Open In File Manager',
+          accelerator: 'CommandOrControl+O',
+          click: function () {
+            if (lastFilePath) require('open')(lastFilePath)
+          }
+        },
+        {
+          label: 'Open In Browser',
+          accelerator: 'CommandOrControl+O',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) require('open')("http://" + w.getTitle())
           }
         },
         {
@@ -136,6 +137,24 @@ app.on('ready', function() {
           accelerator: 'CommandOrControl+N',
           selector: 'new:',
           click: function() {newContainer()}
+        },
+        {
+          label: 'Export',
+          accelerator: 'CommandOrControl+E',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (!w) return
+
+            var ip = w.getTitle()
+            request("http://localhost:32055/env/" + ip, function(err, res, body) {
+              if (err) return
+
+              var bson = JSON.parse(body)
+              if (bson.status != 'success') return
+
+              // aiyo david
+            })
+          }
         }
       ]
     },
@@ -324,22 +343,22 @@ app.on('ready', function() {
       // Destroy and remove reference to window afterwards. If the user
       // selects not to save, run delete request and window remove async.
       switch (confirm) {
-        case 0:
-          saveContainer(id, function () {
-            deleteContainer(id, function () {
-              endSession(start)
-              mainWindow.destroy()
-              mainWindow = null
-            })
-          })
-          break
-        case 1:
+      case 0:
+        saveContainer(id, function () {
           deleteContainer(id, function () {
             endSession(start)
             mainWindow.destroy()
             mainWindow = null
           })
-          break
+        })
+        break
+      case 1:
+        deleteContainer(id, function () {
+          endSession(start)
+          mainWindow.destroy()
+          mainWindow = null
+        })
+        break
       }
     })
   }
@@ -391,7 +410,8 @@ app.on('ready', function() {
     stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - startTime,
       function (status, json) {
         console.log(status, json)
-    })
+      }
+    )
   }
 
   newContainer()
