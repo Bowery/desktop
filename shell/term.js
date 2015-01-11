@@ -2,7 +2,9 @@ lib.rtdep('lib.f', 'lib.Storage', 'hterm')
 var ipc = require('ipc')
 
 ipc.on('canceled', function (){
-  console.log(window.term.exited)
+  if (window.instance.exited) {
+    location.reload()
+  }
 })
 
 function qmark (name) {
