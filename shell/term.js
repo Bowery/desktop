@@ -1,4 +1,11 @@
 lib.rtdep('lib.f', 'lib.Storage', 'hterm')
+var ipc = require('ipc')
+
+ipc.on('canceled', function (){
+  if (window.instance.exited) {
+    location.reload()
+  }
+})
 
 function qmark (name) {
   var queryString = {}

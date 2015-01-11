@@ -366,6 +366,9 @@ app.on('ready', function() {
           mainWindow = null
         })
         break
+      case 2:
+        var w = BrowserWindow.getFocusedWindow()
+        if (w) w.send('canceled')
       }
     })
   }
