@@ -25,6 +25,7 @@ var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
 var localAddr = "http://localhost:32055"
+var openWindows = 0 // Keep count of open windows.
 require('crash-reporter').start() // Report crashes to our server.
 
 rollbar.init('a7c4e78074034f04b1882af596657295')
@@ -154,7 +155,7 @@ app.on('ready', function() {
               url: localAddr + '/env/' + ip,
               method: 'GET'
             }
-            
+
             request(options, function(err, res, body) {
               if (err) {
                 console.log(err)
@@ -294,6 +295,7 @@ app.on('ready', function() {
         })
 
         mainWindow.localPath = paths[0]
+        openWindows++
 
         var data = JSON.parse(body.toString())
 
@@ -302,7 +304,7 @@ app.on('ready', function() {
           rollbar.reportMessage(data.error)
           return
         }
-        
+
         var container = data.container
 
         mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
@@ -322,7 +324,7 @@ app.on('ready', function() {
           // TODO(larzconwell): implement update prompt
         })
       })
-    } else {
+    } else if (openWindows <= 0) {
       // Pressed "Cancel" so just exit.
       app.quit()
     }
@@ -374,6 +376,7 @@ app.on('ready', function() {
             endSession(start)
             mainWindow.destroy()
             mainWindow = null
+            openWindows--
           })
         })
         break
@@ -382,6 +385,7 @@ app.on('ready', function() {
           endSession(start)
           mainWindow.destroy()
           mainWindow = null
+          openWindows--
         })
         break
       case 2:
@@ -411,7 +415,7 @@ app.on('ready', function() {
         rollbar.reportMessage(data.error)
         return
       }
-      
+
       cb && cb()
     })
   }
@@ -421,7 +425,7 @@ app.on('ready', function() {
       url: localAddr + '/containers/' + id,
       method: 'DELETE'
     }
-    
+
     request(options, function(err, res, body) {
       if (err) {
         console.log(err)
