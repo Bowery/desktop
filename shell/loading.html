@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
   <!-- <link rel="stylesheet" href="//f.fontdeck.com/s/css/kMFVOQjPLDEdfKGqpfY/O4BdYig/bowery.io/48405.css" type="text/css" /> -->
   <script src="https://js.pusher.com/2.2/pusher.min.js"></script>
+  <script src="progress.js"></script>
   <style>
    @font-face {
     font-family: "Monosten A";
@@ -112,60 +113,11 @@ function qmark (name) {
 var ipc = require('ipc')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 var containerId = qmark('container_id')
-var channel = pusher.subscribe('container-' + containerId)
 
-Pusher.log = function(message) {
-  if (window.console && window.console.log) {
-    window.console.log(message);
-  }
-};
-
-ipc.on('error', handleError)
-channel.bind('error', handleError)
-
-channel.bind('progress', function (data) {
-  var contents = []
-  try {
-    contents = data.split(':')
-  } catch (e) {}
-
-  var type = contents[0]
-  var prog = contents[1]
-
-  displayProgress(type, prog)
-})
-
-var types = [
-  'instance',
-  'container'
-]
-
-// Handle errors returned from Pusher.
-function handleError(data) {
-  document.querySelector('.progress-error').className = 'progress-error'
-  document.querySelector('.progress-error').innerHTML = data.error
-  document.querySelector('.progress-description').className = 'progress-description hidden'
-}
-
-// displayProgress renders the current provisioning
-// progress based on a type and progress. Progress
-// is in the range [0, 1].
-function displayProgress(type, prog) {
-  if (!~types.indexOf(type)) return
-
-  var index = types.indexOf(type)
-  var existingProgress = (index / types.length) * 100
-  var addedProgress = (prog / types.length) * 100
-
-  var descEl = document.querySelector('.progress-description')
-  var barEl = document.querySelector('.progress-bar')
-  descEl.innerHTML = 'launching ' + type
-  barEl.style.width = existingProgress + addedProgress + '%'
-}
-
-// todo(steve): capture this event
-// when it actually happens.
+var pm = new ProgressManager(containerId, ProgressManager.TypeLaunching)
+pm.init()
 setTimeout(function () {
-  displayProgress('instance', 1)
+  pm.updateProgress('instance', 1)
 }, 1000)
+ipc.on('error', pm.showError)
 </script>
