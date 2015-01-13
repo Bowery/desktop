@@ -38,7 +38,7 @@ func (cm *ContainerManager) Add(container *schemas.Container) {
 			return
 		}
 		channel := conn.Channel("container-" + container.ID)
-		ev := channel.Bind("update")
+		ev := channel.Bind("created")
 		data := (<-ev).(string)
 
 		cont := new(schemas.Container)
