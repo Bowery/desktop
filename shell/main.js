@@ -10,6 +10,7 @@ var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 var request = require('request')
 var rollbar = require('rollbar')
+var TerminalManager = require('./terminal')
 
 // Atom shell modules.
 var app = require('app')
@@ -124,14 +125,6 @@ app.on('ready', function() {
       label: 'File',
       submenu: [
         {
-          label: 'Open In File Manager',
-          accelerator: 'CommandOrControl+O',
-          click: function () {
-            var w = BrowserWindow.getFocusedWindow()
-            if (w && w.localPath) require('open')(w.localPath)
-          }
-        },
-        {
           label: 'Open In Browser',
           accelerator: 'CommandOrControl+O',
           click: function () {
@@ -140,10 +133,18 @@ app.on('ready', function() {
           }
         },
         {
+          label: 'Open In File Manager',
+          accelerator: 'Shift+CommandOrControl+O',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w && w.localPath) require('open')(w.localPath)
+          }
+        },
+        {
           label: 'New Environment',
           accelerator: 'CommandOrControl+N',
           selector: 'new:',
-          click: function() {newContainer()}
+          click: function() {newTerminal()}
         },
         {
           label: 'Export',
@@ -265,207 +266,21 @@ app.on('ready', function() {
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
-  // newContainer prompts the user for an application to launch
-  // an environment with and listens for an update from Pusher.
-  // On successful launch, initiate SSH connection to the container.
-  function newContainer () {
+  var tm = new TerminalManager()
+  function newTerminal() {
     var paths = require('dialog').showOpenDialog({
       title: 'Where is your code?',
       properties: ['openDirectory']
     })
+
+    var terminal
     if (paths && paths.length > 0) {
-      var options = {
-        url: localAddr + '/containers',
-        method: 'POST',
-        body: JSON.stringify({localPath: paths[0]})
-      }
-
-      request(options, function(err, res, body) {
-        if (err) {
-          console.log(err)
-          rollbar.reportMessage(err)
-          return
-        }
-
-        // On successful res, create window.
-        var mainWindow = new BrowserWindow({
-          title: 'Bowery',
-          frame: true,
-          width: 570,
-          height: 370,
-          show: true,
-          resizable: true
-        })
-
-        mainWindow.localPath = paths[0]
-        openWindows++
-
-        var data = JSON.parse(body.toString())
-
-        if (data.status != 'created') {
-          console.log(data.error)
-          rollbar.reportMessage(data.error)
-          return
-        }
-
-        var container = data.container
-        showProgressPage(mainWindow, 'launching', container._id)
-        var channel = pusher.subscribe('container-' + container._id)
-
-        channel.bind('error', function (data) {
-          mainWindow.send('error', data)
-        })
-
-        channel.bind('created', function (data) {
-          setTimeout(function () {
-            openSSH(data._id, data.address, data.user, data.password, mainWindow)
-          }, 500)
-        })
-
-        channel.bind('update', function (data) {
-          // TODO(larzconwell): implement update prompt
-        })
-      })
-    } else if (openWindows <= 0) {
-      // Pressed "Cancel" so just exit.
+      terminal = tm.new(paths[0])
+      terminal.create()
+    } else if (tm.terminals.length <= 0) {
       app.quit()
     }
   }
 
-  // openSSH initiates an ssh connection to the container and
-  // sets window bindings for close related events.
-  function openSSH (id, ip, user, password, mainWindow) {
-    var start = Date.now()
-    var query = require('url').format({
-      query: {
-        ip: ip, user: user, password: password
-      }
-    })
-
-    mainWindow.loadUrl('file://' + path.join(__dirname, 'term.min.html?' + query))
-    mainWindow.setTitle(ip)
-
-    // hterm changes window title when cwd changes triggering
-    // a page-title-updated event. Override default behavior
-    // and ignore change.
-    mainWindow.on('page-title-updated', function (e) {
-      e.preventDefault()
-    })
-
-    // When the window is closed, prompt the user to "save"
-    // the environment.
-    mainWindow.on('close', function (e) {
-      // Returns a value in [0, 1, 2] corresponding to a button.
-      e.preventDefault()
-      var confirm = require('dialog').showMessageBox(mainWindow, {
-        type: 'warning',
-        buttons: ['Save', 'Don\'t save', 'Cancel'],
-        message: 'Do you want to save the changes you made to this environment?',
-        detail: 'Your changes will be lost if you don\'t save them.'
-      })
-
-      console.log('$$$ confirm', confirm)
-
-      // If the user selects save, run save and then delete requests.
-      // Destroy and remove reference to window afterwards. If the user
-      // selects not to save, run delete request and window remove async.
-      switch (confirm) {
-      case 0:
-        mainWindow.loadUrl('file://' + path.join(__dirname, 'saving.html'))
-
-        saveContainer(id, function () {
-          deleteContainer(id, function () {
-            endSession(start)
-            mainWindow.destroy()
-            mainWindow = null
-            openWindows--
-          })
-        })
-        break
-      case 1:
-        deleteContainer(id, function () {
-          endSession(start)
-          mainWindow.destroy()
-          mainWindow = null
-          openWindows--
-        })
-        break
-      case 2:
-        var w = BrowserWindow.getFocusedWindow()
-        if (w) w.send('canceled')
-      }
-    })
-  }
-
-  /**
-   * showProgressPage opens the progress page.
-   * @param {Object} window
-   * @param {string} type
-   * @param {string} id
-   */
-  function showProgressPage (win, type, id) {
-    var query = '?type=' + type + '&container_id=' + id
-    var url = 'file://' + path.join(__dirname, 'progress.html' + query)
-    win.loadUrl(url)
-  }
-
-  function saveContainer (id, cb) {
-    var options = {
-      url: localAddr + '/containers/' + id,
-      method: 'PUT'
-    }
-
-    request(options, function(err, res, body) {
-      if (err) {
-        console.log(err)
-        rollbar.reportMessage(err)
-        return
-      }
-
-      var data = JSON.parse(body.toString())
-      if (data.status == 'failed') {
-        console.log(data.error)
-        rollbar.reportMessage(data.error)
-        return
-      }
-
-      cb && cb()
-    })
-  }
-
-  function deleteContainer (id, cb) {
-    var options = {
-      url: localAddr + '/containers/' + id,
-      method: 'DELETE'
-    }
-
-    request(options, function(err, res, body) {
-      if (err) {
-        console.log(err)
-        rollbar.reportMessage(err)
-        return
-      }
-
-      var data = JSON.parse(body.toString())
-      if (data.status == 'failed') {
-        console.log(data.error)
-        rollbar.reportMessage(data.error)
-        return
-      }
-
-      cb && cb()
-    })
-  }
-
-  // endSession posts the elapsed ssh time to StatHat.
-  function endSession (startTime) {
-    var end = Date.now()
-    stathat.trackEZValue('tibJDdtL7nf5dRIB', 'desktop ssh elapsed time', end - startTime,
-      function (status, json) {
-        console.log(status, json)
-      }
-    )
-  }
-
-  newContainer()
+  newTerminal()
 })
