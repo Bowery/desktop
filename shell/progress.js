@@ -50,6 +50,13 @@ ProgressManager.StepsLaunching = [
 ]
 
 /**
+ * @enum {Array<string>}
+ */
+ProgressManager.StepsSaving = [
+  'container'
+]
+
+/**
  * @param {string} The identifier for this container.
  */
 ProgressManager.prototype._id = ''
@@ -104,6 +111,9 @@ ProgressManager.prototype.setSteps = function () {
   switch (this._type) {
     case ProgressManager.TypeLaunching:
       this.steps = ProgressManager.StepsLaunching
+      break
+    case ProgressManager.TypeSaving:
+      this.steps = ProgressManager.StepsSaving
       break
   }
 }

@@ -306,8 +306,7 @@ app.on('ready', function() {
         }
 
         var container = data.container
-
-        mainWindow.loadUrl('file://' + path.join(__dirname, 'loading.html?container_id=' + container._id))
+        showProgressPage(mainWindow, 'launching', container._id)
         var channel = pusher.subscribe('container-' + container._id)
 
         channel.bind('error', function (data) {
@@ -395,7 +394,18 @@ app.on('ready', function() {
     })
   }
 
-  // todo(steve): show save progress.
+  /**
+   * showProgressPage opens the progress page.
+   * @param {Object} window
+   * @param {string} type
+   * @param {string} id
+   */
+  function showProgressPage (win, type, id) {
+    var query = '?type=' + type + '&container_id=' + id
+    var url = 'file://' + path.join(__dirname, 'progress.html' + query)
+    win.loadUrl(url)
+  }
+
   function saveContainer (id, cb) {
     var options = {
       url: localAddr + '/containers/' + id,
