@@ -70,11 +70,14 @@ var killClient = function () {
 
 killClient()
 
+proc = spawn(clientPath, [])
+/*
 if (process.platform == 'darwin' || process.env.ENV == "no-updater") {
   proc = spawn(clientPath, [])
 } else {
   proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath])
 }
+*/
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
