@@ -11,6 +11,7 @@ var pusher = new Pusher('bbdd9d611b463822cf6e')
 var request = require('request')
 var rollbar = require('rollbar')
 var TerminalManager = require('./terminal')
+var tm = new TerminalManager()
 
 // Atom shell modules.
 var app = require('app')
@@ -155,28 +156,8 @@ app.on('ready', function() {
             if (!w) return
 
             var ip = w.getTitle()
-
-            var options = {
-              url: localAddr + '/env/' + ip,
-              method: 'GET'
-            }
-
-            request(options, function(err, res, body) {
-              if (err) {
-                console.log(err)
-                rollbar.reportMessage(err)
-                return
-              }
-
-              var bson = JSON.parse(body)
-              if (bson.status != 'success') {
-                console.log(bson.error)
-                rollbar.reportMessage(bson.error)
-                return
-              }
-
-              // TODO(thebyrd): add a front end to this ;)
-            })
+            var terminal = tm.getByIP(ip)
+            terminal && terminal.export()
           }
         }
       ]
@@ -267,7 +248,6 @@ app.on('ready', function() {
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
 
-  var tm = new TerminalManager()
   function newTerminal() {
     var paths = require('dialog').showOpenDialog({
       title: 'Where is your code?',

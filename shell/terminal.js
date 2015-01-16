@@ -45,6 +45,12 @@ TerminalManager.prototype.add = function (terminal) {
   return terminal
 }
 
+TerminalManager.prototype.getByIP = function (ip) {
+  for (var i = 0; i < this.terminals.length; i++)
+    if (this.terminals[i].container.address == ip)
+      return this.terminals[i]
+}
+
 /**
  * remove removes a terminal.
  * @enum {Terminal} terminal object.
@@ -168,6 +174,44 @@ Terminal.prototype.saveAndDelete = function() {
       console.log(body.error)
       self._window.destroy()
     }) 
+  })
+}
+
+/**
+ * export shows the user export steps for the container.
+ */
+Terminal.prototype.export = function () {
+  var self = this
+  request({
+    url: baseURL + '/env/' + this.container.address,
+    method: 'GET'
+  }, function (err, res, body) {
+    if (err)
+      return
+
+    var data = JSON.parse(body)
+    if (data.status != 'success')
+      return
+
+    var confirm = require('dialog').showMessageBox(self._window, {
+      type: 'info',
+      buttons: ['Docker', 'Shell', 'Cancel'],
+      message: 'Select a format to export to.',
+      detail: 'You can pipe this container into docker load or download and mount it directly without Docker.'
+    })
+
+    if (confirm == 2)
+      return
+
+    var content = confirm == 0 ? data.docker : data.shell
+    require('clipboard').writeText(content)
+
+    require('dialog').showMessageBox(self._window, {
+      type: 'info',
+      buttons: ['OK'],
+      message: 'Copied to clipboard!',
+      detail: content
+    })
   })
 }
 
