@@ -159,14 +159,24 @@ Terminal.prototype.delete = function () {
   .fail(this._handleDeleteErr.bind(this))
 }
 
+/**
+ * saveAndDelete saves the container and then deletes it.
+ * It redirects to the progress page during this operation.
+ */
 Terminal.prototype.saveAndDelete = function() {
-  this._window.loadUrl('file://' + path.join(__dirname, 'saving.html'))
+  var query = require('url').format({
+    query: {
+      type: 'saving',
+      container_id: this.container._id
+    }
+  })
+
+  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
   var self = this
   request({
     url: baseURL + '/containers/' + this.container._id,
     method: 'PUT'
   }, function (err, res, body) {
-    console.log(body.error)
     request({
       url: baseURL + '/containers/' + self.container._id,
       method: 'DELETE'
