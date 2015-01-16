@@ -79,12 +79,13 @@ if (process.platform == 'darwin' || process.env.ENV == "no-updater") {
   proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath])
 }
 */
+var logStream = fs.createWriteStream('bowery.log', {flags: 'a'})
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
 })
-proc.stdout.pipe(process.stdout)
-proc.stderr.pipe(process.stderr)
+proc.stdout.pipe(logStream)
+proc.stderr.pipe(logStream)
 
 // Write bowery processes info.
 try {
