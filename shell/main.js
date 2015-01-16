@@ -173,7 +173,6 @@ app.on('ready', function() {
                 rollbar.reportMessage(bson.error)
                 return
               }
-
               // TODO(thebyrd): add a front end to this ;)
             })
           }

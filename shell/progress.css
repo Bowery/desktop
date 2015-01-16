@@ -61,7 +61,10 @@ body {
 }
 .progress-error,
 .progress-description {
+  margin: 0 auto;
   margin-top: 20px;
+  width: 500px;
+  line-height: 20px;
 }
 .progress-error.hidden,
 .progress-description.hidden {

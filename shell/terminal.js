@@ -153,8 +153,11 @@ Terminal.prototype.delete = function () {
   .fail(this._handleDeleteErr.bind(this))
 }
 
+/**
+ * saveAndDelete saves a container and then deletes it.
+ */
 Terminal.prototype.saveAndDelete = function() {
-  this._window.loadUrl('file://' + path.join(__dirname, 'saving.html'))
+  this._showProgress('saving')
   var self = this
   request({
     url: baseURL + '/containers/' + this.container._id,
@@ -188,16 +191,8 @@ Terminal.prototype._handleCreateRes = function (res) {
   this.container = body.container
   this._createWindow()
   this._subscribe()
+  this._showProgress('launching')
 
-  // show loading screen
-  var query = require('url').format({
-    query: {
-      type: 'launching',
-      container_id: this.container._id
-    }
-  })
-
-  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
   return this
 }
 
@@ -336,6 +331,23 @@ Terminal.prototype._handleWindowClose = function (e) {
     case 2:
       break
   }
+}
+
+/**
+ * _showProgress opens the progress page and operates
+ * it under a certain type of progress.
+ * @param {string} type
+ * @private
+ */
+Terminal.prototype._showProgress = function (type) {
+  var query = require('url').format({
+    query: {
+      type: type,
+      container_id: this.container._id
+    }
+  })
+
+  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
 }
 
 /**
