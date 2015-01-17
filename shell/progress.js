@@ -1,4 +1,4 @@
-// Copyright 2014 Bowery, Inc. 
+// Copyright 2014 Bowery, Inc.
 /**
  * @fileoverview Progress manager for loading screens.
  */
@@ -138,7 +138,7 @@ ProgressManager.prototype.handleProgressEvent = function (data) {
     contents = data.split(':')
   } catch (e) {}
 
-  this.updateProgress(contents[0], contents[1])
+  this.updateProgress(contents[0], parseFloat(contents[1]))
 }
 
 /**
