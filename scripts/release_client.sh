@@ -37,7 +37,7 @@ if [[ ! -f "$(which goxc)" ]]; then
 fi
 
 echo "--> Downloading shells..."
-ver="0.20.3"
+ver="0.20.6"
 url="https://github.com/atom/atom-shell/releases/download/v${ver}/atom-shell-v${ver}"
 
 mkdir -p "${root}/pkg/${version}"
@@ -64,6 +64,7 @@ unzip -q "/tmp/atom/${ver}_windows_386.zip" -d "${root}/pkg/${version}/windows_3
 unzip -q "/tmp/atom/${ver}_windows_386.zip" -d "${root}/pkg/${version}/windows_amd64"
 
 echo "--> Cross compiling client..."
+go get ./...
 goxc \
 -wd="${root}/client" \
 -d="${root}/build" \
@@ -142,12 +143,12 @@ contents="${app}/Contents"
 mv "${root}/pkg/${version}/darwin_amd64/Atom.app" "${app}"
 setupAtom "darwin_amd64" "${contents}/Resources" "${contents}"
 rm -rf "${contents}/Resources/atom.icns"
-if [[ "${IDENTITY}" == "" ]]; then
-  IDENTITY="Bowery Software, LLC."
-fi
-productbuild --sign "${IDENTITY}" --component "${app}" /Applications "${root}/pkg/${version}/darwin_amd64/bowery.pkg"
-rm -rf "${app}"
 
+# codesign --verbose --deep --force --sign "3rd Party Mac Developer Application: Bowery Software, LLC." "${root}/pkg/${version}/darwin_amd64/Bowery.app"
+# codesign --verbose --force --sign "3rd Party Mac Developer Application: Bowery Software, LLC." "${root}/pkg/${version}/darwin_amd64/Bowery.app/Contents/MacOS/Atom"
+productbuild --sign "Developer ID Installer: Bowery Software, LLC. (B4B749T38A)" --component "${app}" /Applications "${root}/pkg/${version}/darwin_amd64/bowery.pkg"
+spctl -a -vvv --type install "${root}/pkg/${version}/darwin_amd64/bowery.pkg"
+rm -rf "${app}"
 echo "--> Creating extractors for Linux and Windows..."
 
 # Copies installer scripts and logos in the atom directory.
