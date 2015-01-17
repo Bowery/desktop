@@ -8,6 +8,7 @@
     "stathat": "0.0.8",
     "request": "2.51.0",
     "rollbar": "0.4.1",
-    "kew": "^0.5.0-alpha.1"
+    "kew": "^0.5.0-alpha.1",
+    "mixpanel": "0.0.20"
   }
 }

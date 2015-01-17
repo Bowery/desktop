@@ -3,11 +3,14 @@ var fs = require('fs')
 var os = require('os')
 var path = require('path')
 var http = require('http')
+var exec = require('child_process').exec
 var spawn = require('child_process').spawn
 var tmpdir = os.tmpdir()
 var Pusher = require('pusher-client')
 var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
+var Mixpanel = require('mixpanel')
+var mixpanel = Mixpanel.init('d5c191fd4468894be2824bf288879a18')
 var request = require('request')
 var rollbar = require('rollbar')
 var TerminalManager = require('./terminal')
@@ -104,6 +107,17 @@ for (var i = 0, e; e = exitEvents[i]; i++) {
     process.exit(0)
   })
 }
+
+// Attempt to get user information and register with mixpanel.
+var email
+exec('git config user.email', function (err, stdout) {
+  if (err) return
+
+  email = stdout
+  mixpanel.people.set('', {
+    $email: email
+  })
+})
 
 app.on('window-all-closed', function() {
   console.log('$$$ window-all-closed')
