@@ -140,8 +140,15 @@ app.on('ready', function() {
       label: 'File',
       submenu: [
         {
+          label: 'New Environment',
+          accelerator: 'CommandOrControl+N',
+          selector: 'new:',
+          click: function() {newTerminal()}
+        },
+        {
           label: 'Open In Browser',
           accelerator: 'CommandOrControl+O',
+          enabled: false,
           click: function () {
             var w = BrowserWindow.getFocusedWindow()
             if (w) require('open')("http://" + w.getTitle())
@@ -150,20 +157,19 @@ app.on('ready', function() {
         {
           label: 'Open In File Manager',
           accelerator: 'Shift+CommandOrControl+O',
+          enabled: false,
           click: function () {
             var w = BrowserWindow.getFocusedWindow()
-            if (w && w.localPath) require('open')(w.localPath)
+            if (w) {
+              var t = tm.getByIP(w.getTitle())
+              if (t.path) require('open')(t.path)
+            }
           }
-        },
-        {
-          label: 'New Environment',
-          accelerator: 'CommandOrControl+N',
-          selector: 'new:',
-          click: function() {newTerminal()}
         },
         {
           label: 'Export',
           accelerator: 'CommandOrControl+E',
+          enabled: false,
           click: function () {
             var w = BrowserWindow.getFocusedWindow()
             if (!w) return
@@ -244,7 +250,6 @@ app.on('ready', function() {
         },
         {
           label: 'Close',
-          // Don't use CommandOrControl here, since these aren't typical on PCs.
           accelerator: 'Command+W',
           selector: 'performClose:'
         },
@@ -258,8 +263,10 @@ app.on('ready', function() {
       ]
     }
   ]
+
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
+  tm.setMenu(menu)
 
   function newTerminal() {
     var paths = require('dialog').showOpenDialog({

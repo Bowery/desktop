@@ -26,6 +26,12 @@ function TerminalManager() {}
 TerminalManager.prototype.terminals = []
 
 /**
+ * @enum {Object} menu.
+ * @private
+ */
+TerminalManager.prototype._menu = null
+
+/**
  * new creates a new terminal and adds it to the list
  * of active terminals.
  * @param {string} path to code
@@ -39,13 +45,17 @@ TerminalManager.prototype.new = function (path) {
 
 /**
  * add adds a terminal.
- * @enum {Terminal} terminal object.
+ * @param {Terminal} terminal object.
  */
 TerminalManager.prototype.add = function (terminal) {
   this.terminals.push(terminal)
   return terminal
 }
 
+/**
+ * getByIP returns the terminal with matching ip address.
+ * @return {Terminal} 
+ */
 TerminalManager.prototype.getByIP = function (ip) {
   for (var i = 0; i < this.terminals.length; i++)
     if (this.terminals[i].container.address == ip)
@@ -54,12 +64,48 @@ TerminalManager.prototype.getByIP = function (ip) {
 
 /**
  * remove removes a terminal.
- * @enum {Terminal} terminal object.
+ * @param {Terminal} terminal object.
  */
 TerminalManager.prototype.remove = function (terminal) {
   for (var i = 0; i < this.terminals.length; i++)
     if (this.terminals[i].container._id == terminal.container._id)
       this.terminals.splice(i, 1)
+}
+
+/**
+ * setMenu sets the menu.
+ * @param {Object} menu
+ */
+TerminalManager.prototype.setMenu = function (menu) {
+  this._menu = menu
+}
+
+/**
+ * getMenu gets the menu.
+ * @return {Object} menu
+ */
+TerminalManager.prototype.getMenu = function () {
+  return this._menu
+}
+
+/**
+ * updateSubmenuItem updates a sub menu item.
+ * @param {string} label Top level label.
+ * @param {string} sub Label within top level label.
+ * @param {string} key
+ * @param {string|bool} value
+ */
+TerminalManager.prototype.updateSubmenuItem = function (label, sub, key, value) {
+  var menu = this.getMenu()
+  for (var i = 0; i < menu.items.length; i++) {
+    if (menu.items[i].label == label) {
+      for (var j = 0; j < menu.items[i].submenu.items.length; j++) {
+        if (menu.items[i].submenu.items[j].label == sub) {
+          menu.items[i].submenu.items[j][key] = value
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -360,6 +406,9 @@ Terminal.prototype._handleCreateEvent = function (data) {
 
   this.container = data
   this.connect()
+  this.getDelegate().updateSubmenuItem('File', 'Export', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Open In Browser', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Open In File Manager', 'enabled', true)
 }
 
 /**
