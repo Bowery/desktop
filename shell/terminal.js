@@ -33,6 +33,7 @@ TerminalManager.prototype.terminals = []
  */
 TerminalManager.prototype.new = function (path) {
   var t = new Terminal(path)
+  t.setDelegate(this)
   return this.add(t)
 }
 
@@ -96,6 +97,29 @@ Terminal.prototype._subChan = null
  * @private
  */
 Terminal.prototype._window = null
+
+/**
+ * Delegate
+ * @enum {TerminalManager}
+ * @private
+ */
+Terminal.prototype._delegate = null
+
+/**
+ * setDelegate sets the delegate.
+ * @param {TerminalManager}
+ */
+Terminal.prototype.setDelegate = function (delegate) {
+  this._delegate = delegate
+}
+
+/**
+ * getDelegate returns the delegate.
+ * @return {TerminalManager}
+ */
+Terminal.prototype.getDelegate = function () {
+  return this._delegate
+}
 
 /**
  * Send an http request.
@@ -181,7 +205,7 @@ Terminal.prototype.saveAndDelete = function() {
       url: baseURL + '/containers/' + self.container._id,
       method: 'DELETE'
     }, function (err, res, body) {
-      console.log(body.error)
+      self.getDelegate.remove(self)
       self._window.destroy()
     }) 
   })
@@ -276,6 +300,7 @@ Terminal.prototype._handleDeleteRes = function (res) {
   if (body.error)
     throw new Error(body.error)
 
+  this.getDelegate().remove(this)
   this._window.destroy()
   return this
 }

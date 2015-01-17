@@ -30,7 +30,6 @@ var clientPath = path.join(binPath, 'client' + ext)
 var updaterPath = path.join(binPath, 'updater' + ext)
 var proc = null
 var localAddr = "http://localhost:32055"
-var openWindows = 0 // Keep count of open windows.
 require('crash-reporter').start() // Report crashes to our server.
 
 rollbar.init('a7c4e78074034f04b1882af596657295')
