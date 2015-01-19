@@ -296,11 +296,14 @@ Terminal.prototype.export = function () {
     var content = confirm == 0 ? data.docker : data.shell
     require('clipboard').writeText(content)
 
+    var detail = confirm == 0
+      ? 'The copied text will download the exported container and pipe it into docker load. To learn more visit http://bowery.io/docs/deployment'
+      : 'Paste the copied text into a file. Executing that file will mount the exported container using chroot. To learn more visit http://bowery.io/docs/deployment'
     require('dialog').showMessageBox(self._window, {
       type: 'info',
       buttons: ['OK'],
       message: 'Copied to clipboard!',
-      detail: content
+      detail: detail
     })
   })
 }
