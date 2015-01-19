@@ -26,6 +26,12 @@ function TerminalManager() {}
 TerminalManager.prototype.terminals = []
 
 /**
+ * @enum {Object} menu.
+ * @private
+ */
+TerminalManager.prototype._menu = null
+
+/**
  * new creates a new terminal and adds it to the list
  * of active terminals.
  * @param {string} path to code
@@ -33,18 +39,23 @@ TerminalManager.prototype.terminals = []
  */
 TerminalManager.prototype.new = function (path) {
   var t = new Terminal(path)
+  t.setDelegate(this)
   return this.add(t)
 }
 
 /**
  * add adds a terminal.
- * @enum {Terminal} terminal object.
+ * @param {Terminal} terminal object.
  */
 TerminalManager.prototype.add = function (terminal) {
   this.terminals.push(terminal)
   return terminal
 }
 
+/**
+ * getByIP returns the terminal with matching ip address.
+ * @return {Terminal} 
+ */
 TerminalManager.prototype.getByIP = function (ip) {
   for (var i = 0; i < this.terminals.length; i++)
     if (this.terminals[i].container.address == ip)
@@ -53,12 +64,48 @@ TerminalManager.prototype.getByIP = function (ip) {
 
 /**
  * remove removes a terminal.
- * @enum {Terminal} terminal object.
+ * @param {Terminal} terminal object.
  */
 TerminalManager.prototype.remove = function (terminal) {
   for (var i = 0; i < this.terminals.length; i++)
     if (this.terminals[i].container._id == terminal.container._id)
       this.terminals.splice(i, 1)
+}
+
+/**
+ * setMenu sets the menu.
+ * @param {Object} menu
+ */
+TerminalManager.prototype.setMenu = function (menu) {
+  this._menu = menu
+}
+
+/**
+ * getMenu gets the menu.
+ * @return {Object} menu
+ */
+TerminalManager.prototype.getMenu = function () {
+  return this._menu
+}
+
+/**
+ * updateSubmenuItem updates a sub menu item.
+ * @param {string} label Top level label.
+ * @param {string} sub Label within top level label.
+ * @param {string} key
+ * @param {string|bool} value
+ */
+TerminalManager.prototype.updateSubmenuItem = function (label, sub, key, value) {
+  var menu = this.getMenu()
+  for (var i = 0; i < menu.items.length; i++) {
+    if (menu.items[i].label == label) {
+      for (var j = 0; j < menu.items[i].submenu.items.length; j++) {
+        if (menu.items[i].submenu.items[j].label == sub) {
+          menu.items[i].submenu.items[j][key] = value
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -96,6 +143,29 @@ Terminal.prototype._subChan = null
  * @private
  */
 Terminal.prototype._window = null
+
+/**
+ * Delegate
+ * @enum {TerminalManager}
+ * @private
+ */
+Terminal.prototype._delegate = null
+
+/**
+ * setDelegate sets the delegate.
+ * @param {TerminalManager}
+ */
+Terminal.prototype.setDelegate = function (delegate) {
+  this._delegate = delegate
+}
+
+/**
+ * getDelegate returns the delegate.
+ * @return {TerminalManager}
+ */
+Terminal.prototype.getDelegate = function () {
+  return this._delegate
+}
 
 /**
  * Send an http request.
@@ -177,13 +247,15 @@ Terminal.prototype.saveAndDelete = function() {
     url: baseURL + '/containers/' + this.container._id,
     method: 'PUT'
   }, function (err, res, body) {
-    request({
-      url: baseURL + '/containers/' + self.container._id,
-      method: 'DELETE'
-    }, function (err, res, body) {
-      console.log(body.error)
-      self._window.destroy()
-    }) 
+    self._subChan.on('saved', function (data) {
+      request({
+        url: baseURL + '/containers/' + self.container._id,
+        method: 'DELETE'
+      }, function (err, res, body) {
+        self.getDelegate.remove(self)
+        self._window.destroy()
+      }) 
+    })
   })
 }
 
@@ -276,6 +348,7 @@ Terminal.prototype._handleDeleteRes = function (res) {
   if (body.error)
     throw new Error(body.error)
 
+  this.getDelegate().remove(this)
   this._window.destroy()
   return this
 }
@@ -335,6 +408,9 @@ Terminal.prototype._handleCreateEvent = function (data) {
 
   this.container = data
   this.connect()
+  this.getDelegate().updateSubmenuItem('File', 'Export', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Open In Browser', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Open In File Manager', 'enabled', true)
 }
 
 /**

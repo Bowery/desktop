@@ -46,14 +46,14 @@ ProgressManager.Types = [
  */
 ProgressManager.StepsLaunching = [
   'instance',
-  'container'
+  'environment'
 ]
 
 /**
  * @enum {Array<string>}
  */
 ProgressManager.StepsSaving = [
-  'container'
+  'environment'
 ]
 
 /**
