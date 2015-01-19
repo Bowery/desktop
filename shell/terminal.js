@@ -252,7 +252,7 @@ Terminal.prototype.saveAndDelete = function() {
         url: baseURL + '/containers/' + self.container._id,
         method: 'DELETE'
       }, function (err, res, body) {
-        self.getDelegate.remove(self)
+        self.getDelegate().remove(self)
         self._window.destroy()
       }) 
     })
