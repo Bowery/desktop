@@ -147,7 +147,7 @@ func awsCmd(args ...string) error {
 			if err != nil {
 				done <- err
 			}
-			fmt.Println("Uploaded", path, "to", bucket + "/" + info.Name())
+			fmt.Println("Uploaded", path, "to", bucket+"/"+info.Name())
 		}(stat)
 	}
 
