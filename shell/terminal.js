@@ -209,6 +209,14 @@ Terminal.prototype.save = function () {
   if (!this.container._id)
     throw new Error('an active container is required')
 
+  var query = require('url').format({
+    query: {
+      type: 'saving',
+      container_id: this.container._id
+    }
+  })
+  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
+  
   return this._req('/containers/' + this.container._id, 'PUT')
   .then(this._handleSaveRes.bind(this))
   .fail(this._handleSaveErr.bind(this))
@@ -336,6 +344,11 @@ Terminal.prototype._handleSaveRes = function (res) {
   var body = JSON.parse(res.body.toString())
   if (body.error)
     throw new Error(body.error)
+
+  var self = this
+  this._subChan.on('saved', function (data) {
+    self.connect()
+  })
 }
 
 /**
@@ -408,9 +421,10 @@ Terminal.prototype._handleCreateEvent = function (data) {
 
   this.container = data
   this.connect()
-  this.getDelegate().updateSubmenuItem('File', 'Export', 'enabled', true)
   this.getDelegate().updateSubmenuItem('File', 'Open In Browser', 'enabled', true)
   this.getDelegate().updateSubmenuItem('File', 'Open In File Manager', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Save', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Export', 'enabled', true)
 }
 
 /**

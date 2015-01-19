@@ -167,6 +167,19 @@ app.on('ready', function() {
           }
         },
         {
+          label: 'Save',
+          accelerator: 'CommandOrControl+S',
+          enabled: false,
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (!w) return
+
+            var ip = w.getTitle()
+            var terminal = tm.getByIP(ip)
+            terminal && terminal.save()
+          }
+        },
+        {
           label: 'Export',
           accelerator: 'CommandOrControl+E',
           enabled: false,
