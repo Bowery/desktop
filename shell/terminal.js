@@ -247,13 +247,15 @@ Terminal.prototype.saveAndDelete = function() {
     url: baseURL + '/containers/' + this.container._id,
     method: 'PUT'
   }, function (err, res, body) {
-    request({
-      url: baseURL + '/containers/' + self.container._id,
-      method: 'DELETE'
-    }, function (err, res, body) {
-      self.getDelegate.remove(self)
-      self._window.destroy()
-    }) 
+    self._subChan.on('saved', function (data) {
+      request({
+        url: baseURL + '/containers/' + self.container._id,
+        method: 'DELETE'
+      }, function (err, res, body) {
+        self.getDelegate.remove(self)
+        self._window.destroy()
+      }) 
+    })
   })
 }
 
