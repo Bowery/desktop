@@ -12,7 +12,7 @@ import (
 	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/sys"
-	"github.com/oguzbilgic/pusher"
+	"github.com/Bowery/pusher"
 )
 
 // ContainerManager manages all active containers as well as
@@ -40,6 +40,7 @@ func (cm *ContainerManager) Add(container *schemas.Container) {
 		channel := conn.Channel("container-" + container.ID)
 		ev := channel.Bind("created")
 		data := (<-ev).(string)
+		conn.Disconnect()
 
 		cont := new(schemas.Container)
 		err = json.Unmarshal([]byte(data), cont)
