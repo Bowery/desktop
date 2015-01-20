@@ -30,8 +30,5 @@ var containerId = qmark('container_id')
 
 var pm = new ProgressManager(containerId, type)
 pm.init()
-setTimeout(function () {
-  pm.updateProgress('instance', 1)
-}, 1000)
 ipc.on('error', pm.showError)
 </script>
