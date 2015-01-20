@@ -45,7 +45,6 @@ ProgressManager.Types = [
  * @enum {Array<string>}
  */
 ProgressManager.StepsLaunching = [
-  'instance',
   'environment'
 ]
 
