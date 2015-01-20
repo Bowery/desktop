@@ -109,12 +109,23 @@ for (var i = 0, e; e = exitEvents[i]; i++) {
 
 // Attempt to get user information and register with mixpanel.
 var email
+var name
 exec('git config user.email', function (err, stdout) {
   if (err) return
 
   email = stdout
-  mixpanel.people.set('', {
-    $email: email
+  exec('git config user.name', function (err, stdout) {
+    if (err) return
+
+    name = stdout
+    mixpanel.people.set(email, {
+      $email: email,
+      name: name
+    })
+
+    mixpanel.track('opened app', {
+      distinct_id: email
+    })
   })
 })
 
