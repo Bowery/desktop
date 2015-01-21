@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>bowery</id>
+    <title>Bowery</title>
+    <version>{{version}}</version>
+    <authors>Bowery</authors>
+    <summary>Bowery Desktop</summary>
+    <description>
+The Bowery terminal keeps your team’s development environments in sync without making changes to your existing workflow, making it simple to collaborate as a team and deploy quality software. 
+
+Bowery is free to downloaded and can be used by teams of up to 5 for free but each additional  collaborator is charged a monthly rate. 
+
+This package brings the Bowery app to your system.
+    </description>
+    <projectUrl>http://bowery.io</projectUrl>
+    <tags>sync bowery environment onboarding onboard workflow development productivity bowery-client</tags>
+    <copyright>Copyright 2013-2015 Bowery, Inc.</copyright>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>http://desktop.bowery.io.s3.amazonaws.com/logo-transparent.png</iconUrl>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
