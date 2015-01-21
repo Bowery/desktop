@@ -208,9 +208,11 @@ setupExtractor "windows_386" "install.bat" "logo.ico"
 rm -rf "/tmp/${version}_windows_386.7z"
 cp -f "${root}/scripts/data/bowery.exe.manifest" /tmp/rmmanifest.exe "${root}/pkg/${version}/windows_386"
 cd "${root}/pkg/${version}/windows_386"
+touch bowery.exe.gui {rmmanifest.exe,resources/bin/{client,updater}.exe}.ignore
 7z a "/tmp/${version}_windows_386.7z" * &> "${root}/debug.log"
 cd -
 cat /tmp/7zextra/7zS.sfx "${root}/pkg/${version}/windows_386/extractor_config.txt" "/tmp/${version}_windows_386.7z" > "/tmp/${version}_windows_386.exe"
+cp -rf "${root}/pkg/${version}/windows_386" "${root}/pkg/${version}/windows_386_noinstaller"
 rm -rf "${root}/pkg/${version}/windows_386/"*
 cp -f "/tmp/${version}_windows_386.exe" "${root}/pkg/${version}/windows_386/bowery.exe"
 cp -f "${root}/scripts/data/README_windows" "${root}/pkg/${version}/windows_386/README"
@@ -221,9 +223,11 @@ setupExtractor "windows_amd64" "install.bat" "logo.ico"
 rm -rf "/tmp/${version}_windows_amd64.7z"
 cp -f "${root}/scripts/data/bowery.exe.manifest" /tmp/rmmanifest.exe "${root}/pkg/${version}/windows_amd64"
 cd "${root}/pkg/${version}/windows_amd64"
+touch bowery.exe.gui {rmmanifest.exe,resources/bin/{client,updater}.exe}.ignore
 7z a "/tmp/${version}_windows_amd64.7z" * &> "${root}/debug.log"
 cd -
 cat /tmp/7zextra/7zS.sfx "${root}/pkg/${version}/windows_amd64/extractor_config.txt" "/tmp/${version}_windows_amd64.7z" > "/tmp/${version}_windows_amd64.exe"
+cp -rf "${root}/pkg/${version}/windows_amd64" "${root}/pkg/${version}/windows_amd64_noinstaller"
 rm -rf "${root}/pkg/${version}/windows_amd64/"*
 cp -f "/tmp/${version}_windows_amd64.exe" "${root}/pkg/${version}/windows_amd64/bowery.exe"
 cp -f "${root}/scripts/data/README_windows" "${root}/pkg/${version}/windows_amd64/README"
