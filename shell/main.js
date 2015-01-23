@@ -23,6 +23,7 @@ var Menu = require('menu')
 
 // Set vars that control updater/client.
 var versionUrl = 'http://desktop.bowery.io.s3.amazonaws.com/VERSION'
+var homeVar = /^win/.test(process.platform) ? 'USERPROFILE' : 'HOME'
 var ext = /^win/.test(process.platform) ? '.exe' : ''
 var installDir = '..'
 var binPath = path.join(__dirname, '..', 'bin')
@@ -82,13 +83,13 @@ if (process.platform == 'darwin' || process.env.ENV == "no-updater") {
   proc = spawn(updaterPath, ["-d", installDir, versionUrl, "", clientPath])
 }
 */
-// var logStream = fs.createWriteStream('bowery.log', {flags: 'a'})
 proc.on('close', function (code) {
   console.log('client process exited with code:', code)
   process.exit(code)
 })
-// proc.stdout.pipe(logStream)
-// proc.stderr.pipe(logStream)
+var logStream = fs.createWriteStream(path.join(process.env[homeVar], '.bowery.log'), {flags: 'a'})
+proc.stdout.pipe(logStream)
+proc.stderr.pipe(logStream)
 
 // Write bowery processes info.
 try {
