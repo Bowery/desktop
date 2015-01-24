@@ -29,7 +29,7 @@ import (
 	"github.com/unrolled/render"
 )
 
-const boweryFileTmpl = `DO NOT DELETE THIS FILE. It is a key component of Bowery (http://bowery.io/start).
+const boweryFileTmpl = `DO NOT DELETE THIS FILE. It is a key component of Bowery (http://bowery.io/).
 For questions, email hello@bowery.io and include your id (%s) in the email.`
 
 var routes = []web.Route{
@@ -71,7 +71,8 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		imageID = util.FindTokenString(string(data))
 	}
 
-	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
+	ip, _ := util.GetHost()
+	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath, ip)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
