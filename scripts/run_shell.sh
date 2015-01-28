@@ -27,7 +27,7 @@ if [[ ! -d "${build}/Bowery.app" ]]; then
   echo "Downloading Atom Shell..."
   mkdir -p "${build}"
   mkdir -p /tmp/shell
-  wget -O "/tmp/shell/${os}.zip" "https://github.com/atom/atom-shell/releases/download/v0.19.5/atom-shell-v0.19.5-${os}-${arch}.zip"
+  wget -O "/tmp/shell/${os}.zip" "https://github.com/atom/atom-shell/releases/download/v0.21.0/atom-shell-v0.21.0-${os}-${arch}.zip"
   if [[ "${os}" == "darwin" ]]; then
     unzip -d "${build}" "/tmp/shell/${os}.zip"
     mv "${build}/Atom.app" "${build}/Bowery.app"
