@@ -13,6 +13,7 @@ var Mixpanel = require('mixpanel')
 var mixpanel = Mixpanel.init('d5c191fd4468894be2824bf288879a18')
 var request = require('request')
 var rollbar = require('rollbar')
+var open = require('open')
 var TerminalManager = require('./terminal')
 var tm = new TerminalManager()
 
@@ -136,18 +137,31 @@ app.on('window-all-closed', function() {
 })
 
 app.on('ready', function() {
-  // Set the menu items.
   var template = [
     {
-      label: 'Bowery',
-      submenu:[
-        {label: 'About Bowery', selector: 'orderFrontStandardAboutPanel:'},
+      label: 'Bowery', submenu: [
+        {label: 'About Bowery', click: function () {open("http://bowery.io")}},
         {type: 'separator'},
-        // Don't use CommandOrControl here, since these aren't typical on PCs.
-        {label: 'Hide', accelerator: 'Command+H', selector: 'hide:'},
-        {label: 'Quit', accelerator: 'Command+Q', click: function() {app.quit()}}
       ]
-    },
+    }
+  ]
+
+  var isDarwin = process.platform == 'darwin'
+  var item = template[template.length - 1]
+  if (isDarwin) {
+    item.submenu.push.apply(item.submenu, [
+      {label: 'Hide', accelerator: 'Command+H', selector: 'hide:'},
+      {label: 'Quit', accelerator: 'Command+Q', click: function() {app.quit()}}
+    ])
+  } else {
+    item.submenu.push({
+      label: 'Quit', accelerator: 'Alt+F4', click: function() {app.quit()}
+    })
+  }
+
+
+  // Set the menu items.
+  template.push.apply(template, [
     {
       label: 'File',
       submenu: [
@@ -212,12 +226,24 @@ app.on('ready', function() {
         {
           label: 'Undo',
           accelerator: 'CommandOrControl+Z',
-          selector: 'undo:'
+          selector: 'undo:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.undo()
+            }
+          }
         },
         {
           label: 'Redo',
           accelerator: 'Shift+CommandOrControl+Z',
-          selector: 'redo:'
+          selector: 'redo:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.redo()
+            }
+          }
         },
         {
           type: 'separator'
@@ -225,22 +251,46 @@ app.on('ready', function() {
         {
           label: 'Cut',
           accelerator: 'CommandOrControl+X',
-          selector: 'cut:'
+          selector: 'cut:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.cut()
+            }
+          }
         },
         {
           label: 'Copy',
           accelerator: 'CommandOrControl+C',
-          selector: 'copy:'
+          selector: 'copy:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.copy()
+            }
+          }
         },
         {
           label: 'Paste',
           accelerator: 'CommandOrControl+V',
-          selector: 'paste:'
+          selector: 'paste:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.paste()
+            }
+          }
         },
         {
           label: 'Select All',
           accelerator: 'CommandOrControl+A',
-          selector: 'selectAll:'
+          selector: 'selectAll:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.webContents.selectAll()
+            }
+          }
         }
       ]
     },
@@ -271,23 +321,44 @@ app.on('ready', function() {
         {
           label: 'Minimize',
           accelerator: 'CommandOrControl+M',
-          selector: 'performMiniaturize:'
-        },
-        {
-          label: 'Close',
-          accelerator: 'Command+W',
-          selector: 'performClose:'
+          selector: 'performMiniaturize:',
+          click: function () {
+            var w = BrowserWindow.getFocusedWindow()
+            if (w) {
+              w.minimize()
+            }
+          }
         },
         {
           type: 'separator'
         },
         {
           label: 'Bring All to Front',
-          selector: 'arrangeInFront:'
+          selector: 'arrangeInFront:',
+          click: function () {
+            var windows = BrowserWindow.getAllWindows()
+            for (var i in windows) {
+              windows[i].show()
+            }
+          }
         }
       ]
     }
-  ]
+  ])
+
+  if (isDarwin) {
+    template[template.length - 1].submenu.splice(1, 0, {
+      label: 'Close',
+      accelerator: 'Command+W',
+      selector: 'performClose:',
+      click: function () {
+        var w = BrowserWindow.getFocusedWindow()
+        if (w) {
+          w.close()
+        }
+      }
+    })
+  }
 
   var menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
