@@ -309,6 +309,25 @@ Terminal.prototype.export = function () {
 }
 
 /**
+ * info shows the user information about the environment.
+ */
+Terminal.prototype.info = function () {
+  var detail = [
+    'Address: ' + this.container.address,
+    'SSH Port: 23',
+    'Username: ' + this.container.user,
+    'Password: ' + this.container.password
+  ].join('\n')
+
+  require('dialog').showMessageBox(this._window, {
+    type: 'info',
+    buttons: ['OK'],
+    message: 'Environment Info',
+    detail: detail
+  })
+}
+
+/**
  * _handleCreateRes handles the create http response
  * and if successful sets the container, creates a new
  * window, and subscribes to updates via Pusher. Returns
@@ -426,6 +445,7 @@ Terminal.prototype._handleCreateEvent = function (data) {
   this.connect()
   this.getDelegate().updateSubmenuItem('File', 'Open In Browser', 'enabled', true)
   this.getDelegate().updateSubmenuItem('File', 'Open In File Manager', 'enabled', true)
+  this.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', true)
   this.getDelegate().updateSubmenuItem('File', 'Save', 'enabled', true)
   this.getDelegate().updateSubmenuItem('File', 'Export', 'enabled', true)
 }
