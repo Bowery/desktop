@@ -115,11 +115,11 @@ var name
 exec('git config user.email', function (err, stdout) {
   if (err) return
 
-  email = stdout
+  email = stdout.replace(/(\r\n|\n|\r)/gm, '')
   exec('git config user.name', function (err, stdout) {
     if (err) return
 
-    name = stdout
+    name = stdout.replace(/(\r\n|\n|\r)/gm, '')
     mixpanel.people.set(email, {
       $email: email,
       name: name
