@@ -54,7 +54,7 @@ TerminalManager.prototype.add = function (terminal) {
 
 /**
  * getByIP returns the terminal with matching ip address.
- * @return {Terminal} 
+ * @return {Terminal}
  */
 TerminalManager.prototype.getByIP = function (ip) {
   for (var i = 0; i < this.terminals.length; i++)
@@ -216,7 +216,7 @@ Terminal.prototype.save = function () {
     }
   })
   this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
-  
+
   return this._req('/containers/' + this.container._id, 'PUT')
   .then(this._handleSaveRes.bind(this))
   .fail(this._handleSaveErr.bind(this))
@@ -262,7 +262,7 @@ Terminal.prototype.saveAndDelete = function() {
       }, function (err, res, body) {
         self.getDelegate().remove(self)
         self._window.destroy()
-      }) 
+      })
     })
   })
 }
@@ -394,7 +394,7 @@ Terminal.prototype._handleDeleteRes = function (res) {
  * @private
  */
 Terminal.prototype._handleCreateErr = function (err) {
-  return err
+  throw err
 }
 
 /**
@@ -507,7 +507,7 @@ Terminal.prototype._handleWindowClose = function (e) {
 
 /**
  * connect creates the SSH connection and redirects the window to the
- * terminal view. 
+ * terminal view.
  */
 Terminal.prototype.connect = function () {
   var ip = this.container.address

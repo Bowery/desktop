@@ -386,7 +386,19 @@ app.on('ready', function() {
     var terminal
     if (paths && paths.length > 0) {
       terminal = tm.new(paths[0])
-      terminal.create()
+      terminal.create().fail(function (err) {
+        if (err.message == "Not Connected") {
+          err = "You must be connected to the internet to use Bowery. Please ensure you're connected to continue."
+        } else {
+          err = err.toString()
+        }
+
+        require('dialog').showErrorBox("Failed to create environment", err)
+        tm.remove(terminal)
+        if (tm.terminals.length <= 0) {
+          app.quit()
+        }
+      })
     } else if (tm.terminals.length <= 0) {
       app.quit()
     }
