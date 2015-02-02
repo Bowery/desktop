@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Bowery/gopackages/config"
@@ -73,6 +75,10 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 
 	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
 	if err != nil {
+		if isNotConnected(err) {
+			err = errors.New("Not Connected")
+		}
+
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
 			"error":  err.Error(),
@@ -384,4 +390,14 @@ func getExportByIPHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	renderer.JSON(rw, http.StatusOK, export)
+}
+
+// isNotConnected checks if an error occured because of a connection issue.
+func isNotConnected(err error) bool {
+	if strings.Contains(err.Error(), "No such host is known") ||
+		strings.Contains(err.Error(), "no such host") {
+		return true
+	}
+
+	return false
 }
