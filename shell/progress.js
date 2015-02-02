@@ -56,6 +56,13 @@ ProgressManager.StepsSaving = [
 ]
 
 /**
+ * @enum {Array<string>}
+ */
+ProgressManager.StepsExporting = [
+  'environment'
+]
+
+/**
  * @param {string} The identifier for this container.
  */
 ProgressManager.prototype._id = ''
@@ -113,6 +120,9 @@ ProgressManager.prototype.setSteps = function () {
       break
     case ProgressManager.TypeSaving:
       this.steps = ProgressManager.StepsSaving
+      break
+    case ProgressManager.TypeExporting:
+      this.steps = ProgressManager.StepsExporting
       break
   }
 }

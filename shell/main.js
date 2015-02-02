@@ -228,7 +228,7 @@ app.on('ready', function() {
 
             var ip = w.getTitle()
             var terminal = tm.getByIP(ip)
-            terminal && terminal.export()
+            terminal && terminal.saveAndExport()
           }
         }
       ]

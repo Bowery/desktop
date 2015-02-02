@@ -309,6 +309,31 @@ Terminal.prototype.export = function () {
 }
 
 /**
+ * saveAndExport saves the container and then exports it.
+ * It redirects to the progress page during this operation.
+ */
+Terminal.prototype.saveAndExport = function() {
+  var query = require('url').format({
+    query: {
+      type: 'exporting',
+      container_id: this.container._id
+    }
+  })
+
+  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
+  var self = this
+  request({
+    url: baseURL + '/containers/' + this.container._id,
+    method: 'PUT'
+  }, function (err, res, body) {
+    self._subChan.on('saved', function (data) {
+      self.connect()
+      self.export()
+    })
+  })
+}
+
+/**
  * info shows the user information about the environment.
  */
 Terminal.prototype.info = function () {
