@@ -77,6 +77,10 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	// Get initial stats.
 	err = filepath.Walk(local, func(path string, info os.FileInfo, err error) error {
 		if err != nil || local == path {
+			if os.IsNotExist(err) {
+				err = nil
+			}
+
 			return err
 		}
 
@@ -100,11 +104,11 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 	// Manages updates/creates.
 	walker := func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			errChan <- watcher.wrapErr(err)
 			return nil
 		}
-		if local == path {
+		if err != nil || local == path {
 			return nil
 		}
 
