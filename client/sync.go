@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/Bowery/delancey/delancey"
+	"github.com/Bowery/gopackages/ignores"
 	"github.com/Bowery/gopackages/log"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/tar"
-	"github.com/Bowery/ignores"
 )
 
 // Event describes a file event and the associated container.
@@ -59,7 +59,6 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	stats := make(map[string]os.FileInfo)
 	found := make([]string, 0)
 	local := watcher.Container.LocalPath
-	ignoreConfig := filepath.Join(local, ".boweryignore")
 
 	// If previously called Close reset the state.
 	watcher.mutex.Lock()
@@ -69,7 +68,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	}
 	watcher.mutex.Unlock()
 
-	ignoreList, err := ignores.Get(ignoreConfig)
+	ignoreList, err := ignores.Get(local)
 	if err != nil {
 		errChan <- watcher.wrapErr(err)
 		ignoreList = make([]string, 0)
