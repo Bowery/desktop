@@ -13,17 +13,24 @@ import (
 
 	"github.com/Bowery/delancey/delancey"
 	"github.com/Bowery/gopackages/config"
-	"github.com/Bowery/gopackages/log"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/tar"
+	"github.com/Bowery/gopackages/util"
 	"github.com/Bowery/ignores"
 )
+
+// updateEvent is used to store information about an update/create event.
+type updateEvent struct {
+	Path   string
+	Rel    string
+	Status string
+}
 
 // Event describes a file event and the associated container.
 type Event struct {
 	Container *schemas.Container `json:"container"`
 	Status    string             `json:"status"`
-	Path      string             `json:"path"`
+	Paths     []string           `json:"paths"`
 }
 
 // WatchError wraps an error to identify the container origin.
@@ -59,6 +66,7 @@ func NewWatcher(container *schemas.Container) *Watcher {
 func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	var found []string
 	stats := make(map[string]os.FileInfo)
+	updates := make([]*updateEvent, 0)
 	local := watcher.Container.LocalPath
 
 	// If previously called Close reset the state.
@@ -139,9 +147,9 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 
 		// Check if created/updated.
 		if ok && (info.ModTime().After(pstat.ModTime()) || info.Mode() != pstat.Mode()) {
-			status = "update"
+			status = delancey.UpdateStatus
 		} else if !ok {
-			status = "create"
+			status = delancey.CreateStatus
 		}
 		stats[path] = info
 		found = append(found, path)
@@ -151,21 +159,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 			return nil
 		}
 
-		err = watcher.Update(rel, status)
-		if err != nil {
-			if os.IsNotExist(err) {
-				// Remove the stats info so we don't get a false delete later.
-				delete(stats, path)
-				found = found[:len(found)-1]
-				log.Debug("Ignoring temp file", status, "event", rel)
-				return nil
-			}
-
-			errChan <- watcher.wrapErr(err)
-			return nil
-		}
-
-		evChan <- &Event{Container: watcher.Container, Status: status, Path: rel}
+		updates = append(updates, &updateEvent{Path: path, Rel: rel, Status: status})
 		return nil
 	}
 
@@ -218,14 +212,71 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 				continue
 			}
 
-			err = watcher.Update(rel, "delete")
+			err = watcher.Update(rel, delancey.DeleteStatus)
 			if err != nil {
 				errChan <- watcher.wrapErr(err)
 				continue
 			}
 
-			evChan <- &Event{Container: watcher.Container, Status: "delete", Path: rel}
+			evChan <- &Event{Container: watcher.Container, Status: delancey.DeleteStatus, Paths: []string{rel}}
 		}
+	}
+
+	// Removes a temp path from the state, so false deletes aren't triggered.
+	removeTemp := func(path string) {
+		delete(stats, path)
+		found = util.RemoveFromSlice(found, path)
+	}
+
+	// Standard update, does them one at a time.
+	standardUpdate := func() {
+		for _, ev := range updates {
+			err = watcher.Update(ev.Rel, ev.Status)
+			if err != nil {
+				if os.IsNotExist(err) {
+					removeTemp(ev.Path)
+					continue
+				}
+
+				errChan <- watcher.wrapErr(err)
+				continue
+			}
+
+			evChan <- &Event{Container: watcher.Container, Status: ev.Status, Paths: []string{ev.Rel}}
+		}
+	}
+
+	// Batch update, sends all of them in a single .tar.gz upload.
+	batchUpdate := func() {
+		batchChan := make(chan error)
+		pathList := make([]string, 0, len(updates))
+		paths := make(map[string]string, len(updates))
+
+		for _, ev := range updates {
+			pathList = append(pathList, ev.Path)
+			paths[ev.Path] = ev.Rel
+		}
+
+		go func() {
+			for err := range batchChan {
+				berr, ok := err.(*delancey.BatchError)
+				if ok && os.IsNotExist(berr.Err) {
+					removeTemp(berr.Path)
+					continue
+				}
+
+				errChan <- watcher.wrapErr(err)
+			}
+		}()
+
+		evChan <- &Event{Container: watcher.Container, Status: delancey.BatchStartStatus, Paths: pathList}
+		err := delancey.BatchUpdate(watcher.Container, paths, batchChan)
+		if err != nil {
+			errChan <- watcher.wrapErr(err)
+			return
+		}
+
+		evChan <- &Event{Container: watcher.Container, Status: delancey.BatchFinishStatus, Paths: pathList}
 	}
 
 	for {
@@ -246,8 +297,17 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		if err != nil {
 			errChan <- watcher.wrapErr(err)
 		}
+		isBatchJob := len(updates) > 16
+
+		// Do the create/update uploads.
+		if isBatchJob {
+			batchUpdate()
+		} else {
+			standardUpdate()
+		}
 
 		checkDeletes()
+		updates = make([]*updateEvent, 0)
 		found = make([]string, 0)
 		<-time.After(500 * time.Millisecond)
 	}
@@ -378,13 +438,13 @@ func (syncer *Syncer) Watch(container *schemas.Container) {
 
 	// Do the actual event management, and the inital upload.
 	go func() {
-		syncer.Event <- &Event{Container: watcher.Container, Status: "upload-start"}
+		syncer.Event <- &Event{Container: watcher.Container, Status: delancey.UploadStartStatus}
 		err := watcher.Upload()
 		if err != nil {
 			syncer.Error <- err
 			return
 		}
-		syncer.Event <- &Event{Container: watcher.Container, Status: "upload-finish"}
+		syncer.Event <- &Event{Container: watcher.Container, Status: delancey.UploadFinishStatus}
 
 		watcher.Start(syncer.Event, syncer.Error)
 	}()
