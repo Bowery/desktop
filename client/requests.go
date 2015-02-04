@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Bowery/gopackages/config"
@@ -71,6 +72,42 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	data, err := ioutil.ReadFile(boweryConfPath)
 	if err == nil {
 		imageID = util.FindTokenString(string(data))
+	}
+
+	// Get name, email, and MAC address in parallel.
+	collaborator := new(schemas.Collaborator)
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		cmd := sys.NewCommand("git config user.name", nil)
+		out, _ := cmd.Output()
+		collaborator.Name = string(out)
+	}()
+
+	go func() {
+		defer wg.Done()
+		cmd := sys.NewCommand("git config user.email", nil)
+		out, _ := cmd.Output()
+		collaborator.Email = string(out)
+	}()
+
+	go func() {
+		defer wg.Done()
+		addr, _ := sys.GetMACAddress()
+		collaborator.MACAddr = addr
+	}()
+
+	wg.Wait()
+
+	// Update collaborator.
+	_, err = kenmare.UpdateCollaborator(imageID, collaborator)
+	if err != nil {
+		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
 	}
 
 	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
