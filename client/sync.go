@@ -56,8 +56,8 @@ func NewWatcher(container *schemas.Container) *Watcher {
 
 // Start syncs file changes and uploads to the applications remote address.
 func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
+	var found []string
 	stats := make(map[string]os.FileInfo)
-	found := make([]string, 0)
 	local := watcher.Container.LocalPath
 
 	// If previously called Close reset the state.
