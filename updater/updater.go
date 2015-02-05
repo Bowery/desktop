@@ -255,7 +255,7 @@ func doUpdate() error {
 	}
 
 	log.Println("Replacing binaries found in downloaded version")
-	var replaceErr error = nil
+	var replaceErr error
 	for info, body := range contents {
 		path := filepath.Join(installDir, info.Name())
 
