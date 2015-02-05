@@ -100,9 +100,12 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 
 	wg.Wait()
 
-	// Update collaborator.
-	_, err = kenmare.UpdateCollaborator(imageID, collaborator)
+	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
 	if err != nil {
+		if isNotConnected(err) {
+			err = errors.New("Not Connected")
+		}
+
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
 			"error":  err.Error(),
@@ -110,12 +113,9 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
+	// Update collaborator.
+	_, err = kenmare.UpdateCollaborator(container.ImageID, collaborator)
 	if err != nil {
-		if isNotConnected(err) {
-			err = errors.New("Not Connected")
-		}
-
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
 			"error":  err.Error(),
