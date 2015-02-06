@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/Bowery/delancey/delancey"
-	"github.com/Bowery/gopackages/ignores"
+	"github.com/Bowery/gopackages/config"
 	"github.com/Bowery/gopackages/log"
 	"github.com/Bowery/gopackages/schemas"
 	"github.com/Bowery/gopackages/tar"
+	"github.com/Bowery/ignores"
 )
 
 // Event describes a file event and the associated container.
@@ -68,7 +69,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 	}
 	watcher.mutex.Unlock()
 
-	ignoreList, err := ignores.Get(local)
+	ignoreList, err := ignores.Get(filepath.Join(local, config.IgnorePath))
 	if err != nil {
 		errChan <- watcher.wrapErr(err)
 		ignoreList = make([]string, 0)
@@ -235,7 +236,7 @@ func (watcher *Watcher) Start(evChan chan *Event, errChan chan error) {
 		default:
 		}
 
-		ignoreList, err = ignores.Get(local)
+		ignoreList, err = ignores.Get(filepath.Join(local, config.IgnorePath))
 		if err != nil {
 			errChan <- watcher.wrapErr(err)
 			ignoreList = make([]string, 0)
@@ -257,15 +258,16 @@ func (watcher *Watcher) Upload() error {
 	var (
 		err error
 	)
+	local := watcher.Container.LocalPath
 	i := 0
 
-	ignoreList, err := ignores.Get(watcher.Container.LocalPath)
+	ignoreList, err := ignores.Get(filepath.Join(local, config.IgnorePath))
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
 
 	// Tar up the path and write to a type supporting seeking.
-	upload, err := tar.Tar(watcher.Container.LocalPath, ignoreList)
+	upload, err := tar.Tar(local, ignoreList)
 	if err != nil {
 		return watcher.wrapErr(err)
 	}
