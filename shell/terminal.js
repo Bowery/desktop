@@ -526,6 +526,9 @@ Terminal.prototype._handleWindowClose = function (e) {
       break
     // Cancel.
     case 2:
+      // Signal canceled so the window can handle however they need.
+      var w = BrowserWindow.getFocusedWindow()
+      if (w) w.send('canceled')
       break
   }
 }
