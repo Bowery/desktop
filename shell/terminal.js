@@ -261,6 +261,9 @@ Terminal.prototype.saveAndDelete = function() {
         method: 'DELETE'
       }, function (err, res, body) {
         self.getDelegate().remove(self)
+        if (self._infoWindow)
+          self._infoWindow.destroy()
+
         self._window.destroy()
       })
     })
@@ -337,19 +340,31 @@ Terminal.prototype.saveAndExport = function() {
  * info shows the user information about the environment.
  */
 Terminal.prototype.info = function () {
-  var detail = [
-    'Address: ' + this.container.address,
-    'SSH Port: 23',
-    'Username: ' + this.container.user,
-    'Password: ' + this.container.password
-  ].join('\n')
-
-  require('dialog').showMessageBox(this._window, {
-    type: 'info',
-    buttons: ['OK'],
-    message: 'Environment Info',
-    detail: detail
+  this._infoWindow = new BrowserWindow({
+    title: 'info',
+    frame: true,
+    width: 800,
+    height: 450,
+    show: true,
+    resizable: true
   })
+
+  var query = require('url').format({
+    query: {
+      project_id: this.container.imageID,
+      address: this.container.address,
+      ssh_port: 23,
+      username: this.container.user,
+      password: this.container.password
+    }
+  })
+
+  var self = this
+  this._infoWindow.loadUrl('file://' + path.join(__dirname, 'info.html' + query))
+  this._infoWindow.on('close', function () {
+    self.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', true)  
+  })
+  this.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', false)
 }
 
 /**

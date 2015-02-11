@@ -36,6 +36,7 @@ const boweryFileTmpl = `DO NOT DELETE THIS FILE. It is a key component of Bowery
 For questions, email hello@bowery.io and include your id (%s) in the email.`
 
 var routes = []web.Route{
+	{"GET", "/projects/{id}", getProjectByIDHandler, false},
 	{"POST", "/containers", createContainerHandler, false},
 	{"DELETE", "/containers/{id}", deleteContainerHandler, false},
 	{"PUT", "/containers/{id}", updateContainerHandler, false},
@@ -50,6 +51,25 @@ var renderer = render.New(render.Options{
 	IndentJSON:    true,
 	IsDevelopment: true,
 })
+
+func getProjectByIDHandler(rw http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	project, err := kenmare.GetProject(id)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
+		"status":  requests.StatusFound,
+		"project": project,
+	})
+}
 
 // createContainerHandler requests a container from kenmare.io and initiates the
 // sync of the contents of the directory to the container it created.
@@ -82,14 +102,14 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		defer wg.Done()
 		cmd := sys.NewCommand("git config user.name", nil)
 		out, _ := cmd.Output()
-		collaborator.Name = string(out)
+		collaborator.Name = strings.Replace(string(out), "\n", "", -1)
 	}()
 
 	go func() {
 		defer wg.Done()
 		cmd := sys.NewCommand("git config user.email", nil)
 		out, _ := cmd.Output()
-		collaborator.Email = string(out)
+		collaborator.Email = strings.Replace(string(out), "\n", "", -1)
 	}()
 
 	go func() {
