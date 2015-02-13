@@ -64,11 +64,46 @@ request({
   data.project.collaborators.forEach(function (c) {
     peopleElContent.push([
       '<li>',
+        '<input type="hidden" value=' + c._id + '/>',
         '<div class="primary">' + c.name + '</div>',
         '<div class="secondary">' + c.email + '</div>',
+        '<div class="permissions">',
+          '<div class="permission">',
+            '<label>Can Save Environment</label>',
+            '<input type="checkbox" name="canEdit" ' + ((c.permissions && c.permissions.canEdit) ? 'checked' : '') + '>',
+          '</div>',
+        '</div>',
       '</li>'
     ].join('\n'))
   })
   peopleElContent.push('</ul>')
+  peopleElContent.push('<a href="#" id="update-btn" class="btn skeleton">Update</a>')
   peopleEl.innerHTML = peopleElContent.join('\n')
+
+  var updateBtn = document.getElementById('update-btn')
+  updateBtn.onclick = function (e) {
+    e.preventDefault()
+
+    var collaborators = document.querySelectorAll('#people li')
+    for (var i = 0; i < collaborators.length; i++) {
+      var id = collaborators[i].children[0].value
+      var permissions = collaborators[i].querySelector('.permissions')
+      for (var j = 0; j < permissions.children.length; j++) {
+        var p = permissions.children[j]
+        if (!data.project.collaborators[i].permissions)
+          data.project.collaborators[i].permissions = {}
+
+        data.project.collaborators[i].permissions[p.children[1].name] = p.children[1].checked
+      }
+    }
+
+    data.project.id = projectID
+    request({
+      url: baseURL + '/projects/' + projectID,
+      method: 'PUT',
+      body: JSON.stringify(data.project)
+    }, function (err, res, body) {
+      console.log(err, body)
+    })
+  }
 })

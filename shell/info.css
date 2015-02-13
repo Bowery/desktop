@@ -74,3 +74,32 @@ section > ul > li {
   font-family: Helvetica;
   font-size: 14px;
 }
+
+.permissions {
+  margin-top: 10px;
+  font-family: Helvetica;
+  font-size: 12px;
+}
+
+.btn.skeleton {
+  padding: 17px 50px 15px;
+  font-family: "Monosten E";
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  overflow: visible;
+  color: #414042;
+  border: 2px solid #414042;
+  transition: color 200ms ease-in, background-color 200ms ease-in;
+}
+.btn.skeleton:hover,
+.btn.skeleton.active {
+  color: white;
+  background-color: #414042;
+}
+
+#update-btn {
+  position: relative;
+  top: 50px;
+}
