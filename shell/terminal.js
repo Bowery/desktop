@@ -209,14 +209,6 @@ Terminal.prototype.save = function () {
   if (!this.container._id)
     throw new Error('an active container is required')
 
-  var query = require('url').format({
-    query: {
-      type: 'saving',
-      container_id: this.container._id
-    }
-  })
-  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
-
   return this._req('/containers/' + this.container._id, 'PUT')
   .then(this._handleSaveRes.bind(this))
   .fail(this._handleSaveErr.bind(this))
@@ -249,12 +241,17 @@ Terminal.prototype.saveAndDelete = function() {
     }
   })
 
-  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
   var self = this
   request({
     url: baseURL + '/containers/' + this.container._id,
     method: 'PUT'
   }, function (err, res, body) {
+    if (body.error) {
+      self._handleInsufficientPermissions()
+      return
+    }
+
+    self._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
     self._subChan.on('saved', function (data) {
       request({
         url: baseURL + '/containers/' + self.container._id,
@@ -323,12 +320,19 @@ Terminal.prototype.saveAndExport = function() {
     }
   })
 
-  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
   var self = this
   request({
     url: baseURL + '/containers/' + this.container._id,
     method: 'PUT'
   }, function (err, res, body) {
+
+    if (body.error) {
+      self._handleInsufficientPermissions()
+      return
+    }
+
+    self._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
+    
     self._subChan.on('saved', function (data) {
       self.connect()
       self.export()
@@ -404,12 +408,35 @@ Terminal.prototype._handleCreateRes = function (res) {
  */
 Terminal.prototype._handleSaveRes = function (res) {
   var body = JSON.parse(res.body.toString())
-  if (body.error)
-    throw new Error(body.error)
+  if (body.error) {
+    this._handleInsufficientPermissions()
+    return
+  }
+
+  var query = require('url').format({
+    query: {
+      type: 'saving',
+      container_id: this.container._id
+    }
+  })
+  this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
 
   var self = this
   this._subChan.on('saved', function (data) {
     self.connect()
+  })
+}
+
+/**
+ * _handleInsufficientPermissions
+ * @private
+ */
+Terminal.prototype._handleInsufficientPermissions = function () {
+  require('dialog').showMessageBox(this._window, {
+    type: 'info',
+    buttons: ['OK'],
+    message: 'Insufficient Permissions',
+    detail: 'You do not have permission to save this environment. Contact your project owner for assitance.'
   })
 }
 

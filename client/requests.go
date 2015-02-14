@@ -37,6 +37,7 @@ For questions, email hello@bowery.io and include your id (%s) in the email.`
 
 var routes = []web.Route{
 	{"GET", "/projects/{id}", getProjectByIDHandler, false},
+	{"PUT", "/projects/{id}", updateProjectByIDHandler, false},
 	{"POST", "/containers", createContainerHandler, false},
 	{"DELETE", "/containers/{id}", deleteContainerHandler, false},
 	{"PUT", "/containers/{id}", updateContainerHandler, false},
@@ -52,6 +53,7 @@ var renderer = render.New(render.Options{
 	IsDevelopment: true,
 })
 
+// getProjectByIDHandler requests a project from kenmare.io.
 func getProjectByIDHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
@@ -68,6 +70,36 @@ func getProjectByIDHandler(rw http.ResponseWriter, req *http.Request) {
 	renderer.JSON(rw, http.StatusOK, map[string]interface{}{
 		"status":  requests.StatusFound,
 		"project": project,
+	})
+}
+
+func updateProjectByIDHandler(rw http.ResponseWriter, req *http.Request) {
+	addr, _ := sys.GetMACAddress()
+
+	var project schemas.Project
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&project)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	log.Println(project)
+
+	err = kenmare.UpdateProject(addr, &project)
+	if err != nil {
+		renderer.JSON(rw, http.StatusBadRequest, map[string]string{
+			"status": requests.StatusFailed,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	renderer.JSON(rw, http.StatusOK, map[string]string{
+		"status": requests.StatusUpdated,
 	})
 }
 
@@ -193,7 +225,9 @@ func updateContainerHandler(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 
-	err := kenmare.SaveContainer(id)
+	addr, _ := sys.GetMACAddress()
+
+	err := kenmare.SaveContainer(id, addr)
 	if err != nil {
 		renderer.JSON(rw, http.StatusInternalServerError, map[string]string{
 			"status": requests.StatusFailed,
