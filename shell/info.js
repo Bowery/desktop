@@ -65,7 +65,9 @@ request({
     peopleElContent.push([
       '<li>',
         '<input type="hidden" value=' + c._id + '/>',
-        '<div class="primary">' + c.name + '</div>',
+        '<div class="primary">',
+          c.name + ((c._id == data.project.creatorID) ? '<span class="admin"></span>' : ''),
+        '</div>',
         '<div class="secondary">' + c.email + '</div>',
         '<div class="permissions">',
           '<div class="permission">',
