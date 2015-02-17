@@ -77,12 +77,16 @@ request({
     ].join('\n'))
   })
   peopleElContent.push('</ul>')
+  peopleElContent.push('<div class="update-error"></div>')
   peopleElContent.push('<a href="#" id="update-btn" class="btn skeleton">Update</a>')
   peopleEl.innerHTML = peopleElContent.join('\n')
 
   var updateBtn = document.getElementById('update-btn')
+  var updateErr = document.getElementsByClassName('update-error')[0]
   updateBtn.onclick = function (e) {
     e.preventDefault()
+
+    updateBtn.innerHTML = 'Updating...'
 
     var collaborators = document.querySelectorAll('#people li')
     for (var i = 0; i < collaborators.length; i++) {
@@ -103,7 +107,12 @@ request({
       method: 'PUT',
       body: JSON.stringify(data.project)
     }, function (err, res, body) {
-      console.log(err, body)
+      if (body.error)
+        updateErr.innerHTML = body.error
+
+      setTimeout(function () {
+        updateBtn.innerHTML = 'Update'
+      }, 250)
     })
   }
 })
