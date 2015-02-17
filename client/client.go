@@ -47,7 +47,12 @@ func main() {
 		for {
 			select {
 			case ev := <-containerManager.Syncer.Event:
-				log.Println(ev)
+				if len(ev.Paths) == 1 {
+					log.Println("Sync event", ev.Status, "change", ev.Paths[0])
+				} else {
+					log.Println("Sync event", ev.Status, "changes", len(ev.Paths))
+				}
+
 				msg := map[string]interface{}{
 					"event": ev,
 					"type":  "sync",
