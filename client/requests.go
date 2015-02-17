@@ -126,6 +126,14 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 		imageID = util.FindTokenString(string(data))
 	}
 
+	// Get the Dockerfile in the local path and use if it there's no .bowery file.
+	dockerfile := ""
+	dockerfilePath := filepath.Join(reqBody.LocalPath, "Dockerfile")
+	data, err = ioutil.ReadFile(dockerfilePath)
+	if err == nil {
+		dockerfile = string(data)
+	}
+
 	// Get name, email, and MAC address in parallel.
 	collaborator := new(schemas.Collaborator)
 	var wg sync.WaitGroup
@@ -152,7 +160,7 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 
 	wg.Wait()
 
-	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath)
+	container, err := kenmare.CreateContainer(imageID, reqBody.LocalPath, dockerfile)
 	if err != nil {
 		if isNotConnected(err) {
 			err = errors.New("Not Connected")
