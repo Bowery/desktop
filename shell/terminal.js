@@ -145,6 +145,13 @@ Terminal.prototype._subChan = null
 Terminal.prototype._window = null
 
 /**
+ * active.
+ * @enum {Boolean}
+ * @private
+ */
+Terminal.prototype._active = false
+
+/**
  * Delegate
  * @enum {TerminalManager}
  * @private
@@ -398,6 +405,7 @@ Terminal.prototype._handleCreateRes = function (res) {
   })
 
   this._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
+  this._window.on('close', this._handleWindowClose.bind(this))
   return this
 }
 
@@ -550,6 +558,11 @@ Terminal.prototype._createWindow = function () {
  */
 Terminal.prototype._handleWindowClose = function (e) {
   e.preventDefault()
+  if (!this._active) {
+    this.delete()
+    return
+  }
+
   var confirm = require('dialog').showMessageBox(this._window, {
     type: 'warning',
     buttons: ['Save', 'Don\'t save', 'Cancel'],
@@ -592,12 +605,12 @@ Terminal.prototype.connect = function () {
   })
 
   if (this._window) {
+    this._active = true
     this._window.loadUrl('file://' + path.join(__dirname, 'term.min.html?' + query))
     this._window.setTitle(ip)
     this._window.on('page-title-updated', function (e) {
       e.preventDefault()
     })
-    this._window.on('close', this._handleWindowClose.bind(this))
   }
 }
 
