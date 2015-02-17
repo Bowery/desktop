@@ -591,12 +591,14 @@ Terminal.prototype.connect = function () {
     }
   })
 
-  this._window.loadUrl('file://' + path.join(__dirname, 'term.min.html?' + query))
-  this._window.setTitle(ip)
-  this._window.on('page-title-updated', function (e) {
-    e.preventDefault()
-  })
-  this._window.on('close', this._handleWindowClose.bind(this))
+  if (this._window) {
+    this._window.loadUrl('file://' + path.join(__dirname, 'term.min.html?' + query))
+    this._window.setTitle(ip)
+    this._window.on('page-title-updated', function (e) {
+      e.preventDefault()
+    })
+    this._window.on('close', this._handleWindowClose.bind(this))
+  }
 }
 
 module.exports = TerminalManager
