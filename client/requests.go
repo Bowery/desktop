@@ -128,10 +128,12 @@ func createContainerHandler(rw http.ResponseWriter, req *http.Request) {
 
 	// Get the Dockerfile in the local path and use if it there's no .bowery file.
 	dockerfile := ""
-	dockerfilePath := filepath.Join(reqBody.LocalPath, "Dockerfile")
-	data, err = ioutil.ReadFile(dockerfilePath)
-	if err == nil {
-		dockerfile = string(data)
+	if req.FormValue("dockerfile") == "true" && imageID == "" {
+		dockerfilePath := filepath.Join(reqBody.LocalPath, "Dockerfile")
+		data, err = ioutil.ReadFile(dockerfilePath)
+		if err == nil {
+			dockerfile = string(data)
+		}
 	}
 
 	// Get name, email, and MAC address in parallel.

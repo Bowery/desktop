@@ -5,13 +5,15 @@
  * and deleting.
  */
 
-var request = require('request')
+var fs = require('fs')
 var path = require('path')
+var BrowserWindow = require('browser-window')
+var dialog = require('dialog')
 var Q = require('kew')
-var baseURL = 'http://localhost:32055'
+var request = require('request')
 var Pusher = require('pusher-client')
 var pusherC = new Pusher('bbdd9d611b463822cf6e')
-var BrowserWindow = require('browser-window')
+var baseURL = 'http://localhost:32055'
 
 /**
  * TerminalManager maintains the state for all
@@ -200,7 +202,29 @@ Terminal.prototype._req = function (path, method, body) {
  */
 Terminal.prototype.create = function () {
   console.log('[DEBUG]: creating container')
-  return this._req('/containers', 'POST', {
+  var boweryConfPath = path.join(this.path, '.bowery')
+  var dockerfilePath = path.join(this.path, 'Dockerfile')
+  var useDockerfile = false
+
+  if (!fs.existsSync(boweryConfPath) && fs.existsSync(dockerfilePath)) {
+    var val = dialog.showMessageBox(null, {
+      type: 'info',
+      buttons: ['Yes', 'No'],
+      message: 'Would you like to use the Dockerfile as the base image?',
+      detail: 'If you choose yes, the Dockerfile is used as the base image rather than a base Bowery provides.'
+    })
+
+    if (val == 0) {
+      useDockerfile = true
+    }
+  }
+
+  var url = '/containers'
+  if (useDockerfile) {
+    url += '?dockerfile=true'
+  }
+
+  return this._req(url, 'POST', {
     localPath: this.path
   })
   .then(this._handleCreateRes.bind(this))
@@ -339,7 +363,7 @@ Terminal.prototype.saveAndExport = function() {
     }
 
     self._window.loadUrl('file://' + path.join(__dirname, 'progress.html?' + query))
-    
+
     self._subChan.on('saved', function (data) {
       self.connect()
       self.export()
@@ -373,7 +397,7 @@ Terminal.prototype.info = function () {
   var self = this
   this._infoWindow.loadUrl('file://' + path.join(__dirname, 'info.html' + query))
   this._infoWindow.on('close', function () {
-    self.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', true)  
+    self.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', true)
   })
   this.getDelegate().updateSubmenuItem('File', 'Info', 'enabled', false)
 }
