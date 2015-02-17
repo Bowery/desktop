@@ -61,6 +61,9 @@ section {
 section.hidden {
   display: none;
 }
+section > ul {
+  display: block;
+}
 section > ul > li {
   margin-bottom: 25px;
 }
@@ -68,6 +71,18 @@ section > ul > li {
 .primary {
   font-family: "Monosten A";
   margin-bottom: 5px;
+}
+.primary .admin {
+  position: relative;
+  top: -2px;
+  left: 10px;
+  background-color: #414042;
+  padding: 5px;
+  font-size: 12px;
+  color: white;
+}
+.primary .admin:before {
+  content: "admin";
 }
 
 .secondary {
@@ -99,7 +114,9 @@ section > ul > li {
   background-color: #414042;
 }
 
-#update-btn {
-  position: relative;
-  top: 50px;
+.update-error {
+  color: rgb(253, 106, 87);
+  font-family: "Monosten A";
+  font-size: 14px;
+  margin: 20px 0;
 }
