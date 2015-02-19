@@ -128,6 +128,8 @@ exec('git config user.email', function (err, stdout) {
     mixpanel.track('opened app', {
       distinct_id: email
     })
+
+    tm.setMixpanel(mixpanel, email)
   })
 })
 
