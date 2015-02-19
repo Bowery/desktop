@@ -26,11 +26,12 @@ body {
 
 body {
   -webkit-font-smoothing: antialiased;
-  background: black;
+  background: rgb(7,21,38);
   color: white;
   text-rendering: optimizeLegibility;
   -webkit-user-select: none;
   cursor: default;
+ -webkit-app-region: drag;
 }
 
 .container {

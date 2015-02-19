@@ -429,9 +429,9 @@ Terminal.prototype.info = function () {
   this.sendMPEvent('opened info window')
   this._infoWindow = new BrowserWindow({
     title: 'info',
-    frame: true,
-    width: 800,
-    height: 450,
+    frame: false,
+    width: 850,
+    height: 545,
     show: true,
     resizable: true
   })
@@ -628,9 +628,9 @@ Terminal.prototype._createWindow = function () {
   console.log('[DEBUG]: creating window')
   this._window = new BrowserWindow({
     title: 'Bowery',
-    frame: true,
-    width: 570,
-    height: 370,
+    frame: false,
+    width: 850,
+    height: 540,
     show: true,
     resizable: true
   })

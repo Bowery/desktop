@@ -19,15 +19,112 @@ window.chrome = {};
 <script src="../build/hterm/hterm_vt.js"></script>
 <script src="../build/hterm/hterm_vt_character_map.js"></script>
 <script src="term.js"></script>
-
 <style>
 body {
   margin: 0;
   padding: 0;
 }
+.nav {
+  width: 100%;
+  height: 45px;
+  background: black;
+  position: relative;
+}
+.window-controls {
+  height: 12px;
+  width: 52px;
+  padding: 16px 10px;
+  cursor: pointer;
+}
+.window-controls .close,
+.window-controls .minimize,
+.window-controls .maximize {
+  height: 12px;
+  width: 12px;
+  border-radius: 12px;
+  padding: 0;
+  background: transparent;
+  outline: none;
+  display: block;
+  float: left;
+  cursor: pointer;
+}
+.window-controls .close {
+  border: 1px solid #E55933;
+  margin-right: 8px;
+}
+.window-controls .close:hover {
+  background: #E55933;
+}
+.window-controls .minimize {
+  border: 1px solid #FFF140;
+  margin-right: 8px;
+}
+.window-controls .minimize:hover {
+  background: #FFF140;
+}
+.window-controls .maximize {
+  border: 1px solid #5BC46F;
+}
+.window-controls .maximize:hover {
+  background: #5BC46F;
+}
+.plus {
+  height: 13px;
+  width: 14px;
+  float: right;
+  text-align: center;
+  background: transparent;
+  border: none;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 0;
+  cursor: pointer;
+
+}
+.plus .line:first-child {
+  height: 100%;
+  width: 1px;
+  border-left: 1px solid white;
+  margin: 0 auto;
+}
+.plus .line:last-child {
+  position: absolute;
+  top: 6px;
+  width: 100%;
+  border-top: 1px solid white;
+}
 </style>
 </head>
 <body>
-  <div id="terminal"></div>
+  <div class="nav" style="-webkit-app-region: drag;">
+    <div class="window-controls" style="-webkit-app-region: no-drag;">
+      <button class="close"></button>
+      <button class="minimize"></button>
+      <button class="maximize"></button>
+    </div>
+    <button class="plus">
+      <div class="line"></div>
+      <div class="line"></div>
+    </button>
+  </div>
+  <div id="terminal" style="-webkit-app-region: no-drag;"></div>
+  <script type="text/javascript">
+  // Listen for window changes and act accordingly
+  +['close', 'minimize', 'maximize'].forEach(function (name) {
+    document.querySelector('.window-controls .'+name).addEventListener('click', function (e) {
+      var w = require('remote').require('browser-window').getFocusedWindow()
+      w && w[name]()
+    })
+  })
+  // hack to force redraw
+  // setTimeout(function () {
+  //   console.log('we tried :(')
+  //     document.body.style.paddingTop = "0"
+  //   document.body.style.paddingTop = "45px"
+  // }, 1000)
+  
+</script>
 </body>
 </html>
