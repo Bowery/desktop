@@ -34,6 +34,18 @@ TerminalManager.prototype.terminals = []
 TerminalManager.prototype._menu = null
 
 /**
+ * @enum {Object} mixpanel.
+ * @private
+ */
+TerminalManager.prototype._mixpanel = null
+
+/**
+ * @enum {String} email.
+ * @private
+ */
+TerminalManager.prototype._email = ''
+
+/**
  * new creates a new terminal and adds it to the list
  * of active terminals.
  * @param {string} path to code
@@ -88,6 +100,27 @@ TerminalManager.prototype.setMenu = function (menu) {
  */
 TerminalManager.prototype.getMenu = function () {
   return this._menu
+}
+
+/**
+ * setMenu sets the mixpanel.
+ * @param {Object} mixpanel
+ * @param {String} email
+ */
+TerminalManager.prototype.setMixpanel = function (mixpanel, email) {
+  this._mixpanel = mixpanel
+  this._email = email
+}
+
+/**
+ * getMixpanel gets the mixpanel.
+ * @return {Object} mixpanel
+ */
+TerminalManager.prototype.getMixpanel = function () {
+  return {
+    client: this._mixpanel,
+    email: this._email
+  }
 }
 
 /**
@@ -177,6 +210,20 @@ Terminal.prototype.getDelegate = function () {
 }
 
 /**
+ * sendMPEvent sends an event to Mixpanel.
+ */
+Terminal.prototype.sendMPEvent = function (msg) {
+  var obj = this.getDelegate().getMixpanel()
+  var client = obj.client
+  var email = obj.email
+  
+  client.track(msg, {
+    container_id: (this.container && this.container._id),
+    distinct_id: email
+  })
+}
+
+/**
  * Send an http request.
  * @param {string} path
  * @param {string} method
@@ -202,6 +249,7 @@ Terminal.prototype._req = function (path, method, body) {
  */
 Terminal.prototype.create = function () {
   console.log('[DEBUG]: creating container')
+  this.sendMPEvent('created container')
   var boweryConfPath = path.join(this.path, '.bowery')
   var dockerfilePath = path.join(this.path, 'Dockerfile')
   var useDockerfile = false
@@ -237,6 +285,7 @@ Terminal.prototype.create = function () {
  */
 Terminal.prototype.save = function () {
   console.log('[DEBUG]: saving container')
+  this.sendMPEvent('saved container')
   if (!this.container._id)
     throw new Error('an active container is required')
 
@@ -251,6 +300,7 @@ Terminal.prototype.save = function () {
  */
 Terminal.prototype.delete = function () {
   console.log('[DEBUG]: deleting container')
+  this.sendMPEvent('deleted container')
   var id = this.container._id
   if (!id)
     throw new Error('an active container is required')
@@ -302,6 +352,7 @@ Terminal.prototype.saveAndDelete = function() {
  * export shows the user export steps for the container.
  */
 Terminal.prototype.export = function () {
+  this.sendMPEvent('exported container')
   var self = this
   request({
     url: baseURL + '/env/' + this.container.address,
@@ -375,6 +426,7 @@ Terminal.prototype.saveAndExport = function() {
  * info shows the user information about the environment.
  */
 Terminal.prototype.info = function () {
+  this.sendMPEvent('opened info window')
   this._infoWindow = new BrowserWindow({
     title: 'info',
     frame: true,
