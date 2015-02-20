@@ -30,7 +30,12 @@ window.onload = function () {
 }
 
 window.onbeforeunload = function () {
-  window.instance.conn && window.instance.conn.send('data: exit\r')
+  var conn = window.instance.conn
+
+  if (conn) {
+    conn.onclose = null
+    conn.send('data: exit\r')
+  }
 }
 
 // Preferences for hterm.
