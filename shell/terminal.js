@@ -217,7 +217,7 @@ Terminal.prototype.sendMPEvent = function (msg) {
   var client = obj.client
   var email = obj.email
   
-  client.track(msg, {
+  client && client.track(msg, {
     container_id: (this.container && this.container._id),
     distinct_id: email
   })
