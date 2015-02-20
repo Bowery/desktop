@@ -216,7 +216,7 @@ Terminal.prototype.sendMPEvent = function (msg) {
   var obj = this.getDelegate().getMixpanel()
   var client = obj.client
   var email = obj.email
-  
+
   client && client.track(msg, {
     container_id: (this.container && this.container._id),
     distinct_id: email

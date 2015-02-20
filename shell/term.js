@@ -30,7 +30,12 @@ window.onload = function () {
 }
 
 window.onbeforeunload = function () {
-  window.instance.conn && window.instance.conn.send('exit\r')
+  var conn = window.instance.conn
+
+  if (conn) {
+    conn.onclose = null
+    conn.send('data: exit\r')
+  }
 }
 
 // Preferences for hterm.
@@ -112,13 +117,6 @@ hterm.PreferenceManager = function (id) {
       + '&ip=' + qmark('ip') + '&user=' + qmark('user') + '&password=' + qmark('password')
     this.conn = new WebSocket('ws://localhost:32055/_/ssh'+'?'+query)
     this.conn.binaryType = 'arraybuffer'
-
-    this.conn.onopen = function () {
-      if (qmark('logs') == 'true') {
-        var path = '/home/'+qmark('user')+'/.bowery/log/'+qmark('appId')+'-std'
-        self.conn.send('tail -f '+path+'out.log '+path+'err.log\n')
-      }
-    }
 
     this.conn.onerror = function (err) {
       self.gotErr = true
