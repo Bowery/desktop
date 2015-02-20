@@ -74,7 +74,7 @@ hterm.PreferenceManager = function (id) {
     ['pass-ctrl-number', null],
     ['pass-meta-number', null],
     ['scroll-on-keystroke', true],
-    ['scroll-on-output', true], // TODO (thebyrd) I'm not sure about this one.
+    ['scroll-on-output', true],
     ['scrollbar-visible', true],
     ['shift-insert-paste', true],
     ['page-keys-scroll', false],
