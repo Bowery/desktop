@@ -580,6 +580,7 @@ Terminal.prototype._subscribe = function () {
   this._subChan = pusherC.subscribe('container-' + id)
   this._subChan.bind('created', this._handleCreateEvent.bind(this))
   this._subChan.bind('update', this._handleUpdateEvent.bind(this))
+  this._subChan.bind('error', this._handleErrorEvent.bind(this))
 }
 
 /**
@@ -602,12 +603,21 @@ Terminal.prototype._handleCreateEvent = function (data) {
 }
 
 /**
- * _handleUpdteEvent
+ * _handleUpdateEvent
  * @param {Object} event data
  * @private
  */
 Terminal.prototype._handleUpdateEvent = function (data) {
   console.log('[DEBUG]: received `update` event from pusher')
+}
+
+/**
+ * _handleErrorEvent
+ * @param {Object} event data
+ * @private
+ */
+Terminal.prototype._handleErrorEvent = function (data) {
+  console.log('[DEBUG]: received `error` event from pusher', data)
 }
 
 /**
