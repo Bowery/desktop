@@ -85,12 +85,18 @@ body {
 .tabs .tab {
   float: left;
   margin: 0;
-  padding: 18px; 
+  padding: 18px 18px 12px 18px; 
   font: 12px "Monosten E";
   color: white;
-  background: rgb(7,21,38);
+  background: black;
   min-width: 180px;
   position: relative;
+  -webkit-app-region: no-drag;
+  border-left: 1px solid rgba(245, 245, 245, 0.2);
+  cursor: pointer;
+}
+.tabs .tab.selected {
+  background: rgb(7,21,38);
 }
 .tabs .tab .line {
   transform: rotate(45deg);
@@ -122,6 +128,7 @@ body {
   right: 15px;
   padding: 0;
   cursor: pointer;
+  outline: none;
 
 }
 .plus:hover .line {
@@ -149,11 +156,8 @@ body {
       <button class="maximize"></button>
     </div>
     <ul class="tabs">
-      <li class="tab">kenmare
-        <button class="x">x</button>
-      </li>
     </ul>
-    <button class="plus">
+    <button class="plus" style="-webkit-app-region: no-drag;">
       <div class="line"></div>
       <div class="line"></div>
     </button>
@@ -167,12 +171,10 @@ body {
       w && w[name]()
     })
   })
-  // hack to force redraw
-  // setTimeout(function () {
-  //   console.log('we tried :(')
-  //     document.body.style.paddingTop = "0"
-  //   document.body.style.paddingTop = "45px"
-  // }, 1000)
+
+  // Listen for someone clicking the plus button and add a tab
+  document.querySelector('.plus')
+          .addEventListener('click', newtab)
   
 </script>
 </body>
