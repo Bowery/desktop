@@ -64,6 +64,7 @@ window.newtab = function () {
       document.querySelector('#tab-'+firstTerm).className = 'tab selected'
       terminalEl.innerHTML = ""
       terminals[firstTerm].decorate(terminalEl)
+      terminals[firstTerm].runCommandClass(Instance, document.location.hash.substr(1))
     } else {
       console.log('$$$$$ TODO home screen')
     }
@@ -91,14 +92,15 @@ window.newtab = function () {
     this.className = 'tab selected'
     console.log('$$$$ show terminal', this.id)
     terminals[this.id.slice(4)].decorate(terminalEl) // i don't think this actually works if you've already called it
+    terminals[this.id.slice(4)].runCommandClass(Instance, document.location.hash.substr(1))
   }
 
   tabsEl.appendChild(tab)
   terminals[id].decorate(terminalEl)
   terminals[id].onTerminalReady = function () {
-    terminals[id].setCursorPosition(0, 0)
-    terminals[id].setCursorVisible(true)
-    terminals[id].runCommandClass(Instance, document.location.hash.substr(1))
+    this.setCursorPosition(0, 0)
+    this.setCursorVisible(true)
+    this.runCommandClass(Instance, document.location.hash.substr(1))
   }
 
   window.term = terminals[id]
