@@ -4,7 +4,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -43,26 +42,28 @@ func main() {
 	containerManager = NewContainerManager()
 	defer containerManager.Close()
 
-	go func() {
-		for {
-			select {
-			case ev := <-containerManager.Syncer.Event:
-				if len(ev.Paths) == 1 {
-					log.Println("Sync event", ev.Status, "change", ev.Paths[0])
-				} else {
-					log.Println("Sync event", ev.Status, "changes", len(ev.Paths))
-				}
+	/*
+		go func() {
+			for {
+				select {
+				case ev := <-containerManager.Syncer.Event:
+					if len(ev.Paths) == 1 {
+						log.Println("Sync event", ev.Status, "change", ev.Paths[0])
+					} else {
+						log.Println("Sync event", ev.Status, "changes", len(ev.Paths))
+					}
 
-				msg := map[string]interface{}{
-					"event": ev,
-					"type":  "sync",
+					msg := map[string]interface{}{
+						"event": ev,
+						"type":  "sync",
+					}
+					ssePool.Messages <- msg
+				case err := <-containerManager.Syncer.Error:
+					log.Println(err)
 				}
-				ssePool.Messages <- msg
-			case err := <-containerManager.Syncer.Error:
-				log.Println(err)
 			}
-		}
-	}()
+		}()
+	*/
 
 	abs, _ := filepath.Abs(filepath.Join(filepath.Dir(os.Args[0]), "../ui/"))
 	AbsPath = abs
