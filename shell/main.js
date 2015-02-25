@@ -7,7 +7,6 @@ var exec = require('child_process').exec
 var spawn = require('child_process').spawn
 var tmpdir = os.tmpdir()
 var Pusher = require('pusher-client')
-var stathat = require('stathat')
 var pusher = new Pusher('bbdd9d611b463822cf6e')
 var Mixpanel = require('mixpanel')
 var mixpanel = Mixpanel.init('d5c191fd4468894be2824bf288879a18')
