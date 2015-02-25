@@ -54,8 +54,7 @@ window.newtab = function () {
   var tab = document.createElement('li')
   tab.className = 'tab selected'
   tab.id = 'tab-' + id
-  var title = 'website'
-  tab.innerHTML = title
+  tab.innerHTML = '<span class="tab-title">' + qmark('ip') + '</span>'
 
   console.log('$$$$ define close tab')
 

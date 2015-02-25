@@ -35,6 +35,10 @@ body {
   background: black;
   position: relative;
 }
+.nav .tabs * {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
 .window-controls {
   height: 12px;
   width: 52px;
@@ -81,15 +85,17 @@ body {
   float: left;
   list-style: none;
   height: 45px;
+  width: calc(100% - 72px);
+  overflow: hidden;
 }
 .tabs .tab {
   float: left;
+  height: 45px;
   margin: 0;
   padding: 18px 18px 12px 18px; 
   font: 12px "Monosten E";
   color: white;
   background: black;
-  min-width: 180px;
   position: relative;
   -webkit-app-region: no-drag;
   border-left: 1px solid rgba(245, 245, 245, 0.2);
@@ -101,12 +107,15 @@ body {
 .tabs .tab .line {
   transform: rotate(45deg);
 }
+.tab-title {
+  margin-right: 20px;
+}
 .x {
   cursor: pointer;
   background: transparent;
   text-align: center;
   font-size: 16px;
-  margin-top: -4px;
+  margin-top: -6px;
   position: relative;
   padding: 0;
   float: right;
