@@ -29,14 +29,23 @@ window.newtab = function () {
   console.log('$$$$ new tab called')
   var id = newID()
   terminals[id] = new hterm.Terminal('default')
-  var terminalEl = document.querySelector('#terminal')
-  if (terminalEl.innerHTML) {
-    terminalEl.innerHTML = ""
-    console.log('$$$$ removed old terminal')
-  }
+  var terminalContainer = document.querySelector('#terminal')
+  var terminalEl = document.createElement('div')
+  terminalContainer.appendChild(terminalEl)
+  terminalEl.id = 'terminal-' + id
+  terminalEl.className = 'terminal'
 
+  console.log('$$$ add terminal to dom')
+  terminals[id].decorate(terminalEl)
+  terminals[id].onTerminalReady = function () {
+    this.setCursorPosition(0, 0)
+    this.setCursorVisible(true)
+    this.runCommandClass(Instance, document.location.hash.substr(1))
+  }
+  window.term = terminals[id]
 
   // Add Tab
+  console.log('$$$$ add tab')
   var tabsEl = document.querySelector('.tabs')
   var children = tabsEl.childNodes
   for (var existingTabs in children)
@@ -48,6 +57,8 @@ window.newtab = function () {
   var title = 'website'
   tab.innerHTML = title
 
+  console.log('$$$$ define close tab')
+
   // close tab
   var x = document.createElement('button')
   x.className = 'x'
@@ -55,16 +66,16 @@ window.newtab = function () {
   x.onclick = function (e) {
     e.preventDefault()
     var id = this.parentElement.id.slice(4)
-    console.log('$$$ closing tab', id)
+    
+    console.log('$$$ remove tab, remove terminal, & remove from map of terminals', id)
     delete terminals[id]
-    this.parentElement.parentElement.removeChild(this.parentElement)
-    var firstTerm = Object.keys(terminals)[0]
+    this.parentElement.remove()
+    document.querySelector('#terminal-'+id).remove()
 
+    var firstTerm = Object.keys(terminals)[0]
     if (firstTerm) {
       document.querySelector('#tab-'+firstTerm).className = 'tab selected'
-      terminalEl.innerHTML = ""
-      terminals[firstTerm].decorate(terminalEl)
-      terminals[firstTerm].runCommandClass(Instance, document.location.hash.substr(1))
+      document.querySelector('#terminal-'+firstTerm).style.display = 'block'
     } else {
       console.log('$$$$$ TODO home screen')
     }
@@ -72,16 +83,18 @@ window.newtab = function () {
   tab.appendChild(x)
 
 
+  console.log('$$$ define tab.onclick')
   // switch tabs
   tab.onclick = function (e) {
     // if it's not a tab, don't do anything
     if (!~e.target.className.indexOf('tab'))
       return
 
-    var terminalEl = document.querySelector('#terminal')
-    if (terminalEl.innerHTML) {
-      terminalEl.innerHTML = ""
-      console.log('$$$$ removed old terminal')
+    var terminalEls = document.querySelectorAll('.terminal')
+    console.log('$$$$ hide all terminals', terminalEls)
+    for (var i = 0, term; term = terminalEls[i]; i++) {
+      console.log('$$$ term:', term)
+      term.style.display = 'none'
     }
 
     var children = this.parentElement.childNodes
@@ -91,19 +104,11 @@ window.newtab = function () {
 
     this.className = 'tab selected'
     console.log('$$$$ show terminal', this.id)
-    terminals[this.id.slice(4)].decorate(terminalEl) // i don't think this actually works if you've already called it
-    terminals[this.id.slice(4)].runCommandClass(Instance, document.location.hash.substr(1))
+    document.querySelector('#terminal-' + this.id.slice(4)).style.display = 'block'
   }
 
+  console.log('$$$$ add tab to dom')
   tabsEl.appendChild(tab)
-  terminals[id].decorate(terminalEl)
-  terminals[id].onTerminalReady = function () {
-    this.setCursorPosition(0, 0)
-    this.setCursorVisible(true)
-    this.runCommandClass(Instance, document.location.hash.substr(1))
-  }
-
-  window.term = terminals[id]
 }
 
 // Create the terminal and start an instance.
