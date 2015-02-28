@@ -37,7 +37,7 @@ if [[ ! -f "$(which goxc)" ]]; then
 fi
 
 echo "--> Downloading shells..."
-ver="0.21.0"
+ver="0.21.2"
 url="https://github.com/atom/atom-shell/releases/download/v${ver}/atom-shell-v${ver}"
 
 mkdir -p "${root}/pkg/${version}"
